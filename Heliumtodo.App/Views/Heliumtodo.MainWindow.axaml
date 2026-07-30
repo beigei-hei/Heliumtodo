@@ -21,19 +21,12 @@
         <TextBlock Margin="5"
                FontSize="20" 
                HorizontalAlignment="Center" 
-               Text="摄氏温度转换器">
+               Text="">
                
         </TextBlock>
         
     </Border>
-     <Grid ShowGridLines="False" Margin="5" 
-        ColumnDefinitions="120, 100"
-        RowDefinitions="Auto, Auto, Auto" >
-        <TextBlock Grid.Row="0" Grid.Column="0" Margin="10">摄氏度</TextBlock>
-        <TextBox Grid.Row="0" Grid.Column="1" Margin="0 5" TextChanged="摄氏度_TextChanged" Text="0" Name="摄氏度"/>
-        <TextBlock Grid.Row="1" Grid.Column="0" Margin="10">华氏度</TextBlock>
-        <TextBox Grid.Row="1" Grid.Column="1" Margin="0 5" Text="" Name="华氏度" IsReadOnly="True"/>
-    </Grid>
+    
 
 
    
