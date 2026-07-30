@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Heliumtodo.App/Heliumtodo.App.csproj" />
+  <Project Path="Heliumtodo.core/Heliumtodo.core.csproj" />
+</Solution>
