@@ -9,7 +9,7 @@ namespace Heliumtodo.core
         light,
         dark,
         followsystem,
-        custom
+       
     }
    
 }
