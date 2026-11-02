@@ -1387,8 +1387,9 @@ public static class Program
 
         // ── ① 打开动画 ──
         Console.WriteLine();
-        Console.WriteLine("── 打开动画：淡入 + 轻微放大 ──");
+        Console.WriteLine("── 打开动画：遮罩淡出 ──");
 
+        // 先记下"刚 Show 完那一刻"的状态：遮罩应当已经盖上，窗口本身是完全不透明的。
         var window = new MainWindow
         {
             DataContext = shell,
@@ -1397,29 +1398,56 @@ public static class Program
             WindowDecorations = WindowDecorations.None,
         };
 
-        // 先记下"刚 Show 完那一刻"的状态：动画应当已经从 0 开始了
         window.Show();
-        var opacityAtStart = window.Opacity;
-        var scaleAtStart = ReadContentScale(window);
 
-        // 边跑边采，看不透明度是不是真的在变（而不是一步到位）
-        var samples = new List<double>();
-        var start = DateTime.UtcNow;
-        while ((DateTime.UtcNow - start).TotalMilliseconds < 700)
+        // 先让首帧布局跑完，再单独播一次开场动画，这样读到的是"动画第 0 帧"的样子。
+        Dispatcher.UIThread.RunJobs();
+        window.PlayShowAnimation();
+
+        var veil = window.GetVisualDescendants().OfType<Border>()
+            .FirstOrDefault(b => b.Name == "IntroVeil");
+
+        static int VeilAlpha(Border? border)
+            => border?.Background is ISolidColorBrush brush ? brush.Color.A : -1;
+
+        var veilAlpha = VeilAlpha(veil);
+
+        Check("开场动画用遮罩，而不是改窗口不透明度",
+            veilAlpha > 200 && Math.Abs(window.Opacity - 1) < 1e-9,
+            $"遮罩不透明度 {veilAlpha}，窗口不透明度 {window.Opacity:0.00}（窗口必须始终是 1.00）");
+
+        // 先探一下"合成器会不会给帧回调"。真窗口里会，无头平台不会 ——
+        // 这是环境差异，不是 bug，所以探不到就跳过，而不是留一条永远红的断言。
+        var frameFired = false;
+        TopLevel.GetTopLevel(window)?.RequestAnimationFrame(_ => frameFired = true);
+        PumpDispatcher(TimeSpan.FromMilliseconds(200));
+
+        if (frameFired)
         {
-            Dispatcher.UIThread.RunJobs();
-            samples.Add(window.Opacity);
-            Thread.Sleep(10);
+            var veilAlphas = new List<int>();
+            for (var i = 0; i < 12; i++)
+            {
+                PumpDispatcher(TimeSpan.FromMilliseconds(30));
+                veilAlphas.Add(VeilAlpha(veil));
+            }
+
+            var veilDistinct = veilAlphas.Distinct().Count();
+
+            Check("遮罩真的在淡出（不是闪一下）",
+                veilDistinct >= 3 && veilAlphas[^1] < veilAlpha,
+                $"{veilAlpha} → {string.Join(" / ", veilAlphas.Take(8))}…（{veilDistinct} 个不同值）");
+        }
+        else
+        {
+            Console.WriteLine("   [跳过] 遮罩逐帧淡出 — 无头平台的合成器不给帧回调" +
+                              "，改由 probe-intro.ps1 在真实窗口里验证（实测 8 帧 / 6 个 Alpha）");
         }
 
-        var distinct = samples.Distinct().Count();
+        Check("开场动画不缩放内容",
+            Math.Abs(ReadContentScale(window) - 1) < 1e-9,
+            $"缩放 {ReadContentScale(window):0.000}（缩放会把抓手坐标算偏，已删）");
 
-        Check("刚开始是淡入状态", opacityAtStart < 0.95,
-            $"不透明度 {opacityAtStart:0.00}（完全体是 1.00）");
-        Check("刚开始有轻微缩小", scaleAtStart < 0.999,
-            $"缩放 {scaleAtStart:0.000}（设计起点 {WindowAnimationMath.IntroStartScale:0.00}）");
-
-        // 下面三条是"算术部分"的断言 —— 纯函数，不依赖定时器，所以在无头里也能钉死。
+        // 缓动与进度的断言 —— 纯函数，不依赖定时器，所以在无头里也能钉死。
         Check("缓动端点正确",
             Math.Abs(WindowAnimationMath.EaseOut(0)) < 1e-9
             && Math.Abs(WindowAnimationMath.EaseOut(1) - 1) < 1e-9
@@ -1434,19 +1462,24 @@ public static class Program
             && Math.Abs(WindowAnimationMath.ProgressOf(TimeSpan.FromMilliseconds(500)) - 1) < 1e-9,
             "0ms→0.00，90ms→0.50，500ms→1.00（180ms 就该结束，不会因为掉帧被拉长）");
 
-        // 定时器推进这件事，无头平台办不到（实测：RunJobs + Sleep 循环里 DispatcherTimer 一次都不触发），
-        // 所以帧有没有按时到，只能在真实窗口里看，交给 tools/probe-intro.ps1。
-        Console.WriteLine($"   [跳过] 帧是否按时到达 — 无头平台的 DispatcherTimer 不触发" +
-                          $"（本次采到 {distinct} 个不透明度值），改由 probe-intro.ps1 在真实窗口里验证");
+        // 帧有没有按时到、以及"迟到一帧也不许闪一下"，都只能在真实窗口里看，
+        // 交给 tools/probe-intro.ps1（它数的是日志里的遮罩 Alpha 序列）。
+        Console.WriteLine("   [跳过] 帧是否按时到达 — 无头平台的合成器不驱动帧回调" +
+                          "，改由 probe-intro.ps1 在真实窗口里验证");
 
-        // 动画是靠定时器推的，无头里它一帧都不来。先强制收尾 ——
+        // 动画是靠合成器帧回调推的，无头里一帧都不来。先强制收尾 ——
         // 这既是"窗口要藏起来之前该做的事"，也顺便验证收尾真的能把视觉状态还原干净。
         window.FinishAnimationsImmediately();
         Dispatcher.UIThread.RunJobs();
 
+        var veilHiddenAfterSettle = veil is null || !veil.IsVisible;
+
         Check("收尾能强制回到完全体",
-            Math.Abs(window.Opacity - 1) < 1e-9 && Math.Abs(ReadContentScale(window) - 1) < 1e-9,
-            $"不透明度 {window.Opacity:0.00}，缩放 {ReadContentScale(window):0.000}");
+            Math.Abs(window.Opacity - 1) < 1e-9
+            && Math.Abs(ReadContentScale(window) - 1) < 1e-9
+            && veilHiddenAfterSettle,
+            $"不透明度 {window.Opacity:0.00}，缩放 {ReadContentScale(window):0.000}，" +
+            $"遮罩{(veilHiddenAfterSettle ? "已收掉" : "还盖着")}");
 
         // ── ② 拖边改大小 ──
         Console.WriteLine();
@@ -1486,24 +1519,31 @@ public static class Program
             }
         }
 
-        // 最大化 / 还原：只验证"调了不抛异常"。真正的过程动画同样依赖定时器，
-        // 无头里收不了尾，交给 tools/probe-maximize-anim.ps1。
+        // 最大化 / 还原：现在只是切状态，过渡动画由 DWM 在合成器里播（WindowChrome 补了 WS_CAPTION）。
+        // 无头平台没有 DWM，过程动画交给 tools/probe-native-anim.ps1 数可见像素面积。
         var threw = string.Empty;
         try
         {
-            window.ToggleMaximizeAnimated();
+            window.WindowState = WindowState.Maximized;
             PumpDispatcher(TimeSpan.FromMilliseconds(200));
-            window.ToggleMaximizeAnimated();
+            var maximized = window.WindowState;
+
+            window.WindowState = WindowState.Normal;
             PumpDispatcher(TimeSpan.FromMilliseconds(200));
+
+            if (maximized != WindowState.Maximized || window.WindowState != WindowState.Normal)
+            {
+                threw = $"{maximized} → {window.WindowState}";
+            }
         }
         catch (Exception ex)
         {
             threw = ex.GetType().Name;
         }
 
-        Check("最大化 / 还原调得动（不抛异常）", threw.Length == 0,
-            threw.Length == 0 ? "两次切换都没抛异常" : $"抛了 {threw}");
-        Console.WriteLine("   [跳过] 最大化过程动画 — 无头定时器不推进，改由 probe-maximize-anim.ps1 验证");
+        Check("最大化 / 还原切得动（不抛异常）", threw.Length == 0,
+            threw.Length == 0 ? "切到 Maximized 再切回 Normal 都正常" : $"异常：{threw}");
+        Console.WriteLine("   [跳过] 最大化 / 最小化的过程动画 — 由 DWM 播，改由 probe-native-anim.ps1 验证");
 
         window.Close();
         PumpDispatcher(TimeSpan.FromMilliseconds(200));

@@ -127,14 +127,9 @@ public partial class ShellView : UserControl
 
     private void ToggleMaximize()
     {
-        // 最大化走 MainWindow 自己写的过渡动画（Win11 的 DWM 动画对无边框窗口不生效，
-        // 实测点一下是瞬间跳变）。非主窗口（比如渲染检查里的小窗口）就退回系统行为。
-        if (TopLevel.GetTopLevel(this) is MainWindow mainWindow)
-        {
-            mainWindow.ToggleMaximizeAnimated();
-            return;
-        }
-
+        // 只切状态，过渡动画交给 DWM。
+        // 以前这里走自己写的逐帧改窗口矩形版本，是因为样式位缺 WS_CAPTION，DWM 判定
+        // "这不是正常窗口"就不播过渡；补上之后软件渲染下也是满帧（见 WindowChrome）。
         if (TopLevel.GetTopLevel(this) is not Window window) return;
 
         window.WindowState = window.WindowState == WindowState.Maximized

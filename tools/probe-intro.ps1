@@ -7,6 +7,8 @@
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
+. (Join-Path $PSScriptRoot 'probe-common.ps1')
+
 $exe = Join-Path $PSScriptRoot '..\HeliumTodo.App\bin\Debug\net10.0\HeliumTodo.App.exe'
 $exe = (Resolve-Path $exe).Path
 
@@ -15,12 +17,10 @@ if (Test-Path $sandbox) { Remove-Item $sandbox -Recurse -Force }
 New-Item -ItemType Directory -Path $sandbox | Out-Null
 $sandbox = (Resolve-Path $sandbox).Path
 
-$env:HELIUM_CONFIG_DIR = $sandbox
-$env:HELIUM_INTRO_TRACE = '1'
-
 Write-Host '── 开场动画 ──'
-$proc = Start-Process -FilePath $exe -PassThru
-Start-Sleep -Seconds 7
+$proc = Start-HeliumApp -Exe $exe -Environment @{ HELIUM_CONFIG_DIR = $sandbox; HELIUM_INTRO_TRACE = '1' }
+[void](Wait-HeliumWindow -Process $proc)
+Start-Sleep -Seconds 5
 
 $log = Join-Path $sandbox 'background.log'
 if (-not (Test-Path $log)) {
@@ -50,8 +50,7 @@ if ($last -gt 5)         { Write-Host '  [失败] 最后一帧遮罩没有完全
 $proc.Kill()
 Start-Sleep -Milliseconds 800
 Remove-Item $sandbox -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item Env:\HELIUM_CONFIG_DIR -ErrorAction SilentlyContinue
-Remove-Item Env:\HELIUM_INTRO_TRACE -ErrorAction SilentlyContinue
+Clear-HeliumEnvironment -Names @('HELIUM_CONFIG_DIR', 'HELIUM_INTRO_TRACE')
 
 if ($ok) { Write-Host '  ✔ 开场遮罩逐帧淡出，并收尾到完全透明' }
 exit ([int](-not $ok))

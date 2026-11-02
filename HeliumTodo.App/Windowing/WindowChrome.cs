@@ -20,6 +20,13 @@ namespace HeliumTodo.App.Windowing;
 ///   结果是：样式上是个普通可调整窗口（有阴影、有圆角），
 ///   视觉上客户区等于整个窗口（壁纸照样铺满）。
 ///
+/// 0.3.5 补的一条（L1）：WS_CAPTION。
+///   之前缺的不是"边框"而是"标题栏位"：DWM 判断"这个窗口配不配拥有最小化/最大化过渡动画"
+///   看的是 WS_CAPTION（= WS_BORDER | WS_DLGFRAME）。少了它，点最小化/最大化就是硬切；
+///   补上之后过渡交给 DWM 在合成器里播 —— 哪怕窗口内容是软件渲染的，动画照样 60 fps，
+///   因为代价不在我们的进程里。加了 WS_CAPTION 也不会真的长出标题栏：
+///   WM_NCCALCSIZE 已经把非客户区抹成 0。
+///
 /// 为什么单独放一个类，而不是继续写在 MainWindow 的 partial 里：
 ///   这些都是"窗口外壳"的通用做法，跟这个应用有什么页面没关系。
 ///   抽出来之后，MainWindow 只需要一行 <c>WindowChrome.Attach(this);</c>，
@@ -32,6 +39,11 @@ internal static class WindowChrome
     private const uint WS_MINIMIZEBOX = 0x00020000u;
     private const uint WS_MAXIMIZEBOX = 0x00010000u;
     private const uint WS_SYSMENU = 0x00080000u;
+    private const uint WS_BORDER = 0x00800000u;
+    private const uint WS_DLGFRAME = 0x00400000u;
+
+    /// <summary>WS_CAPTION = WS_BORDER | WS_DLGFRAME。只影响 DWM 的判定，不会画出标题栏。</summary>
+    private const uint WS_CAPTION = WS_BORDER | WS_DLGFRAME;
     private const uint WM_NCCALCSIZE = 0x0083;
     private const uint MONITOR_DEFAULTTONEAREST = 0x00000002;
 
@@ -43,14 +55,57 @@ internal static class WindowChrome
     {
         if (!OperatingSystem.IsWindows()) return;
 
-        // ① 样式位：Avalonia 每次重设样式都会回调这里，所以每次都把它们或上
+        // ① 样式位：Avalonia 每次重设样式都会回调这里，所以每次都把它们或上。
+        //    这里的 WS_CAPTION 只给 DWM 看（决定要不要播最小化/最大化过渡），
+        //    真正画不画标题栏由下面的 WM_NCCALCSIZE 说了算。
         Win32Properties.AddWindowStylesCallback(
             window,
             static (style, exStyle) =>
-                (style | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX, exStyle));
+                (style | WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX, exStyle));
 
         // ② 非客户区归零
         Win32Properties.AddWndProcHookCallback(window, OnNativeMessage);
+
+        // ③ 显式允许 DWM 过渡：万一系统的"关闭动画"策略是开着的（辅助功能里的降低动画、
+        //    或者用户手动关过），这里明确要回来 —— 我们宁可跟着系统设置走，也不要自己装死。
+        window.Opened += (_, _) => AllowDwmTransitions(window);
+    }
+
+    /// <summary>
+    /// 告诉 DWM「这个窗口的过渡动画允许播」。
+    ///
+    /// DWMWA_TRANSITIONS_FORCEDISABLED（=3）传 FALSE 表示"不要强制禁用"。
+    /// 注意这个开关是"别拦着我"，不是"必须有动画" —— 用户在系统里关掉动画仍然有效，
+    /// 我们不跟用户的辅助功能设置对着干。
+    /// </summary>
+    private static void AllowDwmTransitions(Window window)
+    {
+        var handle = window.TryGetPlatformHandle();
+        if (handle is null)
+        {
+            return;
+        }
+
+        var allow = 0; // FALSE：不要强制禁用过渡
+        var hr = DwmSetWindowAttribute(
+            handle.Handle, DWMWA_TRANSITIONS_FORCEDISABLED, ref allow, sizeof(int));
+
+        if (hr != 0)
+        {
+            Trace($"[窗口] 没能显式开启 DWM 过渡（hr=0x{hr:X8}），沿用系统默认");
+        }
+    }
+
+    private static void Trace(string message)
+    {
+        try
+        {
+            HeliumTodo.App.App.LogBackground(message);
+        }
+        catch
+        {
+            // 记日志失败不值得影响窗口。
+        }
     }
 
     /// <summary>
@@ -88,6 +143,13 @@ internal static class WindowChrome
         handled = true;
         return IntPtr.Zero;
     }
+
+    /// <summary>DwmSetWindowAttribute 的属性号：WCA 里的 TRANSITIONS_FORCEDISABLED。</summary>
+    private const int DWMWA_TRANSITIONS_FORCEDISABLED = 3;
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(
+        IntPtr hwnd, int attribute, ref int value, int size);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]

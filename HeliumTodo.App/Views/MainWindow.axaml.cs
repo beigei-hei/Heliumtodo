@@ -31,11 +31,10 @@ public partial class MainWindow : Window
         // ① 外壳：把 WS_THICKFRAME 加回来（系统才当成普通窗口），再把非客户区抹成 0（壁纸铺满）
         WindowChrome.Attach(this);
 
-        // ② 动画：打开淡入 / 最大化 / 还原
-        //    动画和拖拽都要在"窗口正在动"的这段时间临时降质（见 InteractionQuality 的实测数字），
-        //    所以先把降质开关建出来，两个协作对象共用它（引用计数，重叠也没事）。
+        // ② 动画：只剩"出现时淡出遮罩"这一件（最大化和还原交给 DWM，见 WindowChrome）。
+        //    拖拽改大小要在"窗口正在动"的这段时间临时降质（见 InteractionQuality 的实测数字）。
         _quality = new InteractionQuality(this);
-        _animator = new WindowAnimator(this, _quality) { Trace = App.LogBackground };
+        _animator = new WindowAnimator(this) { Trace = App.LogBackground };
 
         // 开场动画靠这层遮罩淡出（而不是改窗口不透明度，见 WindowAnimator.PlayIntro 的注释）。
         _animator.SetIntroVeil(IntroVeil);
@@ -47,9 +46,6 @@ public partial class MainWindow : Window
         Opened += OnOpened;
         Closing += OnClosing;
     }
-
-    /// <summary>最大化 / 还原（带过渡）。标题栏双击和右上角按钮都走这里。</summary>
-    public void ToggleMaximizeAnimated() => _animator.ToggleMaximize();
 
     /// <summary>
     /// 从托盘唤回时再播一次"出现"动画 —— 窗口是 Hide/Show 的，不走 Opened，
@@ -79,11 +75,11 @@ public partial class MainWindow : Window
             }
         }
 
-        // 窗口出现的过渡：淡入 + 轻微放大（对齐 Windows 11 的观感）
+        // 窗口出现的过渡：一层遮罩从实到透（对齐 Windows 11 的观感）
         _animator.PlayIntro();
 
-        // 只在自动化验证时生效（环境变量不设就什么都不做）
-        _animator.ScheduleSelfTestIfRequested();
+        // 最大化 / 最小化的过渡动画由 DWM 负责（WindowChrome 补了 WS_CAPTION），
+        // 这里不再安排自己的自测钩子 —— 真机验证交给 tools/probe-native-anim.ps1。
     }
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)
