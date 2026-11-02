@@ -1,0 +1,193 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:HeliumTodo.App.ViewModels"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             x:Class="HeliumTodo.App.Views.ShellView"
+             x:DataType="vm:ShellViewModel"
+             Background="Transparent">
+
+  <!--
+    ══════════════════════════════════════════════════════════════════════════
+      应用外壳
+    ══════════════════════════════════════════════════════════════════════════
+    改版后的结构（从上到下、从左到右）：
+
+      ┌──────────────────────────────────────────────────────────────┐
+      │ 标题栏 48px：品牌                             状态  ─ □ ✕   │  ← 自己画的
+      ├────┬─────────────────────────────────────────┬───────────────┤
+      │导  │                                         │               │
+      │航  │        当前页面（卡片浮在壁纸上）        │   右侧栏      │
+      │轨  │                                         │  （各页自备） │
+      │56  │                                         │               │
+      └────┴─────────────────────────────────────────┴───────────────┘
+
+    为什么自己画标题栏：原生标题栏是系统画的，颜色跟壁纸永远对不上，
+    顶上会突然出现一条灰色横条。改成"无边框 + 自绘"之后，壁纸能一直铺到窗口顶端。
+
+    为什么导航从 FANavigationView 换成自绘图标轨：
+      ① FANavigationView 展开态是 228px 的文字导航，收成 56px 纯图标要额外的显示模式切换；
+      ② 它自带的命令栏、返回按钮、页头在窄轨里全是多余的；
+      ③ 自绘只有几十行，选中态完全可控（强调色实心块 + 白色图标）。
+      代价：键盘导航要自己保证 —— 所以每个条目仍然是真正的 Button，
+      焦点、回车触发都还在。
+  -->
+
+  <UserControl.Resources>
+
+    <!--
+      图标轨里一个按钮：圆角 12、选中时强调色实心。
+
+      宽度不再写死 44，而是绑 ItemWidth（收起 44 / 展开 176）。
+      Width 上的 Transition 让它跟着轨道一起"拉"开 —— 只要一条 Width 过渡，
+      图标与名称的相对位置就自动跟着走，不用另外做位移动画。
+    -->
+    <DataTemplate x:Key="RailItemTemplate" DataType="vm:NavigationItemViewModel">
+      <Button Classes="railItem"
+              Classes.active="{Binding IsSelected}"
+              Tag="{Binding}"
+              Width="{Binding ItemWidth}"
+              HorizontalContentAlignment="Left"
+              Click="OnRailItemClick"
+              ToolTip.Tip="{Binding Title}">
+        <Button.Transitions>
+          <Transitions>
+            <DoubleTransition Property="Width" Duration="0:0:0.26">
+              <DoubleTransition.Easing>
+                <CubicEaseOut />
+              </DoubleTransition.Easing>
+            </DoubleTransition>
+          </Transitions>
+        </Button.Transitions>
+        <StackPanel Orientation="Horizontal" Spacing="10" Margin="13,0" HorizontalAlignment="Left">
+          <TextBlock Classes="railGlyph"
+                     Text="{Binding Icon}"
+                     FontFamily="{DynamicResource IconFont}" />
+          <TextBlock Classes="railLabel"
+                     Text="{Binding Title}"
+                     IsVisible="{Binding IsExpanded}" />
+        </StackPanel>
+      </Button>
+    </DataTemplate>
+
+  </UserControl.Resources>
+
+  <Grid RowDefinitions="Auto,*">
+
+    <!-- ══════════ 标题栏 ══════════ -->
+    <Border Grid.Row="0"
+            x:Name="TitleBar"
+            Height="{DynamicResource TitleBarHeight}"
+            Background="Transparent"
+            PointerPressed="OnTitleBarPointerPressed"
+            DoubleTapped="OnTitleBarDoubleTapped">
+
+      <Grid ColumnDefinitions="Auto,*,Auto" Margin="14,0,8,0">
+
+        <!-- 品牌区 -->
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8"
+                    VerticalAlignment="Center" IsHitTestVisible="False">
+          <Border Width="24" Height="24" CornerRadius="7"
+                  Background="{DynamicResource SystemAccentColor}">
+            <TextBlock Text="H" FontWeight="Bold" FontSize="13" Foreground="White"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Border>
+          <TextBlock Text="Helium Todo" FontWeight="SemiBold" FontSize="13"
+                     VerticalAlignment="Center" />
+          <TextBlock Text="{Binding VersionText}" FontSize="10" Opacity="0.5"
+                     VerticalAlignment="Center" />
+        </StackPanel>
+
+        <!-- 中间：当前页面的加载状态 / 冲突提醒。
+             放在标题栏而不是内容区，是为了不占卡片的高度 —— 它本来就只是一行提示。 -->
+        <TextBlock Grid.Column="1"
+                   Text="{Binding StatusText}"
+                   FontSize="12" Opacity="0.55"
+                   VerticalAlignment="Center" Margin="16,0,0,0"
+                   IsHitTestVisible="False" />
+
+        <!-- 窗口按钮：自己画，才能和壁纸配色统一 -->
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2"
+                    VerticalAlignment="Center">
+          <Button Classes="windowButton" Click="OnMinimizeClick" ToolTip.Tip="最小化">
+            <TextBlock Text="&#xE921;" FontFamily="{DynamicResource IconFont}" FontSize="10" />
+          </Button>
+          <Button Classes="windowButton" Click="OnMaximizeClick" ToolTip.Tip="最大化 / 还原">
+            <TextBlock Text="&#xE922;" FontFamily="{DynamicResource IconFont}" FontSize="10" />
+          </Button>
+          <Button Classes="windowButton close" Click="OnCloseClick" ToolTip.Tip="关闭">
+            <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource IconFont}" FontSize="10" />
+          </Button>
+        </StackPanel>
+
+      </Grid>
+    </Border>
+
+    <!-- ══════════ 主体：图标轨 + 内容区 ══════════ -->
+    <Grid Grid.Row="1" ColumnDefinitions="Auto,*">
+
+      <!-- ───── 左侧图标轨 ───── -->
+      <Border Grid.Column="0"
+              Name="NavRail"
+              Width="{Binding RailWidth}"
+              Margin="8,0,4,8"
+              CornerRadius="{DynamicResource RadiusCard}"
+              Background="{DynamicResource CardSurfaceBrush}"
+              BorderBrush="{DynamicResource CardBorderBrush}"
+              BorderThickness="1"
+              BoxShadow="{DynamicResource CardShadow}"
+              ClipToBounds="True">
+
+        <!--
+          轨道宽度上的过渡就是需求里说的"拉伸非线性动效"：
+          CubicEaseOut = 起步快、收尾慢（Windows 自己的展开动画也是这个手感），
+          0.26 秒比页面切换（0.18）略长一点，才看得出"拉"的过程。
+        -->
+        <Border.Transitions>
+          <Transitions>
+            <DoubleTransition Property="Width" Duration="0:0:0.26">
+              <DoubleTransition.Easing>
+                <CubicEaseOut />
+              </DoubleTransition.Easing>
+            </DoubleTransition>
+          </Transitions>
+        </Border.Transitions>
+
+        <DockPanel Margin="0,6,0,8">
+          <!-- 展开 / 收起按钮：钉在轨道顶部，永远是第一个能点到的东西 -->
+          <Button DockPanel.Dock="Top"
+                  Classes="railToggle"
+                  Click="OnToggleRailClick"
+                  ToolTip.Tip="展开 / 收起功能名">
+            <TextBlock Text="{Binding RailToggleGlyph}"
+                       FontFamily="{DynamicResource IconFont}"
+                       FontSize="11" />
+          </Button>
+
+          <!-- 底部条目：现在空着（设置已上移），留给将来的账户/状态 -->
+          <ItemsControl DockPanel.Dock="Bottom"
+                        ItemsSource="{Binding FooterItems}"
+                        ItemTemplate="{StaticResource RailItemTemplate}" />
+
+          <ItemsControl ItemsSource="{Binding MenuItems}"
+                        ItemTemplate="{StaticResource RailItemTemplate}" />
+        </DockPanel>
+      </Border>
+
+      <!-- ───── 内容区 ───── -->
+      <Grid Grid.Column="1" RowDefinitions="Auto,*">
+
+        <!-- 严重冲突时的提醒条：贴在内容区顶部，不占卡片位置 -->
+        <fa:FAInfoBar Grid.Row="0"
+                      Margin="4,0,12,4"
+                      IsOpen="{Binding IsAlertVisible}"
+                      Severity="Warning"
+                      Message="{Binding AlertMessage}"
+                      IsClosable="True" />
+
+        <ContentControl Grid.Row="1" Content="{Binding CurrentPage}" />
+      </Grid>
+
+    </Grid>
+
+  </Grid>
+</UserControl>

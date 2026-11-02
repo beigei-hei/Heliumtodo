@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:HeliumTodo.App.ViewModels"
+             x:Class="HeliumTodo.App.Controls.ReminderPicker"
+             x:DataType="vm:ReminderEditState">
+
+    <!--
+        「提醒」这一小块，日程和待办共用。
+        DataContext 直接就是 ReminderEditState（ViewModel 里的 Reminder 属性），
+        所以这里只写控件，不写业务。
+    -->
+    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+
+        <TextBlock Text="提醒" Classes="settingHeader"
+                   VerticalAlignment="Center" Margin="0,0,2,0" />
+
+        <ComboBox x:Name="ReminderCombo"
+                  ItemsSource="{Binding Options}"
+                  SelectedItem="{Binding Selected}"
+                  MinWidth="140">
+            <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:ReminderOption">
+                    <TextBlock Text="{Binding DisplayName}" />
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <!-- 选到「自定义…」才出现 -->
+        <StackPanel Orientation="Horizontal" Spacing="6"
+                    IsVisible="{Binding IsCustom}" VerticalAlignment="Center">
+            <NumericUpDown Value="{Binding Hours}" Minimum="0" Maximum="168"
+                           Increment="1" FormatString="0" Width="96" />
+            <TextBlock Text="小时" VerticalAlignment="Center" Opacity="0.7" />
+            <NumericUpDown Value="{Binding Minutes}" Minimum="0" Maximum="59"
+                           Increment="5" FormatString="0" Width="96" />
+            <TextBlock Text="分钟" VerticalAlignment="Center" Opacity="0.7" />
+        </StackPanel>
+
+    </StackPanel>
+</UserControl>

@@ -1,0 +1,68 @@
+# AGENTS.md · 给 AI 的硬规则
+
+> 这是一个 **C# 12 / .NET 10 + Avalonia 12 + FluentAvalonia 3.1 + SQLite** 的本地优先桌面应用。
+> 改代码之前先读 [`DEVELOPMENT_PLAYBOOK.md`](DEVELOPMENT_PLAYBOOK.md)（流程）与 [`ARCHITECTURE.md`](ARCHITECTURE.md)（约定）。
+> 本文件只列**不许破**的规则，不解释为什么——解释在 playbook 里。
+
+## 必须先做的四件事
+
+1. **先给验收标准**：把用户的话拆成 3–6 条可验证的行为，再说怎么改。
+2. **先想怎么证明**：能写单测就写单测；界面改动必须准备无头渲染 + 像素统计的验证方式（Agent 不能看图，"看着挺好"不算证据）。
+3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（179/179）、`--shell`、十四项 `--check`、指纹基线，全绿才交付。
+4. **收尾同步文档**：`PROGRESS.md`（这一轮）、`ARCHITECTURE.md`（新约定）、`UI_TEXT_MAP.md`（改了界面文案时）、指纹基线（`-Update` 后复查）。
+
+## 分层铁律
+
+- `HeliumTodo.Core` **不许** `using Avalonia`、**不许** 引用 EF Core / Sqlite。它必须能被纯控制台测试。
+- 依赖方向单向：`App → Data → Core`。`Data` 不许引用 `App`。
+- 可测的算术与规则放 `Core`（例：`TimelineMetrics` / `PlaybackLimits` / `RestartPolicy` / `ColorSchemes` / `RenderBackendSettings`）；界面层只做装配。
+
+## 界面铁律（都是踩过坑换来的）
+
+- 一个页面**只有一张卡**（`Border Classes="card"`）；模块名那一行在卡片**外面**，与卡片左边距 4px。
+- 六页分区必须完全一致：`Margin="12,4,12,12"`、标题行 `MinHeight="40" Margin="4,0,4,20"` → 卡片顶边 **64**、左边缘 **12**。改一页就要改六页，并跑 `--layout-check`。
+- 卡片底色 `CardSurfaceBrush` **不许**写进 `ThemeDictionaries`（主题字典优先级更高，代码赋值会静默失效）；圆角只有一个来源 `RadiusCard=18`。
+- 提示条**不用** `FAInfoBar`：自绘 `Border Name="NoticeBar"` + `ZIndex="10"`，
+  和卡片同格、排在卡片**后面**（叠在功能区上方），底板跟随明暗，3 秒自动收起（`NoticePolicy`）。
+  注意 Avalonia 12 里写 `ZIndex="10"`，写 `Panel.ZIndex` 会报 `AVLN3000`。
+- 设置页里的 `FASettingsExpander` **和** `FASettingsExpanderItem` 都不许自带底色（控件主题里写死了 `#B3FFFFFF`），四条 `fa|` 样式已统一透明；`--rail-check` 会数着 34 行验证。
+- 卡片内容必须向内缩：`Border.card` 用 `Padding="8"`，里面再套一层同半径（`RadiusCard`）且 `ClipToBounds="True"` 的容器才放滚动区，否则悬停色块会压在圆角上。
+- 图标轨宽度只能取自 `RailMetrics`（收起 56 / 展开 188 / 条目 44 / 176），别在 XAML 里写数字。
+- 改 XAML 时小心 `FINAL` 属性（`ComboBox.currentValue` 之类）与名字冲突（`Name="WindowEdge"` 会遮住 `WindowEdge` 枚举）。
+
+## 动效铁律
+
+- 窗口正在动（开场 / 最大化 / 拖拽改大小）时**必须**在 `InteractionQuality.Begin()` 作用域里：
+  壁纸降 `LowQuality`、关卡片阴影、暂停动图。别删这个作用域，也别把降质改回去。
+- 拖拽改大小只许**按帧**改窗口（`RequestAnimationFrame` 合并），不许在 `PointerMoved` 里直接改。
+- 定性能结论前先跑 `--perf-check` 看数字；无头数字只用来**比较**，不代表真机（同一档无头 23 ms、真机 45 ms）。
+- 凡是要用代码改的资源，**不许**写进 `ThemeDictionaries`（`CardSurfaceBrush` / `WallpaperScrimBrush` / `CardShadow` 都踩过）。
+
+## 测试铁律
+
+- 测试方法名用中文；方法上方一行中文注释写"为什么值得测"。
+- `[[nodiscard]]` 风格的返回值（如 `Assert` 之外的自研检查）不要静默丢弃。
+- `SelfTest` 运行器必须用 `if (result is Task t) t.GetAwaiter().GetResult();`，否则 async 测试会假绿。
+- 自检必须用 `HELIUM_CONFIG_DIR` 指到沙盒目录，**绝不**碰 `%APPDATA%\Helium Todo` 的真实数据。
+
+## 禁止
+
+- 不提交/遗留临时物：`output/`、`_probe-*`、`tools/_*.py`、`.tmp-*`。
+- 不改 `PROGRESS.md` 里的历史小节（旧版本号与旧数字是当时的事实）。
+- 不擅自升级 Avalonia / SkiaSharp 版本（SkiaSharp 必须与 Avalonia 传递依赖同版，否则运行期崩）。
+- 不在写法里引入 `unsafe`（项目未开 `AllowUnsafeBlocks`）。
+- 不为了省事关掉自检项（`--layout-check` 这类是为了防回归，红了要修根因）。
+
+## 常用命令
+
+```powershell
+dotnet build HeliumTodo.slnx -c Debug
+dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll
+dotnet HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll --shell
+dotnet HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll --layout-check
+dotnet HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll --perf-check
+pwsh tools\check-file-integrity.ps1
+python tools\gen_ui_text_map.py
+```
+
+调试用的环境变量（都是"只在自检/截图时开"）：`HELIUM_CONFIG_DIR`（沙盒目录）、`HELIUM_RENDER`（渲染后端）、`HELIUM_DARK`、`HELIUM_CARD_OPACITY`、`HELIUM_SHELL_PAGE`、`HELIUM_NO_RESTART`、`HELIUM_FAKE_DEBUGGER`、`HELIUM_*_DIALOG=1`（拍弹窗截图）、`HELIUM_ANIM_TRACE`（窗口动画逐帧帧间隔）、`HELIUM_NO_INTERACTION_QUALITY`（关掉动效降质做 A/B）。

@@ -1,0 +1,54 @@
+<Project>
+
+  <!--
+    全局编译设置（所有子项目共享）。
+    这里是「统一版本号 / 统一语言特性」的地方，改一处就影响整个解决方案。
+  -->
+  <PropertyGroup>
+    <!--
+      版本号：开发阶段。
+        0.3.5-alpha
+        │ │ │ └── 预发布标记：alpha = 内测版（比 dev 稳一点，功能还可能变）
+        │ │ └──── 修订号：修 bug、微调
+        │ └────── 次版本号：加功能
+        └──────── 主版本号：大改版
+
+      注意版本号里用 -alpha 而不是 .alpha：
+        这是语义化版本（SemVer）的写法。NuGet 和 .NET 的打包工具都只认
+        「数字.数字.数字-预发布标记」这种格式，写成 0.3.5.alpha 会被判为非法版本号。
+        想显示成「0.3.5.alpha」的话，那属于界面上怎么展示的问题，改界面文字就行，
+        但这里（程序集版本）必须是合法格式。
+    -->
+    <Version>0.3.5-alpha</Version>
+    <AssemblyVersion>0.3.5.0</AssemblyVersion>
+    <FileVersion>0.3.5.0</FileVersion>
+
+    <!-- 产品信息 -->
+    <Product>Helium Todo</Product>
+    <Company>Helium</Company>
+    <Copyright>Copyright (c) 2025 Helium</Copyright>
+
+    <!-- 语言特性：C# 12 + 可空引用类型（写代码时能提前发现 null 问题） -->
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- 不让警告挡住编译，但会把警告打出来提醒 -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <InvariantGlobalization>false</InvariantGlobalization>
+
+    <!-- 关闭 .NET 遥测，减少编译时的卡顿 -->
+    <DOTNET_CLI_TELEMETRY_OPTOUT>true</DOTNET_CLI_TELEMETRY_OPTOUT>
+    <DOTNET_NOLOGO>true</DOTNET_NOLOGO>
+  </PropertyGroup>
+
+  <!--
+    集中管理 NuGet 包版本（中央包版本管理）。
+    好处：升级 Avalonia 时只要改这里的数字，不用去翻每个 .csproj。
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,64 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sty="using:FluentAvalonia.Styling"
+             xmlns:conv="using:HeliumTodo.App.Converters"
+             xmlns:local="using:HeliumTodo.App"
+             x:Class="HeliumTodo.App.App"
+             RequestedThemeVariant="Light">
+
+  <!--
+    ══════════════════════════════════════════════════════════════
+      应用的资源与样式
+    ══════════════════════════════════════════════════════════════
+    分成三部分：
+      DataTemplates —— 「数据怎么变成界面」（ViewModel → View）
+      Styles        —— 控件「长什么样」（模板、样式选择器）
+      Resources     —— 可以被界面引用的「值」（颜色、间距、转换器）
+  -->
+
+  <!--
+    ① ViewModel → View 的自动对应（规则见 ViewLocator）。
+       放在 Application 这一层而不是某个窗口里，有两个好处：
+         · 任何窗口、任何控件里的 ViewModel 都能被正确解析成界面
+         · 界面渲染自检（HeliumTodo.RenderCheck）不用主窗口也能渲染页面
+  -->
+  <Application.DataTemplates>
+    <local:ViewLocator />
+  </Application.DataTemplates>
+
+  <Application.Styles>
+    <!--
+      ① Fluent 2 设计系统本体。
+         FluentAvaloniaTheme 是 FluentAvaloniaUI 提供的主题，
+         它一次性带来 NavigationView、InfoBar、Expander 等控件的 Fluent 外观。
+         PreferSystemTheme=False：明暗由我们自己在「设置」页控制，不跟随系统。
+    -->
+    <sty:FluentAvaloniaTheme PreferSystemTheme="False" />
+
+    <!-- ② 我们补充的控件样式（时间轴块、卡片、优先级标签等） -->
+    <StyleInclude Source="avares://HeliumTodo.App/Styles/Controls.axaml" />
+  </Application.Styles>
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <!-- 设计令牌：间距 / 圆角 / 字号 / 优先级配色 / 冲突配色 -->
+        <ResourceInclude Source="avares://HeliumTodo.App/Styles/DesignTokens.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+
+      <!-- 转换器：界面上用它把数据变成能显示的样子 -->
+      <!--
+        「已完成」的待办在列表里淡一点，越靠后越不抢眼。
+        注意方向：TrueOpacity 是「已完成」，要 < 1；FalseOpacity 是「未完成」，保持 1。
+        写成反的（已完成 1、未完成 0.35）时，界面看起来就是"做完的反而更醒目"。
+      -->
+      <conv:BoolToOpacityConverter x:Key="CompletedToOpacity" TrueOpacity="0.55" FalseOpacity="1" />
+      <conv:BoolToVisibilityConverter x:Key="BoolToVisible" />
+      <conv:BoolToVisibilityConverter x:Key="BoolToCollapsed" Invert="True" />
+      <conv:PriorityBrushConverter x:Key="PriorityBrush" />
+      <conv:PriorityTextConverter x:Key="PriorityText" />
+      <conv:TimeBlockTextConverter x:Key="TimeBlockText" />
+    </ResourceDictionary>
+  </Application.Resources>
+
+</Application>

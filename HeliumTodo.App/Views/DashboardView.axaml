@@ -1,0 +1,355 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:HeliumTodo.App.ViewModels"
+             xmlns:ctrl="using:HeliumTodo.App.Controls"
+             xmlns:conv="using:HeliumTodo.App.Converters"
+             xmlns:core="using:HeliumTodo.Core.Models"
+             x:Class="HeliumTodo.App.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+
+  <UserControl.Resources>
+    <!--
+      今日重点列表：已完成的那几行淡一点。
+      方向别写反 —— True 是「已完成」，要更淡。
+    -->
+    <conv:BoolToOpacityConverter x:Key="CompletedToOpacity" TrueOpacity="0.55" FalseOpacity="1" />
+
+    <!--
+      ★ 错位展示的关键 ★
+      给时间轴上每个方块套一个「定位容器」：
+        Canvas.Left / Canvas.Top 决定它在哪一列、第几点
+        Width / Height 决定它多大
+      这四个值都是 ViewModel 算好的（见 TimelineEntryViewModel.Resize）。
+      重叠的日程会拿到不同的 Lane，于是左位置不同，自然就并排错开了。
+    -->
+    <ControlTheme x:Key="TimelineEntryContainerTheme"
+                  TargetType="ContentPresenter"
+                  x:DataType="vm:TimelineEntryViewModel">
+      <Setter Property="Canvas.Left" Value="{Binding X}" />
+      <Setter Property="Canvas.Top" Value="{Binding Y}" />
+      <Setter Property="Width" Value="{Binding EntryWidth}" />
+      <Setter Property="Height" Value="{Binding EntryHeight}" />
+      <Setter Property="ToolTip.Tip" Value="{Binding Tooltip}" />
+    </ControlTheme>
+  </UserControl.Resources>
+
+  <!--
+    今日工作流（改版后）
+
+      ┌──────────────────────────────────────────┬───────────────┐
+      │  时间轴卡（顶部一行概览数字 + 24 小时轴）│  冲突提醒     │
+      │                                          │───────────────│
+      │  空闲时段卡（占满剩下的高度）            │  今日重点     │
+      └──────────────────────────────────────────┴───────────────┘
+
+    改动要点：
+      ① 28px 大标题去掉，页面顶部只留「日期 + 概览 + 翻页按钮」这一条；
+      ② 原来的 4 张统计小卡并进时间轴卡的卡片头（一行 metric），
+         省下的高度全部给时间轴 —— 时间轴才是这一页的主角；
+      ③ 右侧栏固定 360，冲突与今日重点上下排。
+  -->
+
+  <Grid RowDefinitions="Auto,*" Margin="12,4,12,12">
+
+    <!-- ══════════════════ 顶部：日期导航 ══════════════════ -->
+    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" MinHeight="40" Margin="4,0,4,20">
+
+      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+        <TextBlock Text="今日工作流" Classes="pageHeader" />
+        <TextBlock Text="{Binding DateText}" FontSize="14" FontWeight="SemiBold"
+                   VerticalAlignment="Center" />
+        <TextBlock Text="{Binding SummaryText}" Classes="pageCaption"
+                   VerticalAlignment="Center" />
+      </StackPanel>
+
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <Button Content="◀" ToolTip.Tip="前一天" Command="{Binding PreviousDayCommand}" />
+        <Button Content="今天" Command="{Binding GoTodayCommand}" />
+        <Button Content="▶" ToolTip.Tip="后一天" Command="{Binding NextDayCommand}" />
+        <Button FontSize="12" Padding="9,4" ToolTip.Tip="重新加载"
+                Command="{Binding RefreshAllCommand}">
+          <TextBlock Text="&#xE72C;" FontFamily="{DynamicResource IconFont}" />
+        </Button>
+      </StackPanel>
+    </Grid>
+
+    <!-- ══════════════════ 主体 ══════════════════ -->
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+
+      <!-- ─────────── 左边 ─────────── -->
+      <Grid Grid.Column="0" RowDefinitions="Auto,*" RowSpacing="12">
+
+        <!-- 24 小时时间轴（一整天的完整刻度） -->
+        <Border Grid.Row="0" Classes="card" Padding="20,16">
+          <StackPanel Spacing="10">
+
+            <!-- 卡片头：标题 + 4 个概览数字 -->
+            <Grid ColumnDefinitions="Auto,*,Auto">
+
+              <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                <TextBlock Text="24 小时时间轴" Classes="cardHeader" />
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                  <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                    <Border Width="10" Height="10" CornerRadius="3"
+                            Background="{StaticResource ScheduleEntryBrush}"
+                            BorderBrush="{StaticResource ScheduleEntryBorderBrush}" BorderThickness="1" />
+                    <TextBlock Text="日程" Classes="caption" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                    <Border Width="10" Height="10" CornerRadius="3"
+                            Background="{StaticResource TodoEntryBrush}"
+                            BorderBrush="{StaticResource TodoEntryBorderBrush}" BorderThickness="1" />
+                    <TextBlock Text="待办" Classes="caption" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                    <Border Width="10" Height="10" CornerRadius="3"
+                            Background="{StaticResource FocusEntryBrush}"
+                            BorderBrush="{StaticResource FocusEntryBorderBrush}" BorderThickness="1" />
+                    <TextBlock Text="专注 / 预订" Classes="caption" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                    <Border Width="10" Height="10" CornerRadius="3"
+                            Background="Transparent"
+                            BorderBrush="{StaticResource ConflictErrorBrush}" BorderThickness="2" />
+                    <TextBlock Text="冲突" Classes="caption" VerticalAlignment="Center" />
+                  </StackPanel>
+                </StackPanel>
+              </StackPanel>
+
+              <!-- 概览数字：原来 4 张卡片，现在压成一行 -->
+              <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="18" VerticalAlignment="Center">
+                <StackPanel>
+                  <TextBlock Text="{Binding FocusTodayText}" Classes="metric" FontSize="16" />
+                  <TextBlock Text="今日专注" Classes="caption" />
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="{Binding TodoActiveCount}" Classes="metric" FontSize="16" />
+                  <TextBlock Text="待办未完成" Classes="caption" />
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="{Binding BusyText}" Classes="metric" FontSize="16" />
+                  <TextBlock Text="已安排" Classes="caption" />
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="{Binding ConflictCount}" Classes="metric" FontSize="16"
+                             Foreground="{DynamicResource ConflictErrorBrush}" />
+                  <TextBlock Text="冲突" Classes="caption" />
+                </StackPanel>
+              </StackPanel>
+            </Grid>
+
+            <!--
+              时间轴本体：外面套滚动条，因为 24 小时比较长。
+
+              左侧的整点刻度（00:00 / 02:00 …）由 TimelineGrid 这个自绘控件
+              连同网格线一起画出来，不再用一堆 TextBlock 去摆 —— 见该控件的注释。
+            -->
+            <ScrollViewer Name="TimelineScroll" Height="470"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          ScrollChanged="OnTimelineScrollChanged">
+              <!-- 右侧：网格背景（含左侧刻度）+ 错位排布的方块 -->
+              <!-- 高度 = 24 × HourHeight + 上下留白（见 DashboardViewModel.TimelineHeight） -->
+              <ctrl:WidthObserverPanel Name="TimelineHost" Height="{Binding TimelineHeight}">
+                <Grid>
+
+                  <!-- ① 背景网格 + 左侧整点刻度（都是自己画的，比摆几十个控件快得多） -->
+                  <ctrl:TimelineGrid HourHeight="38" StartHour="0"
+                                     VerticalPadding="14"
+                                     Now="{Binding Now}"
+                                     ShowNowLine="{Binding IsToday}"
+                                     ShowHourLabels="True"
+                                     LabelMargin="{x:Static vm:TimelineMetrics.LabelWidth}"
+                                     LabelStepHours="2" />
+
+                  <!-- ② 所有方块。位置由 ViewModel 按「列号 / 时间比例」算好，这里只负责画 -->
+                  <ItemsControl ItemsSource="{Binding Entries}"
+                                ItemContainerTheme="{StaticResource TimelineEntryContainerTheme}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <Canvas />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate DataType="vm:TimelineEntryViewModel">
+                        <Border Classes="timelineEntry"
+                                Classes.conflict="{Binding HasConflict}"
+                                Background="{Binding BackgroundBrush}"
+                                BorderBrush="{Binding BorderBrush}"
+                                CornerRadius="6">
+                          <Grid ColumnDefinitions="Auto,*">
+
+                            <!-- 左侧的优先级色条：优先级越高越粗 -->
+                            <Border Grid.Column="0"
+                                    Width="{Binding PriorityBarWidth}"
+                                    Background="{Binding BorderBrush}"
+                                    CornerRadius="6,0,0,6" />
+
+                            <Border Grid.Column="1" Classes="timelineEntryInner"
+                                    IsVisible="{Binding !IsCompact}">
+                              <StackPanel Spacing="1">
+                                <TextBlock Text="{Binding Title}"
+                                           Classes="entryTitle"
+                                           Foreground="{Binding ForegroundBrush}" />
+                                <TextBlock Text="{Binding TimeRangeText}"
+                                           Classes="entryTime"
+                                           Foreground="{Binding ForegroundBrush}"
+                                           IsVisible="{Binding ShowTime}" />
+                                <TextBlock Text="{Binding Notes}"
+                                           Classes="entryTime"
+                                           Foreground="{Binding ForegroundBrush}"
+                                           IsVisible="{Binding ShowNotes}" />
+                              </StackPanel>
+                            </Border>
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+
+                </Grid>
+              </ctrl:WidthObserverPanel>
+            </ScrollViewer>
+          </StackPanel>
+        </Border>
+
+        <!-- 空闲时段建议 -->
+        <Border Grid.Row="1" Classes="card" Padding="20,16">
+          <Grid RowDefinitions="Auto,*" RowSpacing="10">
+
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+              <TextBlock Grid.Column="0" Text="空闲时段" Classes="cardHeader" />
+              <TextBlock Grid.Column="1" Text="点「安排」把待办放进时间轴"
+                         Classes="caption" VerticalAlignment="Center" />
+            </Grid>
+
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+              <ItemsControl ItemsSource="{Binding FreeSlots}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="vm:FreeSlotViewModel">
+                    <Border Classes="listRow" Padding="10,8">
+                      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                        <TextBlock Grid.Column="0" Text="{Binding TimeRangeText}"
+                                   FontWeight="SemiBold" VerticalAlignment="Center"
+                                   FontSize="12" MinWidth="120" />
+                        <StackPanel Grid.Column="1" Spacing="1">
+                          <TextBlock Text="{Binding SuggestionText}" FontSize="13"
+                                     TextTrimming="CharacterEllipsis" />
+                          <TextBlock Text="{Binding DurationText}" Classes="caption" />
+                        </StackPanel>
+                        <Button Grid.Column="2" Content="安排"
+                                IsEnabled="{Binding CanSchedule}"
+                                Command="{Binding $parent[ItemsControl].((vm:DashboardViewModel)DataContext).ScheduleTodoCommand}"
+                                CommandParameter="{Binding}" />
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </Grid>
+        </Border>
+      </Grid>
+
+      <!-- ─────────── 右边：冲突 + 重点任务（固定 360） ─────────── -->
+      <Grid Grid.Column="1" Width="{DynamicResource RightRailWidth}"
+            RowDefinitions="Auto,*" RowSpacing="12">
+
+        <!-- 冲突列表 -->
+        <Border Grid.Row="0" Classes="card" Padding="20,16" MaxHeight="380">
+          <StackPanel Spacing="8">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Grid.Column="0" Text="冲突提醒" Classes="cardHeader" />
+              <Border Grid.Column="1" Classes="chip"
+                      Background="{DynamicResource ConflictErrorFillBrush}">
+                <TextBlock Text="{Binding ConflictCount}" FontSize="11"
+                           Foreground="{DynamicResource ConflictErrorBrush}" />
+              </Border>
+            </Grid>
+
+            <TextBlock Text="没有任何冲突，今天的安排很清爽 🎉"
+                       Classes="caption" TextWrapping="Wrap"
+                       IsVisible="{Binding !Conflicts.Count}" />
+
+            <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+              <ItemsControl ItemsSource="{Binding Conflicts}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="vm:ConflictViewModel">
+                    <Border Classes="listRow" Padding="10,8">
+                      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{Binding Icon}"
+                                   FontSize="14" VerticalAlignment="Top" Margin="0,1,0,0" />
+                        <StackPanel Grid.Column="1" Spacing="3">
+                          <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Border Classes="chip"
+                                    Background="{DynamicResource ConflictWarningFillBrush}">
+                              <TextBlock Text="{Binding KindText}" />
+                            </Border>
+                            <TextBlock Text="{Binding TimeRangeText}" Classes="caption"
+                                       VerticalAlignment="Center" />
+                          </StackPanel>
+                          <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="12.5" />
+                        </StackPanel>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </StackPanel>
+        </Border>
+
+        <!-- 重点任务（按优先级） -->
+        <Border Grid.Row="1" Classes="card" Padding="20,16">
+          <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8">
+
+            <TextBlock Grid.Row="0" Text="今日重点" Classes="cardHeader" />
+            <TextBlock Grid.Row="1" Text="按优先级排序" Classes="caption" />
+
+            <TextBlock Grid.Row="1" Text="还没有待办，去「待办事项」页加一个吧"
+                       Classes="caption" TextWrapping="Wrap" Margin="0,18,0,0"
+                       IsVisible="{Binding !TopTodos.Count}" />
+
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+              <ItemsControl ItemsSource="{Binding TopTodos}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="core:TodoItem">
+                    <Border Classes="listRow" Padding="10,8"
+                            Opacity="{Binding IsCompleted, Converter={StaticResource CompletedToOpacity}}">
+                      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+
+                        <CheckBox Grid.Column="0" IsChecked="{Binding IsCompleted}"
+                                  VerticalAlignment="Center"
+                                  Command="{Binding $parent[ItemsControl].((vm:DashboardViewModel)DataContext).ToggleTodoCommand}"
+                                  CommandParameter="{Binding}" />
+
+                        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold"
+                                     TextTrimming="CharacterEllipsis" />
+                          <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Classes="caption"
+                                       Text="{Binding DueAt, StringFormat='截止 {0:MM-dd HH:mm}'}"
+                                       IsVisible="{Binding DueAt, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                            <TextBlock Classes="caption"
+                                       Text="{Binding FocusedDuration, StringFormat='已专注 {0:hh\\:mm}'}" />
+                          </StackPanel>
+                        </StackPanel>
+
+                        <Border Grid.Column="2" Classes="chip" VerticalAlignment="Center"
+                                Background="{Binding Priority, Converter={StaticResource PriorityBrush}}">
+                          <TextBlock Text="{Binding Priority, Converter={StaticResource PriorityText}}"
+                                     Foreground="{Binding Priority, Converter={StaticResource PriorityBrush}, ConverterParameter=Text}" />
+                        </Border>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </Grid>
+        </Border>
+      </Grid>
+    </Grid>
+  </Grid>
+</UserControl>

@@ -1,0 +1,309 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:HeliumTodo.App.ViewModels"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:ctrl="using:HeliumTodo.App.Controls"
+             xmlns:core="using:HeliumTodo.Core.Models"
+             x:Class="HeliumTodo.App.Views.StudyRoomView"
+             x:DataType="vm:StudyRoomViewModel">
+
+  <!--
+    页面分区统一模板（以今日工作流为模板）：
+      第 0 行 = 模块名称那一行（标题 + 概览），独立在功能区外面；
+      第 1 行 = 联机状态提示条（一直显示，占一行）；
+      第 2 行 = 功能区（卡片）。标题不再写进卡片头。
+  -->
+
+  <Grid RowDefinitions="Auto,*" Margin="12,4,12,12">
+
+    <!-- ══════════════════ 顶部：模块名称 ══════════════════ -->
+    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" MinHeight="40" Margin="4,0,4,20">
+      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+        <TextBlock Text="自习室" Classes="pageHeader" />
+        <TextBlock Text="{Binding MemberCountText}" Classes="pageCaption"
+                   VerticalAlignment="Center" />
+      </StackPanel>
+    </Grid>
+
+    <!--
+      联机状态原来是一条常驻的 FAInfoBar，单独占一整行 ——
+      结果是这一页的卡片顶端比别页低 60px，切页时明显"塌了一下"。
+      现在收进功能区的第一行（一行小字），六个页面的卡片才齐平。
+    -->
+
+    <!-- ══════════ 主体 ══════════ -->
+    <!--
+      没进房间时只有一张卡，占满整行宽度；
+      进了房间才分成左右两栏（左边房间与成员，右边聊天）。
+      这样没进房间时右侧不会留一大块空白。
+    -->
+    <Grid Grid.Row="1">
+
+      <!-- ─────────── 不在房间：创建 / 加入 ─────────── -->
+      <!-- 这张卡不设 VerticalAlignment，让它跟着行高拉伸 ——
+           别页的功能区都是一路通到底的，这里缩在顶上会显得"少了一截"。 -->
+      <Border Classes="card" Padding="20,18"
+              IsVisible="{Binding !IsInRoom}">
+        <StackPanel Spacing="18">
+
+          <!-- 联机状态（原来占一整行的那条横幅，现在缩成一句） -->
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="局域网联机" Classes="cardHeader" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding OnlineStatusText}" Classes="caption"
+                       VerticalAlignment="Center" TextWrapping="Wrap" />
+          </StackPanel>
+
+          <!-- 房主和房客并排，把整页宽度用起来 -->
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="28">
+
+            <StackPanel Grid.Column="0" Spacing="10">
+              <TextBlock Text="我想当房主" Classes="cardHeader" />
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                <TextBox Grid.Column="0" Text="{Binding RoomName}"
+                         PlaceholderText="输入房间名称以创建房间" />
+                <Button Grid.Column="1" Content="创建" Classes="accent"
+                        Command="{Binding CreateRoomCommand}" />
+              </Grid>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Spacing="10">
+              <TextBlock Text="我想当房客" Classes="cardHeader" />
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                <TextBox Grid.Column="0" Text="{Binding JoinCode}"
+                         PlaceholderText="输入 6 位房间码"
+                         FontFamily="Consolas, monospace" MaxLength="6" />
+                <Button Grid.Column="1" Content="加入" Command="{Binding JoinRoomCommand}" />
+              </Grid>
+            </StackPanel>
+          </Grid>
+
+          <!-- 填地址连接：只有打开了联机才显示 -->
+          <StackPanel Spacing="10" IsVisible="{Binding CanGoOnline}">
+            <TextBlock Text="输入联机地址" Classes="cardHeader" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+              <TextBox Grid.Column="0" Text="{Binding JoinHost}"
+                       PlaceholderText="例如 192.168.1.5 或 [fe80::1]:47470"
+                       FontFamily="Consolas, monospace" />
+              <Button Grid.Column="1" Content="连接" Classes="accent"
+                      Command="{Binding ConnectByAddressCommand}" />
+            </Grid>
+
+            <!--
+              房主的地址不在这里显示 —— 建房之后页面就切到"房间内"了，
+              那段挪到了房间头部卡片里（见下面 IsHost 那块）。
+            -->
+          </StackPanel>
+
+          <!-- 联机是关着的：说明去哪儿打开 -->
+          <Border IsVisible="{Binding IsLanDisabled}"
+                  Background="{DynamicResource SubtleFillColorSecondaryBrush}"
+                  CornerRadius="{DynamicResource RadiusM}" Padding="12,10">
+            <TextBlock Text="局域网联机默认关闭。要用联机自习，到「设置 → 自习室」把「局域网联机」打开。"
+                       Classes="caption" TextWrapping="Wrap" />
+          </Border>
+
+          <TextBlock Text="{Binding NoticeText}" Classes="caption" TextWrapping="Wrap"
+                     IsVisible="{Binding NoticeText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        </StackPanel>
+      </Border>
+
+      <!-- ─────────── 在房间：左（房间与成员） + 右（聊天） ─────────── -->
+      <Grid ColumnDefinitions="*,*" ColumnSpacing="16"
+            IsVisible="{Binding IsInRoom}">
+
+        <!-- 左：房间信息 / 房间内专注 / 成员列表 -->
+        <Grid Grid.Column="0" RowDefinitions="Auto,Auto,*" RowSpacing="12">
+
+          <!-- 房间信息头部 -->
+          <Border Grid.Row="0" Classes="card accent" Padding="16,14"
+                  BorderBrush="{DynamicResource SystemAccentColor}">
+           <StackPanel Spacing="10">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Grid.Column="0" Spacing="4">
+                <TextBlock Text="{Binding CurrentRoomName}" FontSize="17" FontWeight="SemiBold" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="房间码" Classes="caption" VerticalAlignment="Center" />
+                  <Border Classes="chip" Background="{DynamicResource SystemAccentColor}">
+                    <TextBlock Text="{Binding RoomCode}" Foreground="White"
+                               FontFamily="Consolas, monospace" FontSize="13" />
+                  </Border>
+                  <TextBlock Text="{Binding MemberCountText}" Classes="caption"
+                             VerticalAlignment="Center" />
+                </StackPanel>
+              </StackPanel>
+
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"
+                          VerticalAlignment="Center">
+                <Button Content="＋ 示例队友" FontSize="11" Padding="9,4"
+                        ToolTip.Tip="联机实现前，用来看看多人自习的样子"
+                        Command="{Binding AddDemoMemberCommand}" />
+                <Button Content="离开" FontSize="11" Padding="9,4"
+                        Command="{Binding LeaveRoomCommand}" />
+              </StackPanel>
+            </Grid>
+
+            <!--
+              只有房主看得到这一段。
+              放在"房间内"这块而不是"还没进房间"那块，是因为：
+              建房成功的那一刻就已经进房间了，放在外面等于刚建完就消失。
+              单独占一行（不塞进上面的 Grid），否则会被右边那排按钮挤窄、文字被裁掉。
+            -->
+            <Border Background="{DynamicResource SubtleFillColorSecondaryBrush}"
+                    CornerRadius="{DynamicResource RadiusM}" Padding="10,8"
+                    HorizontalAlignment="Stretch"
+                    IsVisible="{Binding IsHost}">
+              <StackPanel Spacing="3">
+                <TextBlock Classes="caption" Text="向你的同学分享房间IP"
+                           TextWrapping="Wrap" />
+                <SelectableTextBlock Text="{Binding LocalAddressText}" TextWrapping="Wrap"
+                                     FontFamily="Consolas, monospace" FontSize="12" />
+                <TextBlock Classes="caption" TextWrapping="Wrap">
+                  <Run Text="端口" />
+                  <Run Text="{Binding LocalPortText}" FontFamily="Consolas, monospace" />
+                  <Run Text="  ·  " />
+                  <Run Text="{Binding LatencyText}" />
+                </TextBlock>
+                <TextBlock Classes="caption" Text="{Binding PeersText}" TextWrapping="Wrap"
+                           IsVisible="{Binding PeersText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+            </Border>
+           </StackPanel>
+          </Border>
+
+          <!-- 房间内专注 -->
+          <Border Grid.Row="1" Classes="card" Padding="16,14">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+
+              <!-- 小号时钟 -->
+              <Grid Grid.Column="0" Width="104" Height="104">
+                <ctrl:ProgressRing Value="{Binding RoomClockProgress}" Thickness="5" />
+                <TextBlock Text="{Binding RoomClockText}"
+                           FontSize="20" FontWeight="Bold"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           FontFamily="Inter, Consolas, monospace" />
+              </Grid>
+
+              <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
+                <TextBox Text="{Binding FocusTitle}" PlaceholderText="这次专注做什么？" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="时长" Classes="caption" VerticalAlignment="Center" />
+                  <NumericUpDown Value="{Binding FocusMinutes}" Minimum="1" Maximum="480"
+                                 Increment="5" FormatString="0" MinWidth="104"
+                                 IsEnabled="{Binding !IsRoomFocusRunning}" />
+                  <TextBlock Text="分钟" Classes="caption" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Classes="caption">
+                  <Run Text="我今天在自习室的累计专注：" />
+                  <Run Text="{Binding MyFocusTodayText}" />
+                </TextBlock>
+              </StackPanel>
+
+              <StackPanel Grid.Column="2" Spacing="8" VerticalAlignment="Center">
+                <Button Content="开始专注" Classes="accent" MinWidth="96"
+                        HorizontalContentAlignment="Center"
+                        IsVisible="{Binding !IsRoomFocusRunning}"
+                        Command="{Binding StartRoomFocusCommand}" />
+                <Button Content="结束专注" MinWidth="96"
+                        HorizontalContentAlignment="Center"
+                        IsVisible="{Binding IsRoomFocusRunning}"
+                        Command="{Binding EndRoomFocusCommand}" />
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <!-- 成员列表 -->
+          <Border Grid.Row="2" Classes="card" Padding="16,14">
+            <StackPanel Spacing="10">
+              <TextBlock Text="房间成员" Classes="cardHeader" />
+              <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Members}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="core:StudyRoomMember">
+                      <Border Classes="listRow" Padding="12,9">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+
+                          <!-- 头像（用姓名首字当头像，省掉图片资源） -->
+                          <Border Grid.Column="0" Width="34" Height="34" CornerRadius="17"
+                                  Background="{DynamicResource SystemAccentColor}">
+                            <TextBlock Text="{Binding DisplayName}" Foreground="White"
+                                       FontWeight="SemiBold" FontSize="14"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Border>
+
+                          <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding DisplayName}" FontSize="14"
+                                       FontWeight="SemiBold" />
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                              <TextBlock Classes="caption"
+                                         Text="{Binding FocusedToday, StringFormat='今日专注 {0:hh\\:mm}'}" />
+                              <TextBlock Classes="caption"
+                                         Text="{Binding JoinedAt, StringFormat='{}{0:HH:mm} 加入'}" />
+                            </StackPanel>
+                          </StackPanel>
+
+                          <!-- 状态点：正在专注显示绿色 -->
+                          <Border Grid.Column="2" Classes="chip"
+                                  Background="{DynamicResource SystemAccentColor}"
+                                  IsVisible="{Binding IsFocusing}">
+                            <TextBlock Text="专注中" Foreground="White" />
+                          </Border>
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </StackPanel>
+          </Border>
+        </Grid>
+
+        <!-- 右：房间聊天 -->
+        <Border Grid.Column="1" Classes="card" Padding="16,14">
+          <Grid RowDefinitions="Auto,*,Auto" RowSpacing="10">
+
+            <TextBlock Grid.Row="0" Text="房间消息" Classes="cardHeader" />
+
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                          Name="MessageScroll">
+              <ItemsControl ItemsSource="{Binding Messages}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="core:StudyRoomMessage">
+                    <Border Margin="0,0,0,8" Padding="0">
+                      <StackPanel Spacing="3">
+                        <!-- 系统消息用灰色小字居中 -->
+                        <TextBlock Text="{Binding Content}" Classes="caption"
+                                   TextWrapping="Wrap"
+                                   HorizontalAlignment="Center"
+                                   IsVisible="{Binding IsSystemMessage}" />
+                        <!-- 普通消息：昵称 + 内容 -->
+                        <StackPanel Spacing="2" IsVisible="{Binding !IsSystemMessage}">
+                          <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{Binding SenderName}" FontSize="12"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding SentAt, StringFormat='{}{0:HH:mm}'}"
+                                       Classes="caption" />
+                          </StackPanel>
+                          <Border Background="{DynamicResource SubtleFillColorSecondaryBrush}"
+                                  CornerRadius="6" Padding="10,7">
+                            <TextBlock Text="{Binding Content}" TextWrapping="Wrap" FontSize="13" />
+                          </Border>
+                        </StackPanel>
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+
+            <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <TextBox Grid.Column="0" Text="{Binding NewMessage}"
+                       PlaceholderText="说点什么…（回车发送）"
+                       KeyDown="OnMessageKeyDown" />
+              <Button Grid.Column="1" Content="发送" Command="{Binding SendMessageCommand}" />
+            </Grid>
+          </Grid>
+        </Border>
+      </Grid>
+    </Grid>
+  </Grid>
+</UserControl>

@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    HeliumTodo.Tests —— 单元测试
+    重点测「冲突检测算法」和「优先级排序」，这些是纯逻辑，最适合用测试保护。
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>HeliumTodo.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <!--
+      APNG 拆帧的测试要真的把帧解成像素，才能证明"重新拼出来的 PNG 是合法的"。
+      光检查字节结构不够 —— 结构对但数据错，解码器照样会报错。
+    -->
+    <PackageReference Include="SkiaSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HeliumTodo.Core\HeliumTodo.Core.csproj" />
+    <!--
+      联机的测试要在本机真开两个 TCP 端口互相对话，
+      而传输层的实现（LanPeerTransport）在 Data 层，所以要引用它。
+      这也是唯一引用 Data 的测试文件所在的项目 ——
+      其余测试都只依赖 Core，保持"纯逻辑"的轻量。
+    -->
+    <ProjectReference Include="..\HeliumTodo.Data\HeliumTodo.Data.csproj" />
+  </ItemGroup>
+
+</Project>

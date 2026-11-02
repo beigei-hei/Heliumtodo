@@ -1,0 +1,46 @@
+
+<!--
+  Helium Todo 解决方案（.slnx 新格式）
+
+  和老的 .sln 有什么区别？
+    · 老 .sln 是 Visual Studio 自己发明的一套文本格式，里面塞满了 GUID，
+      人几乎没法手写，改起来容易出错、合并冲突也难解。
+    · .slnx 就是普通的 XML：一个 <Project Path="..."/> 就是一条项目引用，
+      没有 GUID，看一眼就懂，手改也不会坏。
+
+  怎么打开？
+    Visual Studio 2022 17.13 及以上版本可以直接打开 .slnx。
+    命令行用 dotnet build / dotnet test 也一样，把文件名换成 HeliumTodo.slnx 即可。
+
+  怎么加项目？
+    dotnet sln HeliumTodo.slnx add 项目路径\项目.csproj
+-->
+<Solution>
+
+  <!-- 领域内核：模型 + 算法，不依赖界面框架 -->
+  <Folder Name="/内核/">
+    <Project Path="HeliumTodo.Core/HeliumTodo.Core.csproj" />
+  </Folder>
+
+  <!-- 本地存储：EF Core + SQLite -->
+  <Folder Name="/存储/">
+    <Project Path="HeliumTodo.Data/HeliumTodo.Data.csproj" />
+  </Folder>
+
+  <!-- 界面：Avalonia + FluentAvaloniaUI -->
+  <Folder Name="/界面/">
+    <Project Path="HeliumTodo.App/HeliumTodo.App.csproj" />
+  </Folder>
+
+  <!-- 测试与自检工具 -->
+  <Folder Name="/测试/">
+    <Project Path="HeliumTodo.Tests/HeliumTodo.Tests.csproj" />
+    <Project Path="HeliumTodo.SelfTest/HeliumTodo.SelfTest.csproj" />
+  </Folder>
+
+  <!-- 界面渲染自检：不开窗口也能把页面渲染成图片 -->
+  <Folder Name="/工具/">
+    <Project Path="HeliumTodo.RenderCheck/HeliumTodo.RenderCheck.csproj" />
+  </Folder>
+
+</Solution>

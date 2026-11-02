@@ -1,0 +1,135 @@
+﻿<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+
+    <!--
+      ⚠️ 这一项必须是 true，否则上面的 PackageVersion 对【传递依赖】不生效。
+
+      踩过的坑：本来是 false，以为在 PackageVersion 里写
+      「Avalonia.Controls.DataGrid 12.1.2」就能把它提上去，结果提不上去。
+      因为 false 的含义是「中央版本只用于直接引用的包」；
+      DataGrid 是 FluentAvaloniaUI 拖进来的间接依赖，不归它管。
+
+      症状：输出目录里只有 DataGrid 是旧版本、其余全是新版本。
+      这种混版会让 IDE 的语法分析跨版本解析类型时出错
+      （表现就是莫名其妙标红，但编译能过），运行时也可能加载失败。
+
+      改成 true 之后，中央版本对传递依赖同样有约束力，整棵树就统一了。
+    -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      ===== 界面：Avalonia 12 =====
+
+      ⚠️ 为什么是 12.1.2 而不是最新的 12.1.4？
+
+        因为 Avalonia.Controls.DataGrid 只发到 12.1.2，
+        而主包已经到 12.1.4。整套必须取【交集】——
+        否则还原时直接报 NU1102「找不到版本为 (>= 12.1.4) 的包」。
+
+      这不是第一次踩这个坑了：升 Avalonia 时一定要去 NuGet 索引
+      逐个核对可用版本，不能假设所有子包同步发版。
+    -->
+    <PackageVersion Include="Avalonia" Version="12.1.2" />
+    <PackageVersion Include="Avalonia.Desktop" Version="12.1.2" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.2" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.2" />
+
+    <!--
+      Avalonia 12 把文字排版（HarfBuzz 整形）拆成了独立包，
+      不显式引用的话运行时会在渲染文字时找不到实现。
+      Avalonia 11 时代它埋在 Skia 包里，不需要单独引用。
+    -->
+    <PackageVersion Include="Avalonia.HarfBuzz" Version="12.1.2" />
+
+    <!--
+      下面这两个我们【没有直接用】，但必须显式钉住版本。
+      原因见上面 CentralPackageTransitivePinningEnabled 的注释 ——
+      它们是 FluentAvaloniaUI 拖进来的间接依赖。
+
+      DataGrid 的 12.1.2 也是「整套只能到 12.1.2」的那个卡点。
+
+      ⚠️ 以后升级 Avalonia 时记得【同时改这几行】，否则又会悄悄退回混版。
+
+      ⚠️ 还有一条 XML 的坑要记住：**注释里不能出现连续两个减号**。
+         曾经在这里写过一句检查命令，那两个减号让整个文件的 XML 直接非法，
+         MSBuild 报出一堆莫名其妙的 NU1010（说所有包都没有对应的 PackageVersion）。
+    -->
+    <PackageVersion Include="Avalonia.Controls.DataGrid" Version="12.1.2" />
+    <PackageVersion Include="Avalonia.Controls.ColorPicker" Version="12.1.2" />
+
+    <!-- 无头渲染：不开窗口也能把界面渲染成图片，用来自动检查界面有没有画错 -->
+    <PackageVersion Include="Avalonia.Headless" Version="12.1.2" />
+
+    <!--
+      ===== Fluent 2 设计系统（FluentAvaloniaUI 3）=====
+
+      ⚠️ 3.x 有一个硬限制：它【只有 net10.0 一个目标框架】。
+         所以整个解决方案必须跟着升到 net10.0 ——
+         这就是这次迁移要改 TargetFramework 的根本原因，
+         不是我们想升，是被 FluentAvaloniaUI 3 逼的。
+
+      另一个大变化：3.x 给几乎所有公开类型加了 FA 前缀，
+      用来避开和 Avalonia 官方同名控件的冲突。
+        2.4.0                       3.1.0
+        NavigationView            → FANavigationView
+        NavigationViewItem        → FANavigationViewItem
+        InfoBar                   → FAInfoBar
+        SettingsExpander          → FASettingsExpander
+        SettingsExpanderItem      → FASettingsExpanderItem
+        FontIconSource            → FAFontIconSource
+        252 个导出类型里有 224 个（88%）改了名。
+
+      例外：FluentAvaloniaTheme 没改名，命名空间 FluentAvalonia.Styling 也没变。
+    -->
+    <PackageVersion Include="FluentAvaloniaUI" Version="3.1.0" />
+
+    <!--
+      ===== 图片解码：SkiaSharp =====
+
+      为什么要显式引用它？
+        它是 Avalonia.Skia 拖进来的传递依赖（版本 3.119.4），
+        我们本来不需要单独写。但壁纸功能要【自己】解码 APNG / GIF 的每一帧，
+        得直接用它的 API，所以必须显式引用才能拿到编译期的类型。
+
+      ⚠️ 版本必须和 Avalonia 12.1.2 依赖的那个版本【完全一致】。
+         写高了或写低了，输出目录里就会出现两个不同版本的 libSkiaSharp.dll，
+         运行时挑哪个看加载顺序，表现是"有时候图片显示不出来"这种随机崩溃。
+         查当前版本的办法：dotnet list 看传递依赖里的 SkiaSharp 那一行。
+    -->
+    <PackageVersion Include="SkiaSharp" Version="3.119.4" />
+
+    <!-- ===== MVVM 工具包：源生成器写法，省掉大量样板代码 ===== -->
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+
+    <!-- ===== 数据库：EF Core + SQLite ===== -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.11" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11" />
+
+    <!-- ===== 依赖注入 / 日志 ===== -->
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="8.0.1" />
+
+    <!-- ===== 测试 ===== -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <!--
+    升级 Avalonia 之后怎么检查有没有混版？
+
+      用 dotnet list 命令列出传递依赖（开关名见下面那行纯文本），
+      输出里所有 Avalonia 开头的程序集版本号应该完全一致。
+
+    开关名的写法：include 前面加两个减号，再写 transitive。
+    （之所以不直接写出来，是因为 XML 注释里禁止连续两个减号。）
+  -->
+
+</Project>
