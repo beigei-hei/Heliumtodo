@@ -15,6 +15,7 @@ using HeliumTodo.App.ViewModels;
 using HeliumTodo.App.Views;
 using HeliumTodo.App.Controls;
 using HeliumTodo.Core.Configuration;
+using HeliumTodo.Core.Windowing;
 using HeliumTodo.Core.Notifications;
 using HeliumTodo.Core.Services;
 using HeliumTodo.Data;
@@ -213,6 +214,13 @@ public static class Program
         if (args.Any(a => a.Equals("--perf-check", StringComparison.OrdinalIgnoreCase)))
         {
             return RunPerfCheck(services);
+        }
+
+        // 动效自检：政策数值 + "被打断也要收尾干净"（无头量不出帧间隔，真机数字在
+        // tools/probe-native-anim.ps1）。
+        if (args.Any(a => a.Equals("--anim-check", StringComparison.OrdinalIgnoreCase)))
+        {
+            return RunAnimCheck(services);
         }
 
 
@@ -751,6 +759,17 @@ public static class Program
     /// 把四个变量分开量：壁纸插值质量、有没有壁纸、要不要改尺寸、纯重绘。
     /// 数字出来之后，优化才有依据，也不会"改完感觉快了"其实没变。
     /// </summary>
+/// <summary>
+    /// 一档测量的统计结果。
+    ///
+    /// 为什么不能只看均值：
+    ///   真机上量到的是 18 / 91 / 64 / 58 ms 这种序列 —— 均值 58 看着"还行"，
+    ///   但最慢一帧 91 ms 就是用户嘴里的"卡了一下"。均值会把抖动抹平，
+    ///   所以这里同时给出 P50（一半的帧比它快）、P95、最慢值，
+    ///   以及变异系数 CV = 标准差 / 均值（"抖得厉害不厉害"的单一数字）。
+    /// </summary>
+    private readonly record struct PerfStats(double Mean, double P50, double P95, double Max, double Cv, int Frames);
+
     private static int RunPerfCheck(IServiceProvider services)
     {
         var failures = 0;
@@ -774,11 +793,25 @@ public static class Program
         window.Show();
         PumpDispatcher(TimeSpan.FromMilliseconds(600));
 
+        // ── 尺寸：起点是默认窗口，终点是"整个工作区" ─────────────────────
+        // 以前的探针写死 1400×900 改一点点，只有真实最大化幅度的 1/4，
+        // 量出来的数字自然乐观。现在按真实幅度来（--perf-size 可以覆盖）。
+        var (startSize, endSize) = ResolvePerfSizes(window);
+        Console.WriteLine(
+            $"  测量范围 {startSize.Width:0}×{startSize.Height:0} ↔ {endSize.Width:0}×{endSize.Height:0}（DIP）");
+
         var image = window.GetVisualDescendants().OfType<Image>().FirstOrDefault();
         Check("窗口里有壁纸图层", image is not null, image is null ? "没找到 Image" : "找到了");
 
-        // 造一张和真实壁纸同尺寸的渐变图：纯色会让缓存/合成走捷径，量不准。
-        var wallpaper = CreatePerfWallpaper(1600, 1000);
+        // 壁纸按**真实解码尺寸**造：解码器把长边压到 WallpaperDecoder.MaxLongSide，
+        // 所以真实壁纸就是"长边 1920"这个量级。以前造 1600×1000，
+        // 在大屏上反而是上采样，量出来的成本与线上不符。
+        var wallpaperWidth = WallpaperDecoder.MaxLongSide;
+        var wallpaperHeight = wallpaperWidth * 5 / 8;
+        Console.WriteLine($"  壁纸 {wallpaperWidth}×{wallpaperHeight}（与真实解码尺寸一致）");
+
+        var wallpaper = CreatePerfWallpaper(wallpaperWidth, wallpaperHeight);
+        var solidWallpaper = CreateSolidPerfWallpaper(wallpaperWidth, wallpaperHeight);
         if (image is not null)
         {
             image.Source = wallpaper;
@@ -788,8 +821,11 @@ public static class Program
 
         PumpDispatcher(TimeSpan.FromMilliseconds(300));
 
-        // ── A 基线：改尺寸 + 高品质壁纸插值（现在线上的样子）──
-        var baseline = MeasureFrames(window, 24, frame => ResizeSlightly(window, frame));
+        const int frames = 24;
+        void Resize(int frame) => ResizeBetween(window, startSize, endSize, frame, frames);
+
+        // ── A 基线：改尺寸 + 高品质壁纸插值 + 带卡片阴影（改造前的样子）──
+        var baseline = MeasureFrames(window, frames, Resize);
 
         // ── B 同样改尺寸，但壁纸插值降到 LowQuality ──
         if (image is not null)
@@ -798,7 +834,7 @@ public static class Program
         }
 
         PumpDispatcher(TimeSpan.FromMilliseconds(200));
-        var lowQuality = MeasureFrames(window, 24, frame => ResizeSlightly(window, frame));
+        var lowQuality = MeasureFrames(window, frames, Resize);
 
         // ── C 低质量插值 + 没有壁纸（看壁纸本身占多少）──
         if (image is not null)
@@ -807,42 +843,35 @@ public static class Program
         }
 
         PumpDispatcher(TimeSpan.FromMilliseconds(200));
-        var noWallpaper = MeasureFrames(window, 24, frame => ResizeSlightly(window, frame));
+        var noWallpaper = MeasureFrames(window, frames, Resize);
 
-        // ── D 只重绘、不改尺寸（看"布局"占多少）──
-        var pureRender = MeasureFrames(window, 24, _ => { });
+        // ── D 只重绘、不改尺寸 ──
+        var pureRender = MeasureFrames(window, frames, _ => { });
 
         // ── E 只改尺寸 + 只跑布局、不画像素（把"布局"和"绘制/出图"拆开）──
-        // 这一项决定优化方向：如果布局本身就 40+ ms，那"降低插值质量"只是小头，
-        // 真正要做的是"动画期间别重排"（固定在旧尺寸上做缩放）。
-        var layoutOnly = MeasureLayoutOnly(window, 24, frame => ResizeSlightly(window, frame));
+        var layoutOnly = MeasureLayoutOnly(window, frames, Resize);
 
-        // ── F 不改尺寸，只改整窗不透明度（开场动画就是这么干的）──
-        var opacityOnly = MeasureFrames(window, 24, frame => window.Opacity = 0.96 - frame % 6 * 0.01);
+        // ── F 不改尺寸，只改整窗不透明度（旧开场动画就是这么干的，已废弃）──
+        // 留着这一档是为了留证据：改 Window.Opacity 会走 WS_EX_LAYERED 分层窗口路径，
+        // 每帧都要重新合成整窗 —— 所以新方案改成"淡入一层遮罩"，见下面 M 档。
+        var opacityOnly = MeasureFrames(window, frames, frame => window.Opacity = 0.96 - frame % 6 * 0.01);
         window.Opacity = 1;
 
-        // ── G 不改尺寸、不改不透明度，只改内容缩放（"冻结布局 + 缩放"方案的每帧成本）──
+        // ── G 不改尺寸、只改内容缩放（"冻结布局 + 缩放"的每帧成本）──
         var content = (Control)window.Content!;
         var scale = new ScaleTransform(1, 1);
         content.RenderTransform = scale;
         content.RenderTransformOrigin = new RelativePoint(0, 0, RelativeUnit.Relative);
-        var transformOnly = MeasureFrames(window, 24, frame => scale.ScaleX = scale.ScaleY = 0.96 + frame % 6 * 0.01);
+        var transformOnly = MeasureFrames(window, frames, frame => scale.ScaleX = scale.ScaleY = 0.96 + frame % 6 * 0.01);
         content.RenderTransform = null;
         content.RenderTransformOrigin = new RelativePoint(0.5, 0.5, RelativeUnit.Relative);
 
         // ── H 改尺寸，但"什么都不画"（只剩帧缓冲重建的成本）──
-        // 这一项是"快照缩放"方案的可行性依据：动画期间藏掉真内容、只贴一张位图，
-        // 每帧剩下的就是"换一块帧缓冲 + 贴图"。如果它很便宜，方案就成立。
-        if (image is not null)
-        {
-            image.IsVisible = false;
-        }
-
         content.IsVisible = false;
         PumpDispatcher(TimeSpan.FromMilliseconds(150));
-        var emptyResize = MeasureFrames(window, 24, frame => ResizeSlightly(window, frame));
+        var emptyResize = MeasureFrames(window, frames, Resize);
 
-        // ── I 改尺寸 + 低品质壁纸 + 藏掉真内容（≈快照方案的上限估算）──
+        // ── I 改尺寸 + 高品质壁纸 + 藏掉真内容（"快照拉伸"方案的上限估算）──
         if (image is not null)
         {
             image.IsVisible = true;
@@ -850,13 +879,12 @@ public static class Program
         }
 
         PumpDispatcher(TimeSpan.FromMilliseconds(150));
-        var snapshotLike = MeasureFrames(window, 24, frame => ResizeSlightly(window, frame));
+        var snapshotLike = MeasureFrames(window, frames, Resize);
 
         content.IsVisible = true;
         PumpDispatcher(TimeSpan.FromMilliseconds(150));
 
-        // ── J 改尺寸 + 低品质壁纸 + 不要卡片阴影 ──
-        // 软件渲染里阴影是大块半透明模糊，按"每张卡一整片"算钱，很可能是隐藏成本。
+        // ── J 改尺寸 + 低品质壁纸 + 不要卡片阴影（现在线上用的这一档）──
         if (image is not null)
         {
             RenderOptions.SetBitmapInterpolationMode(image, BitmapInterpolationMode.LowQuality);
@@ -873,46 +901,105 @@ public static class Program
         }
 
         PumpDispatcher(TimeSpan.FromMilliseconds(150));
-        var noShadow = MeasureFrames(window, 24, frame => ResizeSlightly(window, frame));
+        var noShadow = MeasureFrames(window, frames, Resize);
+
+        // ── K 内容矩阵动画：窗口尺寸只改一次，之后每帧只改内容的 RenderTransform ──
+        // 这是"L2 保底方案"的直接依据：如果这一档明显便宜，那就不必逐帧改 HWND，
+        // 一次性把窗口落到终点、让内容从旧尺寸"拉伸"过来。
+        // 注意：这里量的是"每帧成本"，不含开头那一次改尺寸（那一次是 45 ms，只付一次）。
+        window.Width = endSize.Width;
+        window.Height = endSize.Height;
+        PumpDispatcher(TimeSpan.FromMilliseconds(200));
+
+        var matrix = new MatrixTransform(Matrix.Identity);
+        content.RenderTransform = matrix;
+        content.RenderTransformOrigin = new RelativePoint(0, 0, RelativeUnit.Relative);
+        var matrixOnly = MeasureFrames(window, frames, frame =>
+        {
+            var t = (double)frame / (frames - 1);
+            var e = WindowAnimationMath.EaseOut(t);
+            var sx = 1 - (1 - startSize.Width / endSize.Width) * (1 - e);
+            var sy = 1 - (1 - startSize.Height / endSize.Height) * (1 - e);
+            matrix.Matrix = Matrix.CreateScale(sx, sy);
+        });
+        content.RenderTransform = null;
+        content.RenderTransformOrigin = new RelativePoint(0.5, 0.5, RelativeUnit.Relative);
+
+        // ── L 改尺寸 + 纯色壁纸 + 无卡片阴影（隔离"换尺寸本身"的净成本）──
+        // 壁纸换成纯色：不重采样、不走高品质插值路径，剩下的就是
+        // "Win32 换一次尺寸 + 重建一块前后缓冲 + 整窗 blit"。
+        if (image is not null)
+        {
+            image.Source = solidWallpaper;
+            image.IsVisible = true;
+            RenderOptions.SetBitmapInterpolationMode(image, BitmapInterpolationMode.LowQuality);
+        }
+
+        PumpDispatcher(TimeSpan.FromMilliseconds(200));
+        var solidResize = MeasureFrames(window, frames, Resize);
+
+        // ── M 只改"遮罩画刷的 Alpha"（新开场动画的每帧成本）──
+        // 新方案不再改 Window.Opacity（会抖 WS_EX_LAYERED），改成在内容最上层
+        // 盖一层不透明度 1 → 0 的遮罩。改画刷的 Color 不会 push 离屏图层，
+        // 所以应该落在"纯重绘"那一档（1~2 ms）。
+        var scrim = window.GetVisualDescendants()
+            .OfType<Border>()
+            .FirstOrDefault(b => !b.IsHitTestVisible && b.Opacity > 0.05 && b.Opacity < 0.95);
+        var veilBrush = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+        var savedScrimBackground = scrim?.Background;
+        if (scrim is not null)
+        {
+            scrim.Background = veilBrush;
+        }
+
+        PumpDispatcher(TimeSpan.FromMilliseconds(150));
+        var veilAlpha = MeasureFrames(window, frames, frame =>
+        {
+            var alpha = (byte)Math.Round(255 * (1 - (double)frame / (frames - 1)));
+            veilBrush.Color = Color.FromArgb(alpha, 0, 0, 0);
+        });
+
+        if (scrim is not null)
+        {
+            scrim.Background = savedScrimBackground;
+        }
+
+        // 还原成线上默认（高品质 + 显示壁纸 + 带阴影），别留脏状态给后面的自检。
+        if (image is not null)
+        {
+            image.Source = wallpaper;
+            image.IsVisible = true;
+            RenderOptions.SetBitmapInterpolationMode(image, BitmapInterpolationMode.HighQuality);
+        }
 
         for (var i = 0; i < cards.Count; i++)
         {
             cards[i].BoxShadow = savedShadows[i];
         }
 
-        if (image is not null)
-        {
-            RenderOptions.SetBitmapInterpolationMode(image, BitmapInterpolationMode.HighQuality);
-        }
-
         PumpDispatcher(TimeSpan.FromMilliseconds(150));
 
-        // 还原成线上默认（高品质 + 显示壁纸），后面别的自检还要用这个窗口吗？不用，但别留脏状态。
-        if (image is not null)
-        {
-            image.IsVisible = true;
-            RenderOptions.SetBitmapInterpolationMode(image, BitmapInterpolationMode.HighQuality);
-        }
-
         Console.WriteLine();
-        Console.WriteLine("  场景                                  平均 ms   最慢 ms   折合帧率");
-        WritePerfRow("A 改尺寸 + 高品质壁纸（基线）", baseline);
+        Console.WriteLine("  场景                                    平均    P50    P95   最慢   抖动CV  折合帧率");
+        WritePerfRow("A 改尺寸 + 高品质壁纸（改造前）", baseline);
         WritePerfRow("B 改尺寸 + 低品质壁纸", lowQuality);
         WritePerfRow("C 改尺寸 + 不画壁纸", noWallpaper);
         WritePerfRow("D 不改尺寸，纯重绘", pureRender);
         WritePerfRow("E 改尺寸，只布局不画", layoutOnly);
-        WritePerfRow("F 只改整窗不透明度", opacityOnly);
+        WritePerfRow("F 只改整窗不透明度（旧开场动画）", opacityOnly);
         WritePerfRow("G 只改内容缩放", transformOnly);
         WritePerfRow("H 改尺寸，什么内容都不画", emptyResize);
         WritePerfRow("I 改尺寸，只剩壁纸（快照方案）", snapshotLike);
-        WritePerfRow("J 低品质壁纸 + 无卡片阴影（线上实际用的）", noShadow);
+        WritePerfRow("J 低品质壁纸 + 无阴影（线上用的）", noShadow);
+        WritePerfRow("K 只改内容矩阵，不改窗口尺寸", matrixOnly);
+        WritePerfRow("L 改尺寸 + 纯色壁纸 + 无阴影", solidResize);
+        WritePerfRow("M 只改遮罩画刷 Alpha（新开场动画）", veilAlpha);
         // 试过但没用的一档：把文字抗锯齿关掉（RenderOptions → obsolete，已改用 TextOptions）
         // 实测 noShadow 24.6 ms vs 断锯齿 25.6 ms —— 反而更慢，所以没进 InteractionQuality。
 
         Console.WriteLine();
 
         // ── 分页对照：改尺寸的布局开销会不会取决于页面内容量？──
-        // 如果某个页面特别贵，优化就得先看那一页，而不是一句"整体优化"。
         if (image is not null)
         {
             image.IsVisible = true;
@@ -924,10 +1011,10 @@ public static class Program
         {
             shell.SelectedItem = item;
             PumpDispatcher(TimeSpan.FromMilliseconds(400));
-            var perPage = MeasureFrames(window, 12, frame => ResizeSlightly(window, frame));
-            var perPageLayout = MeasureLayoutOnly(window, 12, frame => ResizeSlightly(window, frame));
+            var perPage = MeasureFrames(window, 12, frame => ResizeBetween(window, startSize, endSize, frame, 12));
+            var perPageLayout = MeasureLayoutOnly(window, 12, frame => ResizeBetween(window, startSize, endSize, frame, 12));
             Console.WriteLine(
-                $"  {item.Title,-14} 出图 {perPage.Mean,7:0.0} ms   只布局 {perPageLayout.Mean,7:0.0} ms   最慢 {perPage.Worst,6:0.0} ms");
+                $"  {item.Title,-14} 出图 {perPage.Mean,7:0.0} ms   只布局 {perPageLayout.Mean,7:0.0} ms   最慢 {perPage.Max,6:0.0} ms");
         }
 
         Console.WriteLine();
@@ -936,34 +1023,211 @@ public static class Program
             $"{baseline.Mean:0.0} → {lowQuality.Mean:0.0} ms");
         Check("不画壁纸会更快（说明壁纸是成本之一）", noWallpaper.Mean <= baseline.Mean,
             $"{baseline.Mean:0.0} → {noWallpaper.Mean:0.0} ms");
-        Check("改尺寸比纯重绘贵（说明布局是成本之一）", pureRender.Mean <= baseline.Mean,
+        Check("改尺寸比纯重绘贵（说明换尺寸本身是成本）", pureRender.Mean <= baseline.Mean,
             $"纯重绘 {pureRender.Mean:0.0} ms vs 改尺寸 {baseline.Mean:0.0} ms");
-        Check("最慢一帧没有失控（< 120 ms）", baseline.Worst < 120,
-            $"最慢 {baseline.Worst:0.0} ms");
+        // 帧间隔"卡不卡"要看它相对 P50 的比例，不能钉一个绝对毫秒数：
+        // 绝对数字随屏幕大小和渲染后端变化（1400×900 下 53 ms，1920×1280 下 118 ms），
+        // 但"最慢一帧超过 P50 两倍"就是肉眼可见的卡顿。规则在 Core 里
+        // （WindowTransitionPolicy.IsFramePacingAcceptable），--anim-check 用的是同一条。
+        Check("帧间隔没有失控（最慢 < 2 × P50）",
+            WindowTransitionPolicy.IsFramePacingAcceptable(baseline.P50, baseline.Max),
+            $"P50 {baseline.P50:0.0} ms，最慢 {baseline.Max:0.0} ms");
 
         // 线上真正用的就是 J 这一档（见 HeliumTodo.App/Windowing/InteractionQuality.cs）：
-        // 窗口正在动的时候壁纸降成低品质、卡片阴影关掉。
-        // 这条断言的作用是：以后谁改回去（比如"阴影关掉不好看，还是留着吧"），
-        // 这里会立刻变红，而不是等用户再说一次"卡"。
+        // 以后谁改回去（"阴影关掉不好看，还是留着吧"），这里立刻变红。
         var speedup = baseline.Mean <= 0.01 ? 0 : (baseline.Mean - noShadow.Mean) / baseline.Mean * 100;
         Check("交互降质方案比基线快 30% 以上", speedup >= 30,
             $"{baseline.Mean:0.0} → {noShadow.Mean:0.0} ms（快 {speedup:0}%）");
+
+        // L2 保底方案的可行性：不动窗口尺寸、只改内容矩阵，应该比逐帧改尺寸便宜一大截。
+        var matrixSpeedup = baseline.Mean <= 0.01 ? 0 : (baseline.Mean - matrixOnly.Mean) / baseline.Mean * 100;
+        Check("内容矩阵动画至少比逐帧改尺寸快一半", matrixSpeedup >= 50,
+            $"{baseline.Mean:0.0} → {matrixOnly.Mean:0.0} ms（快 {matrixSpeedup:0}%）");
+
+        // 新开场动画的依据（两条一起看才有意义）：
+        //   ① 只改遮罩画刷的 Alpha 必须比"改整窗不透明度"便宜一大截 —— 后者会走
+        //      WS_EX_LAYERED 分层窗口，每帧重新合成整窗（实测 37 ms）；
+        //   ② 它的成本应该和"纯重绘一帧"同一个量级 —— 既不 push 离屏图层，也不改尺寸。
+        Check("只改遮罩 Alpha 至少比改整窗不透明度便宜一半",
+            veilAlpha.Mean <= opacityOnly.Mean / 2,
+            $"{opacityOnly.Mean:0.0} → {veilAlpha.Mean:0.0} ms/帧");
+        Check("只改遮罩 Alpha 与纯重绘同量级",
+            veilAlpha.Mean <= pureRender.Mean * 1.5 + 1.0,
+            $"纯重绘 {pureRender.Mean:0.0} ms，遮罩 {veilAlpha.Mean:0.0} ms/帧");
 
         window.Close();
         return failures == 0 ? 0 : 1;
     }
 
-    private static void WritePerfRow(string name, (double Mean, double Worst) result)
+    /// <summary>
+    /// 开始/最大化/还原的动效自检。
+    ///
+    /// 无头环境里 RequestAnimationFrame 和 DispatcherTimer 都不会按真实节奏走，
+    /// 所以"帧间隔"这件事在这里量不出来（真机数字在 tools/probe-native-anim.ps1）。
+    /// 这里守的是另一半 —— 那几条"打断了也必须收尾干净"的正确性：
+    ///   ① 政策数值没被改坏；
+    ///   ② 开场动画播到一半被最小化，收尾后不透明度必须是 1、内容变换必须是空；
+    ///   ③ 从任务栏回来、以及手动 Settle，都不能残留半透明或缩放。
+    /// 这几条以前全是 bug（用户看到"回来是半透明、还小了一圈、边缘拉不动"）。
+    /// </summary>
+    private static int RunAnimCheck(IServiceProvider services)
     {
-        var fps = result.Mean <= 0.01 ? 0 : 1000.0 / result.Mean;
-        Console.WriteLine($"  {name,-34} {result.Mean,8:0.0} {result.Worst,9:0.0} {fps,10:0.0}");
+        var failures = 0;
+
+        void Check(string name, bool ok, string detail)
+        {
+            if (!ok) failures++;
+            Console.WriteLine($"  {(ok ? "✓" : "✗")} {name} — {detail}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("── ① 政策数值 ──");
+        Check("过渡时长 180 ms", WindowTransitionPolicy.DurationMs == 180, $"{WindowTransitionPolicy.DurationMs} ms");
+        Check("最少 10 帧", WindowTransitionPolicy.MinFrames == 10, $"{WindowTransitionPolicy.MinFrames} 帧");
+        Check("180 ms 的动画不暂停动图壁纸",
+            !WindowTransitionPolicy.ShouldPauseWallpaper(WindowTransitionPolicy.DurationMs),
+            $"阈值 {WindowTransitionPolicy.WallpaperPauseThresholdMs} ms");
+        Check("每帧间隔约 16-18 ms（约 60 Hz）",
+            WindowTransitionPolicy.FrameIntervalMs(WindowTransitionPolicy.DurationMs) is > 15 and < 19.5,
+            $"{WindowTransitionPolicy.FrameIntervalMs(WindowTransitionPolicy.DurationMs):0.0} ms");
+
+        var shell = services.GetRequiredService<ShellViewModel>();
+        var window = new MainWindow
+        {
+            DataContext = shell,
+            Width = 1400,
+            Height = 900,
+            WindowDecorations = WindowDecorations.None,
+        };
+
+        window.Show();
+        PumpDispatcher(TimeSpan.FromMilliseconds(500));
+
+        var content = (Control)window.Content!;
+
+        Console.WriteLine();
+        Console.WriteLine("── ② 开场动画播到一半被最小化 ──");
+        window.PlayShowAnimation();
+        PumpDispatcher(TimeSpan.FromMilliseconds(60));
+
+        var midOpacity = window.Opacity;
+        var midHasTransform = content.RenderTransform is not null;
+        Console.WriteLine($"   [信息] 动画中途：不透明度 {midOpacity:0.00}，内容变换 {(midHasTransform ? "有" : "无")}");
+
+        window.WindowState = WindowState.Minimized;
+        PumpDispatcher(TimeSpan.FromMilliseconds(150));
+
+        Check("最小化后不透明度回到 1", Math.Abs(window.Opacity - 1.0) < 0.001, $"当前 {window.Opacity:0.00}");
+        Check("最小化后内容变换被清掉（抓手不会错位）", content.RenderTransform is null,
+            content.RenderTransform is null ? "已清空" : "还有变换");
+
+        Console.WriteLine();
+        Console.WriteLine("── ③ 从任务栏点回来 ──");
+        window.WindowState = WindowState.Normal;
+        PumpDispatcher(TimeSpan.FromMilliseconds(250));
+        Check("回来之后不透明度仍是 1", Math.Abs(window.Opacity - 1.0) < 0.001, $"当前 {window.Opacity:0.00}");
+        Check("回来之后没有残留缩放", content.RenderTransform is null,
+            content.RenderTransform is null ? "已清空" : "还有变换");
+
+        Console.WriteLine();
+        Console.WriteLine("── ④ 手动 Settle 也要干净（关窗/藏托盘时调用）──");
+        window.PlayShowAnimation();
+        PumpDispatcher(TimeSpan.FromMilliseconds(40));
+        window.FinishAnimationsImmediately();
+        Check("Settle 后不透明度为 1", Math.Abs(window.Opacity - 1.0) < 0.001, $"当前 {window.Opacity:0.00}");
+        Check("Settle 后内容变换为空", content.RenderTransform is null,
+            content.RenderTransform is null ? "已清空" : "还有变换");
+
+        // 抓手命中点：内容有缩放时 TranslatePoint 会把窗口坐标算偏（曾偏 26 px）。
+        var grip = window.GetVisualDescendants().OfType<Border>().FirstOrDefault(b => b.Name == "GripRight");
+        if (grip is not null && grip.TranslatePoint(new Point(0, 0), window) is { } gripPoint)
+        {
+            var expected = window.Bounds.Width - grip.Bounds.Width;
+            Check("右边缘抓手落在窗口右边界上", Math.Abs(gripPoint.X - expected) < 2.0,
+                $"实际 x={gripPoint.X:0.0}，应为 {expected:0.0}");
+        }
+        else
+        {
+            Check("右边缘抓手落在窗口右边界上", false, "没找到 GripRight");
+        }
+
+        window.Close();
+        return failures == 0 ? 0 : 1;
     }
 
-    /// <summary>把窗口尺寸挪动一小格 —— 和拖边改大小时发生的事一样（触发全量布局 + 全窗重绘）。</summary>
-    private static void ResizeSlightly(Window window, int frame)
+    private static void WritePerfRow(string name, PerfStats result)
     {
-        window.Width = 1300 + frame % 9 * 10;
-        window.Height = 860 + frame % 5 * 6;
+        var fps = result.Mean <= 0.01 ? 0 : 1000.0 / result.Mean;
+        Console.WriteLine(
+            $"  {name,-36} {result.Mean,6:0.0} {result.P50,6:0.0} {result.P95,6:0.0} {result.Max,6:0.0} {result.Cv,7:0.00} {fps,8:0}");
+    }
+
+    /// <summary>
+    /// 这次测量用哪两个尺寸：起点是默认窗口 1400×900，终点默认取主屏工作区
+    /// （--perf-size=2560x1440 可以覆盖）。终点必须用工作区而不是屏幕：
+    /// 最大化后的窗口就是工作区那么大。
+    /// </summary>
+    private static (Size Start, Size End) ResolvePerfSizes(Window window)
+    {
+        var start = new Size(1400, 900);
+
+        if (ReadPerfSizeArgument() is { } requested)
+        {
+            return (start, requested);
+        }
+
+        if (window.Screens.Primary is { } screen)
+        {
+            var scaling = window.RenderScaling <= 0.01 ? 1.0 : window.RenderScaling;
+            var area = screen.WorkingArea;
+            var width = area.Width / scaling;
+            var height = area.Height / scaling;
+
+            // 工作区必须比默认窗口大，否则"放大"这一步根本没发生。
+            if (width > start.Width + 40 && height > start.Height + 40)
+            {
+                return (start, new Size(width, height));
+            }
+        }
+
+        // 无头模式拿不到屏幕信息时退回一个常见的大屏尺寸。
+        return (start, new Size(2560, 1440));
+    }
+
+    private static Size? ReadPerfSizeArgument()
+    {
+        foreach (var arg in Environment.GetCommandLineArgs())
+        {
+            const string prefix = "--perf-size=";
+            if (!arg.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var text = arg[prefix.Length..];
+            var parts = text.Split('x', 'X', '*');
+            if (parts.Length == 2
+                && double.TryParse(parts[0], out var w)
+                && double.TryParse(parts[1], out var h)
+                && w > 200 && h > 200)
+            {
+                return new Size(w, h);
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// 第 <paramref name="frame"/> 帧时窗口应该是多大 —— 按 EaseOut 从起点走到终点，
+    /// 和真实的最大化动画是同一个节奏、同一个幅度。
+    /// </summary>
+    private static void ResizeBetween(Window window, Size start, Size end, int frame, int frames)
+    {
+        var t = frames <= 1 ? 1.0 : (double)frame / (frames - 1);
+        var eased = WindowAnimationMath.EaseOut(t);
+        window.Width = Math.Round(start.Width + (end.Width - start.Width) * eased);
+        window.Height = Math.Round(start.Height + (end.Height - start.Height) * eased);
     }
 
     /// <summary>
@@ -971,7 +1235,7 @@ public static class Program
     /// CaptureRenderedFrame 是同步的：它会把"布局 → 绘制 → 出像素"全跑完才返回，
     /// 所以计到的就是"这一帧真实花的时间"。
     /// </summary>
-    private static (double Mean, double Worst) MeasureFrames(Window window, int frames, Action<int> step)
+    private static PerfStats MeasureFrames(Window window, int frames, Action<int> step)
     {
         var times = new List<double>(frames);
         for (var i = 0; i < frames; i++)
@@ -982,14 +1246,14 @@ public static class Program
             times.Add(stopwatch.Elapsed.TotalMilliseconds);
         }
 
-        return (times.Average(), times.Max());
+        return Stats(times);
     }
 
     /// <summary>
     /// 只跑布局、不画像素：强行调 <see cref="Layoutable.UpdateLayout"/> 把"测量 + 排列"跑完。
     /// 和 <see cref="MeasureFrames"/> 的差就是"绘制 + 出图"的钱。
     /// </summary>
-    private static (double Mean, double Worst) MeasureLayoutOnly(Window window, int frames, Action<int> step)
+    private static PerfStats MeasureLayoutOnly(Window window, int frames, Action<int> step)
     {
         var times = new List<double>(frames);
         for (var i = 0; i < frames; i++)
@@ -1000,7 +1264,44 @@ public static class Program
             times.Add(stopwatch.Elapsed.TotalMilliseconds);
         }
 
-        return (times.Average(), times.Max());
+        return Stats(times);
+    }
+
+    /// <summary>把一串每帧耗时算成"均值 / P50 / P95 / 最慢 / 变异系数"。</summary>
+    private static PerfStats Stats(List<double> times)
+    {
+        var sorted = times.OrderBy(t => t).ToList();
+        var mean = sorted.Average();
+        var sum = sorted.Sum(t => (t - mean) * (t - mean));
+        var deviation = Math.Sqrt(sum / sorted.Count);
+        var cv = mean <= 0.001 ? 0 : deviation / mean;
+
+        return new PerfStats(mean, Percentile(sorted, 0.50), Percentile(sorted, 0.95), sorted[^1], cv, sorted.Count);
+    }
+
+    /// <summary>线性插值取分位数（样本少的时候比"最近秩"稳）。</summary>
+    private static double Percentile(List<double> sorted, double fraction)
+    {
+        if (sorted.Count == 0)
+        {
+            return 0;
+        }
+
+        if (sorted.Count == 1)
+        {
+            return sorted[0];
+        }
+
+        var position = (sorted.Count - 1) * fraction;
+        var lower = (int)Math.Floor(position);
+        var upper = (int)Math.Ceiling(position);
+        if (lower == upper)
+        {
+            return sorted[lower];
+        }
+
+        var weight = position - lower;
+        return sorted[lower] * (1 - weight) + sorted[upper] * weight;
     }
 
     /// <summary>造一张渐变位图当壁纸（纯色会走缓存，量出来的数字偏低）。</summary>
@@ -1021,6 +1322,18 @@ public static class Program
             };
 
             context.DrawRectangle(brush, null, new Rect(0, 0, width, height));
+        }
+
+        return bitmap;
+    }
+
+    /// <summary>造一张纯色位图（用来隔离"换尺寸本身"的成本，排除重采样）。</summary>
+    private static IImage CreateSolidPerfWallpaper(int width, int height)
+    {
+        var bitmap = new RenderTargetBitmap(new PixelSize(width, height));
+        using (var context = bitmap.CreateDrawingContext())
+        {
+            context.DrawRectangle(new SolidColorBrush(Color.Parse("#FF3A4A5A")), null, new Rect(0, 0, width, height));
         }
 
         return bitmap;
