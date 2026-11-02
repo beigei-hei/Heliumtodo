@@ -2,7 +2,9 @@ using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.Threading;
+using HeliumTodo.Core.Windowing;
 
 // WindowState 既是 Window 的属性名，也是枚举名。在窗口类里裸写会解析成属性，
 // 所以给枚举起个别名，代码里就不会误读成"属性 = 属性"。
@@ -42,11 +44,36 @@ internal sealed class WindowAnimator
     /// <summary>当前动画播完该做的事（比如把 WindowState 切成 Maximized）。中断时要替它做掉。</summary>
     private Action? _pendingFinish;
 
+    /// <summary>开场动画用的遮罩（由 MainWindow 注入，名字是 IntroVeil）。</summary>
+    private Border? _veil;
+
+    /// <summary>遮罩画刷：只改它的 Alpha，不换实例（换实例会触发样式重新求值）。</summary>
+    private readonly SolidColorBrush _veilBrush = new(Color.FromArgb(255, 255, 255, 255));
+
+    /// <summary>开场动画的计时（从第一帧真正到来起算）。</summary>
+    private Stopwatch? _introClock;
+
+    /// <summary>保险丝：帧请求丢了也要强制收尾。</summary>
+    private DispatcherTimer? _introWatchdog;
+
+    /// <summary>开场动画已经播了多少帧（只用于日志）。</summary>
+    private int _introFrame;
+
+    /// <summary>上一帧已经播到的进度（用来夹住单帧步进，见 WindowTransitionPolicy）。</summary>
+    private double _introProgress;
+
     public WindowAnimator(Window window, InteractionQuality quality)
     {
         _window = window;
         _quality = quality;
     }
+
+    /// <summary>
+    /// 把开场动画用的遮罩交给动画器。由 MainWindow 在 InitializeComponent 之后调用 ——
+    /// 用显式注入而不是在可视树里按名字找，因为无头环境里第一次调用动画时
+    /// 模板可能还没应用完，找不到就会静默不播。
+    /// </summary>
+    public void SetIntroVeil(Border veil) => _veil = veil;
 
     /// <summary>
     /// 诊断输出口。App 会把它接到 background.log —— 窗口透明度在 Win32 那边读不出来，
@@ -123,71 +150,128 @@ internal sealed class WindowAnimator
     // ───────────────────────── 打开 / 唤醒 ─────────────────────────
 
     /// <summary>
-    /// 窗口出现时的过渡：整体淡入 + 从 96% 放大到 100%。
+    /// 窗口出现时的过渡：把盖在界面最上层的一层遮罩从"不透明"淡到"透明"。
     ///
-    /// 只动两样东西：
-    ///   · 窗口自己的 Opacity（0 → 1）—— 这是"淡入"；
-    ///   · 内容根元素的 RenderTransform 缩放 —— Avalonia 的 Window 不能直接设缩放，
-    ///     但把缩放挂到内容的变换上，视觉上等价。
-    /// 为什么不用 Animation/KeyFrame：这里要的帧数、缓动、收尾清理都很明确，
-    /// 与其和动画系统的生命周期打交道，不如复用下面那套"定时器切帧"，行为一眼可数。
+    /// 为什么不再改 Window.Opacity：
+    ///   给窗口设小于 1 的不透明度，Win32 会走 WS_EX_LAYERED（分层窗口）那条路，
+    ///   每帧都要把整窗重新合成一次。实测 1920×1280 下这一帧 37 ms（见 --perf-check 的 F 档），
+    ///   而且改扩展样式会让 DWM 重建重定向表面 —— 那正好也会让系统原生的
+    ///   最小化/最大化过渡播不出来。所以这条路必须彻底放弃。
+    ///
+    /// 现在只改一层遮罩画刷的 Alpha：
+    ///   · 改画刷颜色不会 push 离屏图层，成本就是"重绘一帧"（实测 4.8 ms，和纯重绘等价）；
+    ///   · 窗口本身始终是完全不透明的，DWM 那边看到的就是一个正常窗口；
+    ///   · 顺便也不再缩放内容 —— 那 4% 的缩放在 180 毫秒里几乎看不出来，
+    ///     却要让整棵内容树每帧重算，而且会把抓手坐标算偏（曾经偏 26 px）。
+    ///
+    /// 帧驱动换成 RequestAnimationFrame：定时器按 11.25 ms 排，而真机一帧要 45 ms，
+    /// 排进来的帧只会越积越多，量出来是 18 / 91 / 64 / 58 这种极不均匀的间隔 ——
+    /// 不均匀比慢更显卡。交给合成器"下一帧叫我"就没有这个问题。
     /// </summary>
     public void PlayIntro()
     {
-        // 最大值 / 最小化状态不该播开场动画（用户刚从托盘唤醒时窗口已经在那儿了）
-        if (_window.Content is not Control content) return;
+        if (_veil is null) return;
 
-        if (content.RenderTransform is not ScaleTransform scale)
+        _window.Opacity = 1;
+
+        // 遮罩颜色跟界面底色一致，淡出时看到的就是"内容从底色里浮出来"，
+        // 不会出现黑闪或白闪。
+        _veilBrush.Color = _window.ActualThemeVariant == ThemeVariant.Dark
+            ? Color.FromArgb(255, 0x1C, 0x1C, 0x1C)
+            : Color.FromArgb(255, 0xFF, 0xFF, 0xFF);
+        _veil.Background = _veilBrush;
+        _veil.IsVisible = true;
+        _veil.Opacity = 1;
+
+        _pendingFinish = null;
+        _introFrame = 0;
+        _introProgress = 0;
+        RequestIntroFrame();
+    }
+
+    /// <summary>开场动画推迟到下一帧再走一步（合成器每画一帧回调一次）。</summary>
+    private void RequestIntroFrame()
+    {
+        if (_veil is null) return;
+
+        var topLevel = TopLevel.GetTopLevel(_window);
+        if (topLevel is null)
         {
-            scale = new ScaleTransform(1, 1);
-            content.RenderTransform = scale;
-            content.RenderTransformOrigin = RelativePoint.Center;
+            FinishIntro();
+            return;
         }
 
-        _window.Opacity = 0;
-        scale.ScaleX = WindowAnimationMath.IntroStartScale;
-        scale.ScaleY = WindowAnimationMath.IntroStartScale;
+        // 保险丝：万一某一帧的请求丢了（窗口被藏起来、合成器停了），
+        // 也不能让遮罩永久留在屏幕上 —— 动画时长再多给 300 ms 就强制收尾。
+        _introWatchdog ??= new DispatcherTimer { Interval = WindowAnimationMath.Duration + TimeSpan.FromMilliseconds(300) };
+        _introWatchdog.Tick -= OnIntroWatchdogTick;
+        _introWatchdog.Tick += OnIntroWatchdogTick;
+        _introWatchdog.Stop();
+        _introWatchdog.Start();
 
-        // 计时不能从"现在"开始：窗口刚 Show 出来时第一次布局/渲染可能就要上百毫秒，
-        // 等第一帧到来时 180ms 早就过去了 —— 那样动画会一步跳到终点，等于没播。
-        // 所以计时从"第一帧真的到来"那一刻起算，保证这 180 毫秒里是有画面的。
-        // 这 180 毫秒里窗口每帧都要整窗重画，先把"贵但看不出差别"的东西降级
-        BeginQuality();
+        topLevel.RequestAnimationFrame(OnIntroFrame);
+    }
 
-        Stopwatch? clock = null;
-        var timer = new DispatcherTimer { Interval = WindowAnimationMath.FrameInterval };
-        _timer = timer;
-        _pendingFinish = null;
+    private void OnIntroFrame(TimeSpan _)
+    {
+        _introWatchdog?.Stop();
 
-        timer.Tick += (_, _) =>
+        // 记第一帧而不是"点开动画那一刻"：窗口刚 Show 出来时首次布局/渲染可能上百毫秒，
+        // 从点开计时会把整段动画吞掉（曾经只剩 4 帧）。
+        _introClock ??= Stopwatch.StartNew();
+        var raw = WindowAnimationMath.ProgressOf(_introClock.Elapsed);
+
+        // 单帧最多推进 1/5：冷启动时第二帧可能迟到 170 ms，那时 raw 已经是 1，
+        // 直接用它就变成"闪一下"。夹一下之后帧慢了动画就慢，但每一帧都看得见。
+        var progress = WindowTransitionPolicy.ClampIntroProgress(_introProgress, raw);
+        _introProgress = progress;
+        var t = WindowAnimationMath.EaseOut(progress);
+        _introFrame++;
+
+        if (_veil is not null)
         {
-            clock ??= Stopwatch.StartNew();
-            var progress = WindowAnimationMath.ProgressOf(clock.Elapsed);
-            var t = WindowAnimationMath.EaseOut(progress);
+            var alpha = (byte)Math.Round(255 * (1 - t));
+            _veilBrush.Color = Color.FromArgb(alpha, _veilBrush.Color.R, _veilBrush.Color.G, _veilBrush.Color.B);
+        }
 
-            _window.Opacity = t;
-            var s = WindowAnimationMath.IntroStartScale + (1 - WindowAnimationMath.IntroStartScale) * t;
-            scale.ScaleX = s;
-            scale.ScaleY = s;
+        if (_traceIntro && Trace is { } trace)
+        {
+            trace($"[开场动画] 第 {_introFrame} 帧 progress={progress:0.00} 遮罩={_veilBrush.Color.A}");
+        }
 
-            if (_traceIntro && Trace is { } trace)
-            {
-                trace($"[开场动画] progress={progress:0.00} opacity={_window.Opacity:0.00} scale={s:0.000}");
-            }
+        if (progress < 1)
+        {
+            RequestIntroFrame();
+            return;
+        }
 
-            if (progress < 1) return;
+        FinishIntro();
+    }
 
-            timer.Stop();
-            _timer = null;
+    private void OnIntroWatchdogTick(object? sender, EventArgs e)
+    {
+        if (_traceIntro && Trace is { } trace)
+        {
+            trace("[开场动画] 等不到下一帧，强制收尾");
+        }
 
-            // 收尾一定要回到"完全体"，别留下 0.99 的透明度或 0.999 的缩放
-            _window.Opacity = 1;
-            scale.ScaleX = 1;
-            scale.ScaleY = 1;
-            EndQuality();
-        };
+        FinishIntro();
+    }
 
-        timer.Start();
+    /// <summary>开场动画收尾：遮罩藏起来、计时清掉。必须幂等（被打断时会再调一次）。</summary>
+    private void FinishIntro()
+    {
+        _introWatchdog?.Stop();
+
+        if (_veil is not null)
+        {
+            _veil.IsVisible = false;
+            _veil.Opacity = 1;
+        }
+
+        _introClock = null;
+        _introFrame = 0;
+        _introProgress = 0;
     }
 
     /// <summary>
@@ -209,13 +293,17 @@ internal sealed class WindowAnimator
             _timer = null;
         }
 
-        // 透明度与缩放回到"完全体"，顺便把这个 ScaleTransform 留着复用（下次动画还要用）
+        // 收尾一律回到"完全体"：窗口不透明（我们本来就不改它，这里兜底）、
+        // 内容不留任何变换（残留缩放会让 TranslatePoint 把抓手坐标算偏）、
+        // 遮罩藏起来。三件事都必须走这里，因为动画随时可能被打断。
         _window.Opacity = 1;
-        if (_window.Content is Control { RenderTransform: ScaleTransform scale })
+        if (_window.Content is Control { RenderTransform: not null } content)
         {
-            scale.ScaleX = 1;
-            scale.ScaleY = 1;
+            content.RenderTransform = null;
+            content.RenderTransformOrigin = RelativePoint.Center;
         }
+
+        FinishIntro();
 
         // 动画被打断时，本该在收尾阶段完成的状态切换不能丢：比如最大化动画播到一半被中断，
         // 窗口尺寸已经停在中间值了，这时必须真的切成 Maximized，交给系统摆正。

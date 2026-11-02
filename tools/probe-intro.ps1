@@ -29,20 +29,23 @@ if (-not (Test-Path $log)) {
 }
 
 $frames = Get-Content $log -Encoding UTF8 | Where-Object { $_ -like '*[开场动画]*' }
-$opacities = @()
+$alphas = @()
 foreach ($line in $frames) {
-    if ($line -match 'opacity=([0-9.]+)') { $opacities += [double]$Matches[1] }
+    # 0.3.5 起开场动画改成"遮罩淡出"：每帧记的是遮罩的 Alpha（255 = 全遮，0 = 全透）。
+    if ($line -match '遮罩=(\d+)') { $alphas += [double]$Matches[1] }
 }
 
-$distinct = ($opacities | Sort-Object -Unique).Count
-$last = if ($opacities.Count -gt 0) { $opacities[-1] } else { -1 }
+$distinct = ($alphas | Sort-Object -Unique).Count
+$last = if ($alphas.Count -gt 0) { $alphas[-1] } else { -1 }
+$first = if ($alphas.Count -gt 0) { $alphas[0] } else { -1 }
 
-Write-Host ("  帧数：{0}，不同不透明度：{1}，最后一帧不透明度：{2}" -f $frames.Count, $distinct, $last)
+Write-Host ("  帧数：{0}，不同遮罩 Alpha：{1}，首帧 {2} → 末帧 {3}" -f $frames.Count, $distinct, $first, $last)
 
 $ok = $true
 if ($frames.Count -lt 5) { Write-Host '  [失败] 帧太少（至少 5 帧才说明是一帧一帧来的）'; $ok = $false }
-if ($distinct -lt 4)    { Write-Host '  [失败] 不透明度几乎没变化（说明是瞬间出现）'; $ok = $false }
-if ($last -lt 0.99)     { Write-Host '  [失败] 最后一帧没有回到完全体'; $ok = $false }
+if ($distinct -lt 4)     { Write-Host '  [失败] 遮罩几乎没变化（说明是瞬间出现）'; $ok = $false }
+if ($first -lt 200)      { Write-Host '  [失败] 首帧遮罩不够厚（应当几乎全遮住，再淡出）'; $ok = $false }
+if ($last -gt 5)         { Write-Host '  [失败] 最后一帧遮罩没有完全透掉'; $ok = $false }
 
 $proc.Kill()
 Start-Sleep -Milliseconds 800
@@ -50,5 +53,5 @@ Remove-Item $sandbox -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item Env:\HELIUM_CONFIG_DIR -ErrorAction SilentlyContinue
 Remove-Item Env:\HELIUM_INTRO_TRACE -ErrorAction SilentlyContinue
 
-if ($ok) { Write-Host '  ✔ 开场动画逐帧播出，并收尾到完全体' }
+if ($ok) { Write-Host '  ✔ 开场遮罩逐帧淡出，并收尾到完全透明' }
 exit ([int](-not $ok))

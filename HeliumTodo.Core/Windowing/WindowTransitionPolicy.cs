@@ -71,4 +71,34 @@ public static class WindowTransitionPolicy
 
         return (double)durationMs / frames;
     }
+
+    /// <summary>开场淡入最少要有几帧。</summary>
+    /// <remarks>
+    /// 冷启动时第一帧到第二帧之间可能隔 170 ms 以上（首次布局 + 字体光栅化 + 首次出图），
+    /// 如果进度按真实时间走，第二帧就已经 progress=1，淡出变成"闪一下"。
+    /// 所以单帧进度不许超过 1/5：帧慢了就把动画拉长，而不是一次跳到终点。
+    /// </remarks>
+    public const int MinIntroFrames = 5;
+
+    /// <summary>单帧最多推进多少进度（= 1 / <see cref="MinIntroFrames"/>）。</summary>
+    public const double IntroMaxProgressStep = 1.0 / MinIntroFrames;
+
+    /// <summary>
+    /// 把这一帧的原始进度夹到「上一帧 + 单帧步进上限」以内，保证至少走
+    /// <see cref="MinIntroFrames"/> 帧、且不会倒退。
+    /// </summary>
+    /// <param name="previous">上一帧已经播到的进度（0~1）。</param>
+    /// <param name="raw">按真实时间算出来的进度（0~1）。</param>
+    public static double ClampIntroProgress(double previous, double raw)
+    {
+        var floor = Math.Clamp(previous, 0, 1);
+        var target = Math.Clamp(raw, 0, 1);
+
+        if (target <= floor)
+        {
+            return floor;
+        }
+
+        return Math.Min(target, floor + IntroMaxProgressStep);
+    }
 }

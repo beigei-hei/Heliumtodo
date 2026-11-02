@@ -70,4 +70,40 @@ public class WindowTransitionPolicyTests
         Assert.Equal(0, WindowTransitionPolicy.FrameIntervalMs(0, 10));
         Assert.Equal(0, WindowTransitionPolicy.FrameIntervalMs(180, 0));
     }
+
+    [Fact]
+    public void 开场动画至少要走五帧()
+    {
+        // 冷启动实测：第 1 帧到第 2 帧隔了约 176 ms，按真实时间算第 2 帧 progress 就已经是 1，
+        // 于是淡出变成"闪一下"。所以要有一个单帧步进上限，保证至少五帧。
+        Assert.Equal(5, WindowTransitionPolicy.MinIntroFrames);
+        Assert.Equal(0.2, WindowTransitionPolicy.IntroMaxProgressStep, precision: 3);
+
+        var progress = 0.0;
+        var frames = 0;
+
+        // 模拟"每帧都迟到很多"：原始进度每次都直接给 1，也必须走满五帧。
+        while (progress < 1 && frames < 50)
+        {
+            progress = WindowTransitionPolicy.ClampIntroProgress(progress, 1.0);
+            frames++;
+        }
+
+        Assert.Equal(5, frames);
+        Assert.Equal(1.0, progress, precision: 6);
+    }
+
+    [Fact]
+    public void 单帧步进不许倒退也不许超过上限()
+    {
+        // 时间真的走了一点点：只推进一点点，不能一口气跨完。
+        Assert.Equal(0.1, WindowTransitionPolicy.ClampIntroProgress(0.0, 0.1), precision: 6);
+        Assert.Equal(0.2, WindowTransitionPolicy.ClampIntroProgress(0.0, 0.9), precision: 6);
+        Assert.Equal(0.55, WindowTransitionPolicy.ClampIntroProgress(0.35, 0.9), precision: 6);
+
+        // 时钟倒退（不太可能，但别让遮罩弹回去）与越界值都要夹住。
+        Assert.Equal(0.4, WindowTransitionPolicy.ClampIntroProgress(0.4, 0.1), precision: 6);
+        Assert.Equal(1.0, WindowTransitionPolicy.ClampIntroProgress(1.0, 2.0), precision: 6);
+        Assert.Equal(0.0, WindowTransitionPolicy.ClampIntroProgress(-1.0, -1.0), precision: 6);
+    }
 }

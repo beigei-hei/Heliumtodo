@@ -37,6 +37,9 @@ public partial class MainWindow : Window
         _quality = new InteractionQuality(this);
         _animator = new WindowAnimator(this, _quality) { Trace = App.LogBackground };
 
+        // 开场动画靠这层遮罩淡出（而不是改窗口不透明度，见 WindowAnimator.PlayIntro 的注释）。
+        _animator.SetIntroVeil(IntroVeil);
+
         // ③ 拖拽改大小
         _grips = new WindowResizeGrips(this, _quality);
         _grips.Attach();

@@ -1090,6 +1090,10 @@ public static class Program
         Check("每帧间隔约 16-18 ms（约 60 Hz）",
             WindowTransitionPolicy.FrameIntervalMs(WindowTransitionPolicy.DurationMs) is > 15 and < 19.5,
             $"{WindowTransitionPolicy.FrameIntervalMs(WindowTransitionPolicy.DurationMs):0.0} ms");
+        Check("开场淡入至少 5 帧（冷启动帧迟到时也不许闪一下）",
+            WindowTransitionPolicy.MinIntroFrames >= 5
+            && WindowTransitionPolicy.IntroMaxProgressStep <= 0.2 + 1e-9,
+            $"最少 {WindowTransitionPolicy.MinIntroFrames} 帧，单帧步进上限 {WindowTransitionPolicy.IntroMaxProgressStep:0.00}");
 
         var shell = services.GetRequiredService<ShellViewModel>();
         var window = new MainWindow
@@ -1105,6 +1109,10 @@ public static class Program
 
         var content = (Control)window.Content!;
 
+        // 先探一下这个环境里 DispatcherTimer 会不会真的触发 ——
+        // 无头渲染下它不触发，靠定时器收尾的断言只能跳过（真机由 probe-intro 验）。
+        var timersTick = ProbeDispatcherTimer();
+
         Console.WriteLine();
         Console.WriteLine("── ② 开场动画播到一半被最小化 ──");
         window.PlayShowAnimation();
@@ -1112,7 +1120,12 @@ public static class Program
 
         var midOpacity = window.Opacity;
         var midHasTransform = content.RenderTransform is not null;
-        Console.WriteLine($"   [信息] 动画中途：不透明度 {midOpacity:0.00}，内容变换 {(midHasTransform ? "有" : "无")}");
+        var veil = window.GetVisualDescendants().OfType<Border>().FirstOrDefault(b => b.Name == "IntroVeil");
+
+        // 开场动画现在靠"遮罩淡出"，会把 Window.Opacity 交给别的东西 —— 淡入效果寄几必须看得见。
+        // 这条断言就是防止以后有人把开场动画改成"什么都不做"还能过自检。
+        var veilAlpha = veil?.Background is ISolidColorBrush veilBrush ? veilBrush.Color.A : -1;
+        Console.WriteLine($"   [信息] 动画中途：不透明度 {midOpacity:0.00}，内容变换 {(midHasTransform ? "有" : "无")}，遮罩 {veilAlpha}");
 
         window.WindowState = WindowState.Minimized;
         PumpDispatcher(TimeSpan.FromMilliseconds(150));
@@ -1137,6 +1150,28 @@ public static class Program
         Check("Settle 后不透明度为 1", Math.Abs(window.Opacity - 1.0) < 0.001, $"当前 {window.Opacity:0.00}");
         Check("Settle 后内容变换为空", content.RenderTransform is null,
             content.RenderTransform is null ? "已清空" : "还有变换");
+
+        Console.WriteLine();
+        Console.WriteLine("── ⑤ 开场动画一定会收尾（看门狗）──");
+
+        // 无头环境里合成器不一定给帧回调，Timer 也可能被调度器掐掉 ——
+        // 但"遮罩不能永久留在屏幕上"是硬要求，所以给足时间后必须自己收尾。
+        window.PlayShowAnimation();
+        PumpDispatcher(TimeSpan.FromMilliseconds(900));
+        var veilGone = veil is null || !veil.IsVisible;
+
+        // 无头环境里 DispatcherTimer 根本不触发（这是老问题，之前 Settle 就是为它加的），
+        // 所以看门狗在这里没有机会跑 —— 这种情况下不能算失败，只能说"这一条无头验不了"，
+        // 真机上由 tools/probe-intro.ps1 用 HELIUM_INTRO_TRACE 数帧来验证。
+        if (timersTick)
+        {
+            Check("开场遮罩最终会被收掉（等不到帧也不会卡在半透明）", veilGone,
+                veil is null ? "没有遮罩" : veil.IsVisible ? "遮罩还在" : "已收掉");
+        }
+        else
+        {
+            Console.WriteLine("   - 跳过：无头环境 DispatcherTimer 不触发，看门狗只能在真机上验（tools/probe-intro.ps1）");
+        }
 
         // 抓手命中点：内容有缩放时 TranslatePoint 会把窗口坐标算偏（曾偏 26 px）。
         var grip = window.GetVisualDescendants().OfType<Border>().FirstOrDefault(b => b.Name == "GripRight");
@@ -2974,6 +3009,29 @@ public static class Program
             Dispatcher.UIThread.RunJobs();
             Thread.Sleep(15);
         }
+    }
+
+    /// <summary>
+    /// 探一下这个环境里 DispatcherTimer 会不会真的触发。
+    ///
+    /// 为什么需要：无头渲染下定时器不触发（动画、防抖、看门狗全都不走），
+    /// 于是"等它自己收尾"这类断言在无头里永远为假 —— 那不是 bug，是环境不同。
+    /// 与其写一条永远红的断言，不如先问一句"这里的定时器会跑吗"，
+    /// 会跑就真断言，不会跑就明说跳过（真机另有 tools/probe-intro.ps1）。
+    /// </summary>
+    private static bool ProbeDispatcherTimer()
+    {
+        var fired = false;
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(20) };
+        timer.Tick += (_, _) =>
+        {
+            fired = true;
+            timer.Stop();
+        };
+        timer.Start();
+        PumpDispatcher(TimeSpan.FromMilliseconds(300));
+        timer.Stop();
+        return fired;
     }
 
     /// <summary>把页面标题变成合法的文件名（去掉不能用在文件名里的字符）。</summary>

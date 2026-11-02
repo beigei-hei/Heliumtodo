@@ -68,6 +68,15 @@
             Opacity="{DynamicResource WallpaperScrimOpacity}"
             IsHitTestVisible="False" />
 
+    <!-- ②c 开场动画用的遮罩：从"不透明"淡到"透明"。
+         为什么不用 Window.Opacity：小于 1 的窗口不透明度会让 Win32 走
+         WS_EX_LAYERED（分层窗口）路径，每帧都要重新合成整窗（实测 37 ms/帧），
+         而且改扩展样式会让 DWM 重建重定向表面，系统原生的最小化/最大化过渡也就播不出来。 -->
+    <Border Name="IntroVeil"
+            IsVisible="False"
+            IsHitTestVisible="False"
+            Background="#FFFFFFFF" />
+
     <!-- ③ 界面本体 -->
     <views:ShellView />
 
