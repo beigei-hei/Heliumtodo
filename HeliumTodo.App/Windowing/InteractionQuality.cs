@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.VisualTree;
 using HeliumTodo.App.Services;
+using HeliumTodo.Core.Windowing;
 
 namespace HeliumTodo.App.Windowing;
 
@@ -50,7 +51,12 @@ internal sealed class InteractionQuality
     /// 进入降质状态，返回的作用域销毁时退出。
     /// 用法：<c>using var _ = quality.Begin();</c>
     /// </summary>
-    public IDisposable Begin()
+    /// <param name="expectedDurationMs">
+    /// 预计要动多久。只有超过 WindowTransitionPolicy.WallpaperPauseThresholdMs（250ms）
+    /// 才值得停掉动图壁纸 —— 视频壁纸重启要重新 seek + 解码首帧，
+    /// 为一个 180ms 的过渡付这个代价是负收益。拖拽改大小不断言时长，按"很久"算。
+    /// </param>
+    public IDisposable Begin(int expectedDurationMs = int.MaxValue)
     {
         if (_disabled)
         {
@@ -59,7 +65,7 @@ internal sealed class InteractionQuality
 
         if (_depth++ == 0)
         {
-            Enter();
+            Enter(expectedDurationMs);
         }
 
         return new Scope(this);
@@ -73,7 +79,7 @@ internal sealed class InteractionQuality
     private static readonly bool _disabled =
         Environment.GetEnvironmentVariable("HELIUM_NO_INTERACTION_QUALITY") == "1";
 
-    private void Enter()
+    private void Enter(int expectedDurationMs)
     {
         if (ResolveWallpaper() is { } image)
         {
@@ -81,7 +87,13 @@ internal sealed class InteractionQuality
         }
 
         App.SetCardShadowSuppressed(true);
-        PauseWallpaperAnimation();
+
+        // 只有"动得够久"才值得停掉动图壁纸：视频壁纸重启要重新 seek + 解码首帧，
+        // 为一个 180ms 的过渡付这个代价是负收益。规则在 Core 里，能单测。
+        if (WindowTransitionPolicy.ShouldPauseWallpaper(expectedDurationMs))
+        {
+            PauseWallpaperAnimation();
+        }
     }
 
     private void Exit()

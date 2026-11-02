@@ -1,4 +1,4 @@
-﻿using Avalonia;
+using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using HeliumTodo.App.Services;
@@ -353,6 +353,9 @@ public partial class App : Application
     private void RestoreMainWindow()
     {
         if (_mainWindow is not { } window) return;
+
+        // 先打招呼：这次恢复的动画由下面显式播，窗口自己别再播一遍。
+        window.BeginTrayRestore();
 
         window.Show();
         if (window.WindowState == Avalonia.Controls.WindowState.Minimized)
