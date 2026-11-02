@@ -645,7 +645,7 @@ HeliumTodo-backup-20261027-183012.zip
 | 没有 | 原因 |
 | --- | --- |
 | `.editorconfig` | 代码风格靠 `DesignTokens` 和评审保持一致；如果多人协作建议补一个 |
-| Git 仓库 | 项目目前还没初始化 `.git`（`.idea/.gitignore` 是 Rider 自动生成的） |
+| Git 仓库 | 2026-11-02 已初始化：`main` 是发布线、`dev` 是开发线，首个提交打了标签 `v0.3.5-alpha`；`.gitignore` 挡掉 `bin/`/`obj/`/`dist/`/`Data/`/`output/`，`.gitattributes` 统一 LF |
 | `dotnet test` | 受限环境跑不了测试宿主进程，改用自研的 `SelfTest` 运行器 |
 | 网络请求 | 需求就是「本地优先」。联机自习接口已留（`IPeerTransport`）但【暂缓】 |
 | 遥测 / 崩溃上报 | 同上，不联网 |

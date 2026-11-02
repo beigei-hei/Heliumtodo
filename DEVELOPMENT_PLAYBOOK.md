@@ -88,10 +88,9 @@
 ### 7. `code-review` — 收尾审查
 
 - **触发**：每轮交付前。
-- **降级说明**：这个技能原本要求"since a fixed point（commit / branch / merge-base）"，**本仓库还没进 Git**（`git status` → `fatal: not a git repository`）。替代做法：
-  1. 列出本轮改过的文件（`C:\Users\17121\.dsh\skills` 无关；用 `tools/check-file-integrity.ps1` 的差异或本轮写入记录）；
-  2. 对照两个轴自查：**规范**（是否符合本手册第 5–6 节与 `ARCHITECTURE.md` 的约定）、**需求**（是否逐条对上用户原话）。
-- **建议**：进 Git 之后直接改用 `code-review` 原生的 fixed point 形式（见第 8 节）。
+- **fixed point**：自 2026-11-02 起本仓库已进 Git，直接用它原生形式 —— `git diff main...HEAD`（`dev` 分支上干活，`main` 是发布线）或 `git diff <上一轮的提交>`。
+- **另加一道尺子**：`tools/check-file-integrity.ps1` 的指纹差异仍然要跑 —— 它覆盖所有源码与文档，能抓到 Git 看不见的临时物残留。
+- **两个轴自查**：**规范**（是否符合本手册第 5–6 节与 `ARCHITECTURE.md` 的约定）、**需求**（是否逐条对上用户原话）。
 
 ### 8. `writing-for-agents` — 写给人也写给 Agent 的文档
 
@@ -231,7 +230,7 @@ pwsh tools\check-file-integrity.ps1                                    # 应为 
 
 按投入产出排：
 
-1. **进 Git**（建议最先做）。现在没有版本管理，`code-review` 只能降级、`git-guardrails-claude-code` / `pr` 完全用不了，`PROGRESS.md` 是唯一的"历史"。做法：`git init` + 首次提交 + `.gitignore`（`bin/`、`obj/`、`output/`、`Data/`、`.vs/`、`.idea/`），之后每轮一个提交。
+1. **版本管理已就位**（2026-11-02）。`main` = 发布线、`dev` = 开发线，标签打版本（当前 `v0.3.5-alpha`）。`.gitignore` 挡掉了 `bin/`、`obj/`、`dist/`、`Data/`、`output/`、`_probe-*`、`.vs/`、`.idea/`；`.gitattributes` 统一按 LF 存。约定：每轮一个提交，消息写"做了什么 + 为什么"；交付前 `git status` 必须是干净的（临时物不许混进来）。仓库外的整包备份放 `D:\代码\dsh project\HeliumTodo-backups\`（`git archive` 导出的源码 zip）。
 2. **`GLOSSARY.md`**（`domain-modeling` 的标准产物）。目前术语散在 `ARCHITECTURE.md` 里；建议把"日程 / 待办 / 专注 / 时间块 / 冲突 / 车道(lane)"等词各写一句定义。
 3. **`docs/adr/`**：重大决策（软件渲染为默认、Media Foundation 而非 ffmpeg、`Core` 不许引用 Avalonia）值得各留一份 ADR。现在它们只写在 `PROGRESS.md` 的叙述里。
 4. **构建提速**（已诊断、待实施）：验证回路用 `--no-build`、把 12 次启动合并成单进程 `--all-checks`。实测 12 项自检串行 `--no-build` 约 57.5 秒，带构建检查 70 秒以上；单进程可省掉重复的 Avalonia 初始化。

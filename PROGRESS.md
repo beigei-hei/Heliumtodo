@@ -5,7 +5,7 @@
 
 当前版本：**v0.3.5-alpha**
 状态：**已迁移到 Avalonia 12 + FluentAvaloniaUI 3（.NET 10），三大核心功能完整跑通；
-新增「背景壁纸 + 自定义调色板 + 局域网联机自习 + 统一 .zip 备份 + 待办/日程提醒 + 托盘常驻」六块，168 个测试全绿，7 项界面渲染全部通过（含整个外壳）；
+新增「背景壁纸 + 自定义调色板 + 局域网联机自习 + 统一 .zip 备份 + 待办/日程提醒 + 托盘常驻」六块，179 个测试全绿，7 项界面渲染全部通过（含整个外壳）；
 设置页说明文字已精简，「打开文件夹」改为「Avalonia Launcher → 四级进程降级」；
 界面已按 `UI_REDESIGN_BRIEF.md` 改成「三列卡片工作台」（自绘标题栏 + 图标轨 + 卡片 + 右栏）**
 
@@ -3780,3 +3780,55 @@ build 0 警告 0 错误。
 `dotnet build HeliumTodo.slnx -c Debug` 0 警告 0 错误；`SelfTest` **179/179**；
 `--perf-check` 5 条断言全绿（含"交互降质方案比基线快 30% 以上"，实测 53.2 → 23.0 ms）；
 十四项 `--check` 全 `exit=0`；`--shell` 7/7。
+
+---
+
+## 2026-11-02 · 并入版本控制：`git init` + 分支 + 源码快照
+
+### 为什么做这件事
+
+到这一轮为止，项目已经 179 个测试、31 500 行代码，但**没有版本管理**：
+`git status` 一直是 `fatal: not a git repository`，唯一的"历史"是这份 `PROGRESS.md`。
+用户要求「备份所有目前代码，创建分支」，于是把这两件事一起做掉。
+
+### 做了什么
+
+| 事项 | 做法 |
+| --- | --- |
+| 仓库初始化 | `git init -b main`，首个提交 `f14f0a5`（194 个文件 / 43 013 行） |
+| 分支 | `main` = 发布线（就停在这一个提交上），`dev` = 开发线（当前所在） |
+| 标签 | `v0.3.5-alpha`（annotated，指向首个提交） |
+| 忽略规则 | `.gitignore`：`bin/`、`obj/`、`dist/`、`Data/`、`backups/`、`*.db*`、`output/`、`_probe-*/`、`.vs/`、`.idea/`、`docs/_shots/` |
+| 换行规则 | `.gitattributes`：`* text=auto eol=lf`；`*.png`/`*.dll`/`*.exe`/`*.zip`/`*.db` 标 binary；`core.autocrlf=false` |
+| 整包备份 | `git archive --format=zip` 导出到仓库外：`D:\代码\dsh project\HeliumTodo-backups\HeliumTodo-0.3.5-alpha-20261102.zip`（1.9 MB，只含受版本管理的源码与文档） |
+
+为什么把 `Data/` 也忽略：那是**运行时数据**（`helium.db` + `config.json` + `backups/`），
+复制来复制去会互相污染，而且之前已经踩过"自检写真实库"的坑。代码仓库只放代码。
+
+为什么 `dist/` 不进球：`dist/HeliumTodo-0.3.1-win-x64/` 之类的目录加起来 454 MB，
+全是可从源码重建的产物。要发版就重新 `dotnet publish`。
+
+### 备份内容核对
+
+- 194 个受管理文件：6 个项目的全部 `.cs` / `.axaml` / `.csproj`、14 张文档截图、
+  9 份 Markdown、`tools/` 里 9 个脚本、`.gitignore` / `.gitattributes` / `global.json` 等配置。
+- `git archive` 出来的 zip 解压后目录名带前缀 `HeliumTodo-0.3.5-alpha/`，和源码树同构。
+- 大小对比：源码快照 1.9 MB vs 整个工作目录 2.4 GB —— 差额基本是 `bin/`、`obj/`、`dist/`。
+
+### 顺带修正
+
+- `AGENTS.md` 新增「版本管理」一节（分支约定、每轮一个提交、交付前 `git status` 必须干净），
+  常用命令里补了 `git status --short` 与 `git add -A && git commit`。
+- `DEVELOPMENT_PLAYBOOK.md`：`code-review` 那段从"本仓库还没进 Git，只能降级"改成
+  "用 `git diff main...HEAD` 当 fixed point + 指纹差异当第二把尺子"；已知缺口第 1 条
+  "进 Git"改成"已就位"。
+- `PROJECT_OVERVIEW.md` 的环境表里 `Git 仓库` 一行改为记录当前分支与标签。
+
+### 经验
+
+1. **先 `.gitignore` 再 `git add`**。这个仓库有 2.4 GB，其中 99% 是构建产物；
+   顺序反了就是"提交 45 万行二进制"的事故。
+2. **`core.autocrlf=false` + `.gitattributes` 里写 `eol=lf`**：本机 `git add` 默认会
+   报警"LF 将被 CRLF 取代"，那是 `core.autocrlf=true` 的行为。两者定死一端，diff 才不会每行都变。
+3. **备份放仓库外面**。`git archive` 导出的 zip 如果放在工作区里，下次 `git status`
+   就是脏的（除非也忽略它）；放 `D:\代码\dsh project\HeliumTodo-backups\` 最省心。

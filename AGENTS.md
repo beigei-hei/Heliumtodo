@@ -53,6 +53,14 @@
 - 不在写法里引入 `unsafe`（项目未开 `AllowUnsafeBlocks`）。
 - 不为了省事关掉自检项（`--layout-check` 这类是为了防回归，红了要修根因）。
 
+## 版本管理（2026-11-02 起）
+
+- `main` = 发布线，`dev` = 开发线，日常在 `dev` 上改；标签打版本（当前 `v0.3.5-alpha`）。
+- **每轮一个提交**，消息写"做了什么 + 为什么"，不写"update"这种空话。
+- 交付前 `git status --short` 必须是**空**的：临时物（`output/`、`_probe-*`、`tools/_*.py`）要么删掉，要么就别生成。
+- `bin/`、`obj/`、`dist/`、`Data/`、`*.db` 由 `.gitignore` 挡着，**不要** `git add -f` 硬塞进去。
+- 换行统一 LF（`.gitattributes` 里 `* text=auto eol=lf`）；含中文的 `.ps1` 例外，必须 UTF-8 **带 BOM** + CRLF。
+
 ## 常用命令
 
 ```powershell
@@ -61,6 +69,8 @@ dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll
 dotnet HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll --shell
 dotnet HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll --layout-check
 dotnet HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll --perf-check
+git status --short          # 交付前这里必须是空的
+git add -A && git commit -m "…"
 pwsh tools\check-file-integrity.ps1
 python tools\gen_ui_text_map.py
 ```
