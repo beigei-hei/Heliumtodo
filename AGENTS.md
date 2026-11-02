@@ -8,7 +8,7 @@
 
 1. **先给验收标准**：把用户的话拆成 3–6 条可验证的行为，再说怎么改。
 2. **先想怎么证明**：能写单测就写单测；界面改动必须准备无头渲染 + 像素统计的验证方式（Agent 不能看图，"看着挺好"不算证据）。
-3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（179/179）、`--shell`、十四项 `--check`、指纹基线，全绿才交付。
+3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（186/186）、`--shell`、十五项 `--check`、指纹基线，全绿才交付。
 4. **收尾同步文档**：`PROGRESS.md`（这一轮）、`ARCHITECTURE.md`（新约定）、`UI_TEXT_MAP.md`（改了界面文案时）、指纹基线（`-Update` 后复查）。
 
 ## 分层铁律
@@ -32,8 +32,17 @@
 
 ## 动效铁律
 
-- 窗口正在动（开场 / 最大化 / 拖拽改大小）时**必须**在 `InteractionQuality.Begin()` 作用域里：
-  壁纸降 `LowQuality`、关卡片阴影、暂停动图。别删这个作用域，也别把降质改回去。
+- **能让系统播的就别自己播**。最小化 / 最大化 / 还原交给 DWM：窗口样式位必须有
+  `WS_CAPTION`（`WindowChrome.cs`），这是我们自己动画播不出来的唯一原因。
+  别再把 `Window.State` 的过渡写回逐帧改尺寸。验证：`tools/probe-window-style.ps1`、
+  `tools/probe-native-anim.ps1`（真机，DWM 会给 ≥12 个单调变化的可见面积）。
+- **动画期间不许改 `Window.Opacity`**。Avalonia 走 `WS_EX_LAYERED` 分层窗口，改它会让 DWM
+  重建重定向表面，还会让 DWM 拒绝播过渡。淡入用 `IntroVeil`（一层遮罩改画刷 Alpha）。
+- 窗口被最小化时**必须**立刻 `Settle()`（`MainWindow.OnPropertyChanged` 里已接），
+  否则动画停在半路：窗口半透明、内容留着缩放、边缘抓手偏 26 px。
+- 窗口正在动（开场 / 拖拽改大小）时**必须**在 `InteractionQuality.Begin()` 作用域里：
+  壁纸降 `LowQuality`、关卡片阴影；预计超过 250 ms 才暂停动图（`WindowTransitionPolicy`）。
+  别删这个作用域，也别把降质改回去。
 - 拖拽改大小只许**按帧**改窗口（`RequestAnimationFrame` 合并），不许在 `PointerMoved` 里直接改。
 - 定性能结论前先跑 `--perf-check` 看数字；无头数字只用来**比较**，不代表真机（同一档无头 23 ms、真机 45 ms）。
 - 凡是要用代码改的资源，**不许**写进 `ThemeDictionaries`（`CardSurfaceBrush` / `WallpaperScrimBrush` / `CardShadow` 都踩过）。

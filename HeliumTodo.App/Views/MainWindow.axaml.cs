@@ -97,6 +97,7 @@ public partial class MainWindow : Window
         {
             // 就地收尾：窗口看不见了，放映中的动画没有意义，也不能留下半截状态。
             _animator.Settle();
+            App.LogBackground("[窗口] 状态 → 最小化，动画就地收尾");
             return;
         }
 
@@ -104,12 +105,18 @@ public partial class MainWindow : Window
         {
             // 托盘那条路由 App 显式播，别播两遍。
             _trayRestorePending = false;
+            App.LogBackground($"[窗口] 状态 → {state}（托盘唤回，出现动画由 App 播）");
             return;
         }
 
         if (wasMinimized)
         {
             _animator.PlayIntro();
+            App.LogBackground($"[窗口] 状态 → {state}，从最小化恢复，补播出现动画");
+        }
+        else
+        {
+            App.LogBackground($"[窗口] 状态 → {state}");
         }
     }
 

@@ -39,7 +39,7 @@ HeliumTodo.App  ──▶  HeliumTodo.Data  ──▶  HeliumTodo.Core
  （界面）              （存储）              （纯逻辑，无任何外部依赖）
 ```
 
-`Core` 不引用 Avalonia、不引用 EF Core —— 所以它的单元测试跑得飞快（179 个测试约 2 秒，纯算法那部分只占几十毫秒），
+`Core` 不引用 Avalonia、不引用 EF Core —— 所以它的单元测试跑得飞快（186 个测试约 2 秒，纯算法那部分只占几十毫秒），
 以后想换界面框架或换数据库，动的都是外层，`Core` 一行不用改。
 
 ---

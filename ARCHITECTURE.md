@@ -3,7 +3,7 @@
 > **一句话概括**：单进程 Windows 桌面应用，四层结构（表现 / 应用服务 / 领域 / 存储），
 > 数据落在本地 SQLite，可选局域网 P2P 联机，界面与业务通过 MVVM 彻底解耦。
 >
-> 本文所有结构、类名、方法签名、行数均**取自当前代码实际内容**（2026-11-02 核对）。
+> 本文所有结构、类名、方法签名、行数均**取自当前代码实际内容**（2026-11-03 核对）。
 >
 > 开发流程（每轮怎么走、用哪些技能、质量门禁）见 [`DEVELOPMENT_PLAYBOOK.md`](DEVELOPMENT_PLAYBOOK.md)，
 > 给 AI 的硬规则见 [`AGENTS.md`](AGENTS.md)。本文只描述「现在的代码长什么样」，讲流程的不在这里。
@@ -22,19 +22,22 @@
 | 图像 | SkiaSharp 3.119.4（Avalonia 传递依赖，必须版本一致） |
 | 联机 | 原生 `System.Net.Sockets`，TCP + UDP 广播，无中心服务器 |
 | 渲染 | 默认 **Software**（Skia CPU 光栅化）；设置页「底层设置」或 `HELIUM_RENDER` 可切 OpenGL / Avalonia 自带（ANGLE）/ Vulkan（见 §18） |
-| 规模 | **31 508 行** · 132 个源文件（`.cs` + `.axaml`，不含 `bin`/`obj`） |
-| 测试 | **179** 个单元测试 + 7 项渲染自检 + 14 个 `--check` 专项自检 |
+| 规模 | **32 127 行** · 134 个源文件（`.cs` + `.axaml`，不含 `bin`/`obj`） |
+| 测试 | **186** 个单元测试 + 7 项渲染自检 + 15 个 `--check` 专项自检 |
+| 窗口动画 | 打开时遮罩淡出（自己做）；最小化 / 最大化 / 还原交给 DWM（见 §5.2） |
 
 ### 各项目规模
 
+只数 `.cs` 与 `.axaml`（`bin`/`obj`/`.csproj` 不算）：
+
 | 项目 | 文件 | 行数 | 职责 |
 | --- | ---: | ---: | --- |
-| `HeliumTodo.Core` | 43 | 5 883 | 领域模型 + 纯算法 + 备份格式 + 提醒调度（零 UI 依赖、零数据库依赖、零包引用） |
-| `HeliumTodo.Data` | 16 | 3 623 | EF Core 上下文、仓储、种子数据、网络传输、备份服务 |
-| `HeliumTodo.App` | 60 | 15 051 | Avalonia 界面、ViewModel、自绘控件、应用服务、窗口封装 |
-| `HeliumTodo.Tests` | 22 | 3 386 | **179** 个 xunit 测试 |
-| `HeliumTodo.SelfTest` | 4 | 195 | 反射式测试运行器（绕过被拦的 `dotnet test`） |
-| `HeliumTodo.RenderCheck` | 1 | 3 182 | 无头渲染自检 + 14 个 `--check` 专项断言 |
+| `HeliumTodo.Core` | 41 | 5 951 | 领域模型 + 纯算法 + 备份格式 + 提醒调度 + 窗口过渡规则（零 UI 依赖、零数据库依赖、零包引用） |
+| `HeliumTodo.Data` | 13 | 3 588 | EF Core 上下文、仓储、种子数据、网络传输、备份服务 |
+| `HeliumTodo.App` | 58 | 15 385 | Avalonia 界面、ViewModel、自绘控件、应用服务、窗口封装 |
+| `HeliumTodo.Tests` | 20 | 3 459 | **186** 个 xunit 测试 |
+| `HeliumTodo.SelfTest` | 1 | 160 | 反射式测试运行器（绕过被拦的 `dotnet test`） |
+| `HeliumTodo.RenderCheck` | 1 | 3 584 | 无头渲染自检 + 15 个 `--check` 专项断言 |
 
 ---
 
@@ -355,41 +358,71 @@ MainWindow (WindowDecorations=None, 客户区 = 窗口矩形)
 自己再叠一层 `Border` 会变成内外两条线。第一版就是这么写的（还踩了
 `Name="WindowEdge"` 遮住同名枚举、报 5 个 `CS1061` 的坑），后来整段删掉了。
 
-#### 最大化动画：DWM 不给，就自己写
+#### 最大化 / 最小化动画：DWM 自己会，前提是样式位里有 `WS_CAPTION`
 
-先试过"把样式位借回来"（补 `WS_THICKFRAME`，见上一小节），实测**仍然是瞬间跳变**；
-再查 DWM 的 `DWMWA_NCRENDERING_ENABLED`(=1)、`DWMWA_TRANSITIONS_FORCEDISABLED`、圆角、描边
-全部正常 —— 没有开关被关，就是 DWM 不认这个无边框窗口。
+**这里曾经写错过一次，改正记录如下。** 早先的结论是"补了 `WS_THICKFRAME` 之后 DWM 仍然不给动画，
+所以无边框窗口就是没动画"，于是自己写了一套逐帧改窗口矩形的动画。后来把样式位打印出来对比才发现：
 
-于是动画改由自己实现，全部在 `HeliumTodo.App/Windowing/WindowAnimator.cs`：
+| 窗口 | `GWL_STYLE` | 差额 |
+| --- | --- | --- |
+| 本项目（自绘，改前） | `0x160F0000` | 只有 `WS_THICKFRAME` / `WS_SYSMENU` / `WS_MIN` / `WS_MAX` |
+| Avalonia `BorderOnly` | `0x16870000` | 多了 `WS_BORDER`（`0x00800000`） |
+| 普通可最大化窗口 | `0x16CF0000` | 多了 `WS_CAPTION = WS_BORDER \| WS_DLGFRAME`（`0x00C00000`） |
 
-| 成员 | 作用 |
-| --- | --- |
-| `ToggleMaximize()` | 唯一入口，动画中忽略重复点击 |
-| `Maximize()` | 起点=当前矩形，终点=`Screens.ScreenFromWindow(this).WorkingArea`，收尾设 `WindowState.Maximized` |
-| `Restore()` | 先切 `Normal`，同帧内摆回最大化矩形，再往回收（防闪） |
-| `PlayIntro()` | 打开 / 从托盘唤醒时的「淡入 + 96%→100%」，180ms / 16 帧 |
-| `AnimateWindow(from, to, onFinished)` | `DispatcherTimer` 逐帧改矩形 |
-| `Settle()` | 立刻收尾：停表、`opacity=1`、缩放归 1、补做被打断的状态切换 |
-| `ScheduleSelfTestIfRequested()` | 仅在 `HELIUM_MAXIMIZE_TEST=<毫秒>` 时挂定时器，供探针量测 |
+DWM 判定"这是不是一个正常窗口"看的是 **`WS_CAPTION`**，不是 `WS_THICKFRAME`。补上它之后：
 
-纯算术部分拆到 `HeliumTodo.App/Windowing/WindowAnimationMath.cs`（`EaseOut` / `ProgressOf` /
-`Interpolate` / `IntroStartScale=0.96` / `DurationMs=180` / `Frames=16`）—— 这样"缓动对不对"
-在无头环境里也能被断言钉死，只有"帧有没有按时来"才需要真实窗口。
+- 最小化 / 最大化 / 还原 / Win+↑ / Win+↓ / 拖到顶边 / 双击标题栏 / Aero Snap **全部**白捡；
+- 动画在**合成器**里跑，软件渲染下也是满帧（真机实测最小化 30 个、最大化 32 个不同可见面积，
+  单调下降 95% / 86%）；
+- 不会长出标题栏 —— `WM_NCCALCSIZE` 依旧把非客户区抹成 0，壁纸照样铺满。
 
-两个必须记住的点：
+代码在 `HeliumTodo.App/Windowing/WindowChrome.cs`：样式回调里加 `WS_CAPTION`，
+`Opened` 之后再显式 `DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED /*3*/, 0, 4)`
+（万一被系统/组策略关过）。
 
-1. **计时从第一帧起算**。窗口 `Show` 后第一次布局+渲染可能就要上百毫秒；
-   若在 `PlayIntro()` 入口就 `Stopwatch.StartNew()`，第一帧到来时 180ms 早已过去，
-   动画会一步跳到终点（探针实测：只剩 4 帧、1 个不透明度值）。
-   改成 `Stopwatch? clock = null;` + 每帧 `clock ??= Stopwatch.StartNew();` 后是 15 帧、11 个值。
-2. **`Settle()` 不是可选项**。定时器丢帧（窗口在动画中途被隐藏/关闭、系统繁忙）会让窗口
-   永久停在半透明 + 96% 缩放。无头自检里就是这样：定时器根本不触发，窗口一直 `opacity=0`、
-   `scale=0.96`，连"按右边缘拖拽"都会因为坐标被缩放而算错位置（1277 被算成 1251.5）。
-   所以窗口要藏起来之前，一律先 `FinishAnimationsImmediately()`。
+配套删掉的东西（约 210 行）：`WindowAnimator` 的 `ToggleMaximize` / `Maximize` / `Restore` /
+`AnimateWindow` / `ApplyRect` / `CurrentPixelRect` / `GetWorkArea` / `ScheduleSelfTestIfRequested`，
+`WindowAnimationMath` 的 `Interpolate` / `Frames` / `FrameInterval` / `IntroStartScale`。
+`ShellView.ToggleMaximize()` 现在只有一行：切 `WindowState`。
 
-可量测性：动画每帧改 `Position/Width/Height`，所以从窗口外 `GetWindowRect` 能采到中间尺寸。
-`tools/probe-maximize-anim.ps1` 实测去程 14 个、回程 11 个中间尺寸（跳变时只会有 1~2 个）。
+验证工具（都是正式脚本，不是临时物）：
+
+| 脚本 | 验什么 | 实测 |
+| --- | --- | --- |
+| `tools/probe-window-style.ps1` | `GWL_STYLE` 是否含 `WS_CAPTION`；窗口矩形是否仍等于客户区 | `0x16CF0000`；1295×857 vs 1294×857 ✔ |
+| `tools/probe-native-anim.ps1` | 触发最小化/最大化，按帧统计"可见像素面积" | 30 / 32 个不同面积，单调下降 95% / 86% ✔ |
+| `tools/probe-intro.ps1` | 读日志里的遮罩 Alpha 序列 | 8 帧 / 6 个 Alpha / 255→0 ✔ |
+| `tools/probe-minimize-restore.ps1` | 最小化→恢复的收尾与补播（读 `background.log`） | 两条状态行都命中 ✔ |
+
+**为什么原来的探针给的是假阴性**：`tools/probe-maximize-anim.ps1` 靠高频 `GetWindowRect` 数中间尺寸，
+而 DWM 原生动画只改视觉、不改矩形 —— 数出来永远是 1 个值。改动画之后必须换一种量法（数像素面积）。
+
+#### 打开动画：一层遮罩淡出，不碰 `Window.Opacity`
+
+给窗口设小于 1 的不透明度会让 Win32 走 `WS_EX_LAYERED`（分层窗口）：每帧整窗重新合成
+（`--perf-check` F 档 37 ms/帧），而且改扩展样式会让 DWM 重建重定向表面 —— 正好把上面刚弄好的
+原生过渡又弄没。所以现在的做法是：
+
+- `MainWindow.axaml` 里一层 `Border Name="IntroVeil"`（`IsHitTestVisible="False"`），
+  每帧只改它画刷的 Alpha（`--perf-check` M 档 4.4 ms/帧，与纯重绘同量级）；
+- 帧驱动用 `TopLevel.RequestAnimationFrame`，不是 `DispatcherTimer`（定时器按 11.25 ms 排，
+  真机一帧 45 ms，排进来的帧只会越积越多，量出来是 18/91/64/58 这种极不均匀的间隔）；
+- **单帧进度上限** `WindowTransitionPolicy.ClampIntroProgress`：冷启动第一帧到第二帧可能隔 176 ms
+  （布局 + 字体光栅化 + 首次出图把 UI 线程占住），按真实时间算会一步跳到终点、变成"闪一下"。
+  夹住单帧步进 ≤ 0.2（至少 5 帧）之后，迟到的帧只会把动画拉长，不会跳；
+- 不再缩放内容：那 4% 在 180 ms 里几乎看不出来，却要让整棵内容树每帧重算，
+  还会把抓手坐标算偏（`TranslatePoint` 曾把 x=1277 算成 1251.5）。
+
+两个必须记住的点（都是踩出来的）：
+
+1. **计时从第一帧起算**：`Stopwatch? clock = null;` + 每帧 `clock ??= Stopwatch.StartNew();`。
+   若在 `PlayIntro()` 入口就开表，第一帧到来时 180 ms 早已过去。
+2. **`Settle()` 不是可选项**：窗口要藏起来、要关、要最小化之前一律调 `FinishAnimationsImmediately()`。
+   否则遮罩会留在屏幕上、`RenderTransform` 会留着（抓手算偏 26 px）。
+   `MainWindow` 在 `WindowStateProperty` 变化时盯住这件事：进 `Minimized` 立刻 `Settle()`，
+   从 `Minimized` 回来补一次 `PlayIntro()`（这是 L4 修的 bug，以前从任务栏点回来是个半透明窗口）。
+
+可量测性：动画不再改窗口矩形的，所以 `GetWindowRect` 采不到中间值 —— 这也正是它变快的原因。
 
 #### （历史）最大化动画：样式位还得借回来
 
@@ -1771,7 +1804,8 @@ Application.Current.Resources["CardSurfaceBrush"] = new SolidColorBrush(...);
 | `--appearance-check` | 14 | 卡片 alpha、暗色底色、蒙版颜色与强度（0.45 / 0.72 / 上限 0.95）、画出来的刷子就是资源那一份 |
 | `--notice-check` | 13 | 提示条默认收起、与滚动容器**重叠**（证明是叠层）、`ZIndex>=10`、亮暗底板不同、2 秒不消失 / 3.5 秒消失、点 × 立刻收起 |
 | `--rail-check` | 20 | 设置排在自习室下面、收起 56/44、展开 188/176、6 个名称全可见、宽度过渡存在、10 个分组标题 + **34 行分组行**的底色全透明、设置卡 8px 内边距、内层圆角与卡片同为 18、内层裁边界 |
-| `--perf-check` | 5 | 交互降质确实更快（低品质壁纸 + 关阴影，23~26 ms vs 基线 53~58 ms）、改尺寸比纯重绘贵、最慢一帧 < 120 ms |
+| `--perf-check` | 8 | 改尺寸的固定成本、降质确实更快（42 ms vs 117 ms）、内容矩阵比改尺寸快一半、遮罩 Alpha 与纯重绘同量级、帧间隔最慢 < 2×P50 |
+| `--anim-check` | 16 | 政策数值（180ms/10 帧/5 帧下限/250ms 阈值）、动画中途被最小化后不透明度和变换都干净、遮罩被收掉、回来会重播、`Settle()` 干净、抓手不偏 |
 
 截图开关也跟着补齐（都在 `HeliumTodo.RenderCheck`）：
 
@@ -1779,30 +1813,39 @@ Application.Current.Resources["CardSurfaceBrush"] = new SolidColorBrush(...);
   以前只写在 `RenderPage` 里，导致 `--shell` 拍出来的"暗色图"和亮色一模一样。
 - `HELIUM_RAIL_EXPANDED=1`：先展开轨道、等 500 ms 把 260 ms 过渡走完再截图。
 
-### 19.9 窗口动起来的时候，先降质再动
+### 19.9 窗口动起来的时候：能让系统播的就别自己播
 
-窗口动画（开场、最大化/还原）和拖拽改大小，都是"每一帧改一次窗口尺寸"。软件渲染下这件事很贵：
+窗口动画现在只剩两件事：**打开时的遮罩淡出**（自己播）和**最小化/最大化**
+（交给 DWM，见 5.2）。拖拽改大小仍然逐帧改窗口尺寸，那是用户手动在拖，没有别的办法。
 
-| 场景（1400×900，无头真绘图） | ms/帧 | 折合帧率 |
+软件渲染下"改一次窗口尺寸"到底多贵（`--perf-check`，1400×900 ↔ 1920×1280，无头真绘图）：
+
+| 场景 | 平均 ms/帧 | 折合帧率 |
 | --- | --- | --- |
-| 改尺寸 + 高品质壁纸（旧做法） | 53~58 | 18 |
-| 改尺寸，只布局不画 | 0.0~0.1 | — |
-| 改尺寸但什么都不画 | 13~15 | 66~75 |
-| **低品质壁纸 + 无卡片阴影（现在的做法）** | **23~26** | **39~44** |
+| A 改尺寸 + 高品质壁纸（改造前） | 117 | 9 |
+| E 改尺寸，只布局不画 | 0.1 | — |
+| H 改尺寸，什么内容都不画 | 24 | 41 |
+| J 低品质壁纸 + 无阴影（拖拽时用的） | 42 | 24 |
+| M 只改遮罩画刷 Alpha（开场用的） | 4.4 | 228 |
+| D 不改尺寸，纯重绘 | 5.0 | 201 |
 
-所以约定三条：
+从这张表能读出三件事：布局几乎不花钱；钱全在"整窗重新光栅化 + 帧缓冲重建"；
+**不改窗口尺寸，成本直接掉到 1/20**。所以约定四条：
 
-1. **动画期间自动降质**：`HeliumTodo.App/Windowing/InteractionQuality.cs` 用引用计数包住一段交互，
-   进入时把壁纸降成 `LowQuality`、关掉卡片阴影、暂停动图；退出时还原。
-   `WindowAnimator`（开场 + 最大化）与 `WindowResizeGrips`（拖拽）都包着它。
-   `HELIUM_NO_INTERACTION_QUALITY=1` 可整体关掉做对照。
-2. **拖拽只按帧改一次窗口**：`OnPointerMoved` 只记目标值，用 `TopLevel.RequestAnimationFrame`
+1. **能让系统播的就别自己播**。最小化/最大化/还原交给 DWM（`WS_CAPTION` 那个开关）。
+   自己写的逐帧改矩形版本已经删了 —— 软件渲染下 5~6 帧跑完 180 ms，又慢又不均匀。
+2. **动画期间自动降质**：`HeliumTodo.App/Windowing/InteractionQuality.cs` 用引用计数包住一段交互，
+   进入时把壁纸降成 `LowQuality`、关掉卡片阴影；退出时还原。拖拽
+   （`WindowResizeGrips`）包着它；`HELIUM_NO_INTERACTION_QUALITY=1` 可整体关掉做对照。
+   动图壁纸只在预计 > 250 ms 时才停（视频壁纸重启要重新 seek + 解码首帧，负收益），
+   规则在 `HeliumTodo.Core/Windowing/WindowTransitionPolicy.ShouldPauseWallpaper`。
+3. **拖拽只按帧改一次窗口**：`OnPointerMoved` 只记目标值，用 `TopLevel.RequestAnimationFrame`
    合并到下一帧（鼠标回报率比显示器刷新率高得多）。
-3. **凡是要用代码改的资源，不许写进 `ThemeDictionaries`**：`CardSurfaceBrush`、`WallpaperScrimBrush`、
-   `CardShadow` 都踩过——主题字典优先级高于应用级同名资源，代码赋值静默失效。
+4. **凡是要用代码改的资源，不许写进 `ThemeDictionaries`**：`CardSurfaceBrush`、`WallpaperScrimBrush`、
+   `CardShadow` 都踩过 —— 主题字典优先级高于应用级同名资源，代码赋值静默失效。
    `App.ApplyCardShadow(bool isDark)` / `App.SetCardShadowSuppressed(bool)` 就是靠"资源只有一份"才生效的。
 
-帧预算的实话：**软件渲染在 2560×1440 下做不到 60 fps 的尺寸动画**（真机 45 ms/帧）。
-同一份代码换 `HELIUM_RENDER=angle`（或设置里把渲染后端改成「Avalonia 自带渲染器」）实测 12 ms/帧、14 帧跑完。
-这是"内存 ↔ 流畅"的取舍，不是一个能靠改代码绕过去的 bug。`--perf-check` 里那 5 条断言
-（含"交互降质方案比基线快 30% 以上"）就是防止以后有人把降质改回去。
+时间轴与帧预算的实话：**软件渲染在 2560×1440 下拖拽仍然只有 ~20 fps**（真机 45 ms/帧），
+这是"内存 ↔ 流畅"的取舍。换成 DWM 播放的最小化/最大化在软件渲染下也是满帧，因为它们不经过我们。
+`--perf-check` 的八条断言（含"遮罩 Alpha 与纯重绘同量级""内容矩阵动画快一半"）就是防止以后有人把这些改回去。
+
