@@ -1801,7 +1801,7 @@ Application.Current.Resources["CardSurfaceBrush"] = new SolidColorBrush(...);
 
 | 自检 | 项数 | 钉住什么 |
 | --- | --- | --- |
-| `--appearance-check` | 14 | 卡片 alpha、暗色底色、蒙版颜色与强度（0.45 / 0.72 / 上限 0.95）、画出来的刷子就是资源那一份 |
+| `--appearance-check` | 14 | 卡片 alpha、暗色底色、蒙版颜色与强度（0.45 / 0.72 / 上限 0.95）、画出来的刷子就是资源那一份、壁纸缩放的尺寸与裁切位置 |
 | `--notice-check` | 13 | 提示条默认收起、与滚动容器**重叠**（证明是叠层）、`ZIndex>=10`、亮暗底板不同、2 秒不消失 / 3.5 秒消失、点 × 立刻收起 |
 | `--rail-check` | 23 | 设置排在自习室下面、收起 56/44（按钮真实 Bounds 44×44）、展开时按钮跟着轨道一起变宽、**导航按钮自己没有宽度过渡**（只有轨道一条在动）、6 个名称靠不透明度淡入淡出（始终留在布局里）、10 个分组标题 + **34 行分组行**的底色全透明、设置卡 8px 内边距、内层圆角与卡片同为 18、内层裁边界 |
 | `--perf-check` | 10 | 改尺寸的固定成本（A–M 十三档）、降质确实更快、内容矩阵比改尺寸快一半、遮罩 Alpha 与纯重绘同量级、**P95 < 2×P50** 且**最慢一帧 < 4×P50**（分两条，避免孤立尖峰让自检随机变红） |
@@ -1880,4 +1880,12 @@ Application.Current.Resources["CardSurfaceBrush"] = new SolidColorBrush(...);
 现在拆成 `P95 < 2 × P50`（尾部抬高才叫卡）与 `最慢 < 4 × P50`（拦住 5 倍那种真跳变），
 规则在 `WindowTransitionPolicy.IsFramePacingAcceptable` / `IsWorstFrameAcceptable`。
 真机侧由 `tools/probe-rail-anim.ps1` 守着：帧数 ≥ 10、P50 ≤ 16.7 ms、P95 ≤ 33.3 ms。
+
+壁纸缩放本身也要验，但不能靠截图：`--shell --wallpaper=<png>` 拍出来的图与不传壁纸时
+**逐像素完全相同**（`RenderCheck` 的 `--wallpaper` 只改 VM 状态，不经过 `MainWindow` 的壁纸图层），
+所以无头截图**看不出**壁纸画得对不对。改成直接测算术：`--appearance-check` 造一张
+2560×1440 的"左红、中绿、右蓝"三竖带源图，缩到 1400×900，断言尺寸相等、左缘红、右缘蓝、
+中间绿 —— UniformToFill 的系数是 0.625，左右各裁 160 px，所以左缘只能看到红、右缘只能看到蓝，
+**颜色对得上就说明裁切居中且没左右翻转**。读像素的办法：`RenderTargetBitmap` 不能直接读，
+先 `CopyPixels` 到 `WriteableBitmap` 的 `ILockedFramebuffer`，再 `Marshal.Copy` 取中间一行。
 

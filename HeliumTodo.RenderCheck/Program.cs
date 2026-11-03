@@ -3236,6 +3236,46 @@ public static class Program
     ///   这种"代码没错、画面没变"的问题肉眼看不出来，只能靠断言：
     ///   既要看资源字典里的值，也要看真正画出来的那个 Border 用的刷子。
     /// </summary>
+    /// <summary>把缩放后的壁纸读回来，取一行上的左、中、右三个像素。</summary>
+    private static (Color Left, Color Middle, Color Right) SampleRow(RenderTargetBitmap bitmap)
+    {
+        var width = bitmap.PixelSize.Width;
+        var height = bitmap.PixelSize.Height;
+
+        // RenderTargetBitmap 不能直接读像素，先画到一块可读写位图上再取。
+        using var writable = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96),
+            Avalonia.Platform.PixelFormat.Bgra8888, Avalonia.Platform.AlphaFormat.Premul);
+        using (var context = writable.Lock())
+        {
+            bitmap.CopyPixels(new PixelRect(0, 0, width, height),
+                context.Address, context.RowBytes * height, context.RowBytes);
+        }
+
+        var pixels = new byte[width * height * 4];
+        var handle = System.Runtime.InteropServices.GCHandle.Alloc(pixels, System.Runtime.InteropServices.GCHandleType.Pinned);
+        try
+        {
+            using var locked = writable.Lock();
+            var row = height / 2;
+            var span = new byte[width * 4];
+            System.Runtime.InteropServices.Marshal.Copy(
+                locked.Address + row * locked.RowBytes, span, 0, span.Length);
+            span.CopyTo(pixels, 0);
+        }
+        finally
+        {
+            handle.Free();
+        }
+
+        Color At(int x)
+        {
+            var offset = x * 4;
+            return Color.FromArgb(pixels[offset + 3], pixels[offset + 2], pixels[offset + 1], pixels[offset]);
+        }
+
+        return (At(width / 40), At(width / 2), At(width - width / 40));
+    }
+
     private static int RunAppearanceCheck(IServiceProvider services)
     {
         var failures = 0;
@@ -3292,6 +3332,40 @@ public static class Program
 
         // 还原成亮色 45%，后面的截图断言用得上
         HeliumTodo.App.App.ApplyWallpaperScrim(45, isDark: false);
+
+        // ── 三·五、壁纸预缩放：尺寸对上、裁切居中 ──
+        // 这一条守的是"卡顿修复没有把壁纸画歪"：软件渲染下把 4K 原图直接丢给
+        // Image 撑满，每帧都要重采样一次（+27 ms/帧），所以现在先缩成窗口像素。
+        // 缩放的算术写在 HeliumTodo.App/Services/WallpaperScaler.cs 里，
+        // 这里用"左红、中绿、右蓝"三条竖带当尺子：UniformToFill 会裁掉左右各 160 px，
+        // 于是 1400 宽的成品左边缘只能看到红、右边缘只能看到蓝、中间还是绿。
+        {
+            const int sourceWidth = 2560;
+            const int sourceHeight = 1440;
+            using var source = new RenderTargetBitmap(new PixelSize(sourceWidth, sourceHeight), new Vector(96, 96));
+            using (var context = source.CreateDrawingContext())
+            {
+                context.FillRectangle(Brushes.Red, new Rect(0, 0, 256, sourceHeight));
+                context.FillRectangle(Brushes.Lime, new Rect(256, 0, sourceWidth - 512, sourceHeight));
+                context.FillRectangle(Brushes.Blue, new Rect(sourceWidth - 256, 0, 256, sourceHeight));
+            }
+
+            var target = new PixelSize(1400, 900);
+            var scaled = HeliumTodo.App.Services.WallpaperScaler.Scale(source, target);
+            Check("壁纸能被缩放到窗口尺寸", scaled is not null && scaled.PixelSize == target,
+                scaled is null ? "返回了 null" : $"{scaled.PixelSize.Width}×{scaled.PixelSize.Height}");
+
+            if (scaled is not null)
+            {
+                var colors = SampleRow(scaled);
+                Check("缩放后左边缘仍是左边的颜色（裁切居中）", colors.Left.R > 200 && colors.Left.G < 80,
+                    $"RGB=({colors.Left.R},{colors.Left.G},{colors.Left.B})");
+                Check("缩放后右边缘仍是右边的颜色（没左右翻转）", colors.Right.B > 200 && colors.Right.R < 80,
+                    $"RGB=({colors.Right.R},{colors.Right.G},{colors.Right.B})");
+                Check("缩放后中间没被裁掉", colors.Middle.G > 150 && colors.Middle.R < 120,
+                    $"RGB=({colors.Middle.R},{colors.Middle.G},{colors.Middle.B})");
+            }
+        }
 
         // ── 四、真正画出来的卡片有没有跟着变 ──
         // 这一条才是"主题字典没把它盖住"的证据：只看资源字典是查不出问题的。

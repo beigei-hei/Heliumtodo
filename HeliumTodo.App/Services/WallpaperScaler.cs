@@ -17,7 +17,7 @@ namespace HeliumTodo.App.Services;
 /// 只对静态壁纸这么做：动图/视频每帧都是一张新图，缩放一次的成本等于每帧多做一次
 /// 全窗口绘制，不划算，那边仍然交给 <c>Image</c> 自己撑。
 /// </summary>
-internal static class WallpaperScaler
+public static class WallpaperScaler
 {
     /// <summary>
     /// 把 <paramref name="source"/> 按"填满"规则缩放到 <paramref name="target"/>。

@@ -4062,3 +4062,65 @@ GC 或别的进程抢一下就会打出孤立的一帧。于是拆成两条：
 2560×1440 + 壁纸 + **软件渲染**仍然只有 ≈25–43 fps（整页重排 + 全窗光栅化的固定成本）。
 同一台机器换 GPU 后端（`HELIUM_RENDER=angle`）直接到 **16 帧 / 74 fps**。
 所以"要不要把默认渲染后端从 `Software` 改成 `Auto`"这个待拍板项，现在多了一组更硬的数字。
+
+## 2026-11-03 · 壁纸缩放怎么验：截图验不出来，就改成验算术
+
+壁纸预缩放（上一节）把 2560×1440 上的展开动画从 20 fps 抬到 25–43 fps，
+但"有没有画歪"这件事一开始没验：想用 `tools/capture-window.ps1` 在真机上拍一张对比，
+结果脚本**卡死 120 秒**。
+
+### 卡死的原因不是脚本，是 `Start-Process`
+
+`capture-window.ps1` 里写的是 `Start-Process -FilePath $ExePath -PassThru`。
+本机会话**没有资源管理器进程**（`background.log` 里 `[环境] … 资源管理器=没有运行`），
+而 `Start-Process` 默认 `UseShellExecute = $true`，走 `ShellExecuteEx` 会永久挂住不返回 ——
+和这一轮写 `probe-common.ps1` 时踩的是同一个坑。修法：`. (Join-Path $PSScriptRoot 'probe-common.ps1')`
++ `Start-HeliumApp` + `Wait-HeliumWindow -TimeoutMs ($WaitSeconds * 1000)`
+（参数名是 `-TimeoutMs`，写 `-TimeoutSeconds` 会静默用默认 15 秒）。
+
+### 更重要的是：无头截图根本验不出壁纸
+
+顺手做了个对照：`--shell --wallpaper=<png>` 与不传壁纸，两张图**逐像素完全相同（差异 0 个点）**。
+原因很直白 —— `RenderCheck` 的 `--wallpaper` 只是把 VM 的壁纸状态设上，截图走的是自己拼的页面，
+**不经过 `MainWindow` 的壁纸图层**。所以这条路本来就走不通，早点知道省事。
+
+### 改成直接验算术
+
+`WallpaperScaler.Scale` 是纯算术 + 一次 `DrawImage`，可以无头验：
+
+1. 造一张 2560×1440 源图：左边 256 px 红、中间绿、右边 256 px 蓝。
+2. `Scale(source, new PixelSize(1400, 900))`。
+3. 断言：返回非 null 且 `PixelSize == 1400×900`；左缘是红；右缘是蓝；中间是绿。
+
+道理：UniformToFill 的缩放系数 = max(1400/2560, 900/1440) = **0.625**，缩放后是 1600×900，
+横向各裁 160 px。源图左边 256 px 的红带，裁掉 160 后还剩 96 px，正好在左缘；
+右边同理。**颜色对得上 = 裁切居中 + 没左右翻转 + 没有被拉伸变形。**
+
+为让 `RenderCheck` 调得到，`WallpaperScaler` 从 `internal static class` 升成 `public static class`。
+读像素的办法（`RenderTargetBitmap` 不能直接读）：先 `CopyPixels` 到 `WriteableBitmap` 的
+`ILockedFramebuffer`，再 `Marshal.Copy` 取中间一行，按 BGRA 顺序拼颜色。
+
+`--appearance-check` 现在共 **14 项**（本轮新增 4 条壁纸缩放断言），实测输出：
+
+```
+[通过] 壁纸能被缩放到窗口尺寸 — 1400×900
+[通过] 缩放后左边缘仍是左边的颜色（裁切居中） — RGB=(255,0,0)
+[通过] 缩放后右边缘仍是右边的颜色（没左右翻转） — RGB=(0,0,255)
+[通过] 缩放后中间没被裁掉 — RGB=(0,255,0)
+```
+
+### 门禁
+
+- `dotnet build HeliumTodo.slnx -c Debug` → 0 警告 0 错误
+- `SelfTest` → **187/187**
+- 十五项 `--check` 全部 `exit=0`、失败 0；`--shell` → 7/7
+- 真机 `probe-rail-anim.ps1` → 19 帧 / P50 12.5 ms / P95 15.0 ms（77 fps）✔
+- 指纹基线 → **176 文件**，复查一致
+
+### 三条经验
+
+1. **验不出来的东西就换个角度验**。截图验不了壁纸，就去验缩放的算术 —— 后者还更稳，
+   不受主题、DPI、壁纸加载时机影响。
+2. **`Start-Process` 在这个会话里等于死锁**。凡是要起子进程，一律走 `probe-common.ps1`。
+3. **无头截图的 `--wallpaper` 是个幌子**：它只改 VM 状态。以后再加"渲染图层"的东西，
+   要确认截图路径真的会画到它。
