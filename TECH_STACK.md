@@ -18,7 +18,7 @@
 | MVVM | **CommunityToolkit.Mvvm 8.4.0** | `[ObservableProperty]` / `[RelayCommand]` 源生成器 |
 | 数据访问 | **EF Core 8.0.11** + `Microsoft.EntityFrameworkCore.Sqlite` | `net10.0` 上跑 8.0.x 没问题，没升 9/10 是为了少折腾 |
 | 依赖注入 | `Microsoft.Extensions.DependencyInjection 8.0.1` | `App.axaml.cs` 里手工注册 20 处 |
-| 测试 | **xunit 2.9.2** + `Microsoft.NET.Test.Sdk 17.11.1` | 186 个测试 |
+| 测试 | **xunit 2.9.2** + `Microsoft.NET.Test.Sdk 17.11.1` | 187 个测试 |
 | 视频解码 | **Windows Media Foundation**（系统组件，`mfplat.dll` / `mfreadwrite.dll`） | 零额外打包体积；`MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING` 请求 RGB32，缩放自己用 Skia 做 |
 | 渲染后端 | `Win32RenderingMode`：Software（默认）/ AngleEgl / Wgl / Vulkan | 设置页「底层设置」或 `HELIUM_RENDER` 切换，重启生效 |
 
@@ -75,7 +75,7 @@ RenderCheck ──► App
 | `Core` | 41 | 5 951 | 模型、重复规则、时间轴构建（并查集分列 + 冲突检测）、专注计时状态机、备份格式、提醒调度、IPC 契约、壁纸取色、窗口过渡规则 |
 | `Data` | 13 | 3 588 | `HeliumDbContext`、5 个仓储、种子数据、`.zip` 备份服务、局域网传输 |
 | `App` | 58 | 15 385 | 6 个页面 + 外壳、9 个 ViewModel、自绘控件、壁纸服务、托盘、提醒、窗口封装 |
-| `Tests` | 20 | 3 459 | 186 个测试 |
+| `Tests` | 20 | 3 484 | 187 个测试 |
 | `SelfTest` | 1 | 160 | 反射跑 `[Fact]`，支持 `async Task` |
 | `RenderCheck` | 1 | 3 584 | 7 页渲染截图 + 15 个 `--check` |
 
@@ -237,8 +237,8 @@ dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll
 | `--restart-prompt-check` | 17 | 改渲染后端 → 重启提示 → 确认/取消/调试器三档 |
 | `--notice-check` | 13 | 提示条叠在功能区上方、跟随明暗、3 秒自动收起、点 × 立刻收起 |
 | `--appearance-check` | 14 | 明暗切换、玻璃浓度 alpha、蒙版合并后的颜色与强度（0.45 / 0.72 / 上限 0.95） |
-| `--perf-check` | 5 | 交互降质真的更快（低品质壁纸 + 关阴影，实测 53.2 → 23.0 ms / 快 57%）；改尺寸比纯重绘贵；最慢一帧 < 120 ms |
-| `--rail-check` | 20 | 设置排在自习室下面、图标轨 56↔188 展开与宽度过渡、设置页 10 个分组标题 + 34 行分组行的背景全透明 |
+| `--perf-check` | 10 | A–M 十三档逐档测量；交互降质真的更快（实测快 52~66%）；改尺寸比纯重绘贵；P95 < 2×P50 且最慢一帧 < 4×P50 |
+| `--rail-check` | 23 | 设置排在自习室下面、图标轨 56↔188 展开、按钮被动拉伸（自己不挂宽度过渡）、名称靠 Opacity 淡入淡出、设置页 10 个分组标题 + 34 行分组行的背景全透明 |
 | `--layout-check` | 6 页 × 6 项 | 六页分区是否同一套（左/右/顶边缘、缝、标题字号） |
 | `--shell` | 7 页 | 每页无头渲染出 PNG |
 | `--tree N` | — | 打印可视树（查布局用） |

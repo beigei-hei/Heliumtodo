@@ -1,6 +1,8 @@
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Threading;
 using HeliumTodo.App.ViewModels;
 using HeliumTodo.App.Windowing;
 
@@ -31,6 +33,19 @@ public partial class MainWindow : Window
     /// <summary>这次恢复是不是托盘唤回的（那条路 App 自己会播出现动画，这里不能重复播）。</summary>
     private bool _trayRestorePending;
 
+    /// <summary>图标轨展开 / 收起期间那份"降质"的凭据，以及到点收回它的表。</summary>
+    private IDisposable? _railQuality;
+    private DispatcherTimer? _railQualityTimer;
+
+    /// <summary>预缩放后的壁纸（和窗口像素 1:1），以及它是按哪张源图、哪个尺寸做的。</summary>
+    private Avalonia.Media.Imaging.RenderTargetBitmap? _scaledWallpaper;
+    private object? _scaledWallpaperSource;
+    private PixelSize _scaledWallpaperSize;
+
+    /// <summary>窗口尺寸变化时的防抖表：拖拽改大小期间不会每帧都重做一次壁纸缩放。</summary>
+    private DispatcherTimer? _wallpaperScaleTimer;
+    private ShellViewModel? _wallpaperViewModel;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -52,6 +67,131 @@ public partial class MainWindow : Window
 
         Opened += OnOpened;
         Closing += OnClosing;
+
+        // ④ 壁纸：先缩放成窗口尺寸再贴（这样每帧重绘不用重新采样整张图）
+        SizeChanged += OnWindowSizeChanged;
+        DataContextChanged += OnWindowDataContextChanged;
+
+        // 探针入口（tools/probe-rail-anim.ps1 用）：等界面稳下来之后自己展开一次图标轨，
+        // 好让 HELIUM_RAIL_TRACE 的逐帧日志有东西可打。生产里这个变量不存在。
+        if (Environment.GetEnvironmentVariable("HELIUM_RAIL_TEST") == "1")
+        {
+            var trigger = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(900) };
+            trigger.Tick += (_, _) =>
+            {
+                trigger.Stop();
+                BeginRailAnimation();
+                if (DataContext is ShellViewModel shell)
+                {
+                    shell.ToggleRailCommand.Execute(null);
+                }
+            };
+            trigger.Start();
+        }
+    }
+
+    private void OnWindowDataContextChanged(object? sender, EventArgs e)
+    {
+        if (_wallpaperViewModel is not null)
+        {
+            _wallpaperViewModel.PropertyChanged -= OnShellPropertyChanged;
+        }
+
+        _wallpaperViewModel = DataContext as ShellViewModel;
+        if (_wallpaperViewModel is not null)
+        {
+            _wallpaperViewModel.PropertyChanged += OnShellPropertyChanged;
+        }
+
+        RefreshScaledWallpaper();
+    }
+
+    private void OnShellPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(ShellViewModel.WallpaperImage) or nameof(ShellViewModel.IsWallpaperAnimated))
+        {
+            RefreshScaledWallpaper();
+        }
+    }
+
+    private void OnWindowSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        // 防抖：拖拽改大小的时候每帧都会 SizeChanged，每帧重做一张全窗口位图不合适。
+        // 停下 160 ms 之后再按最终尺寸重做一次（期间旧图会被拉伸，看不清差别）。
+        _wallpaperScaleTimer ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(160) };
+        _wallpaperScaleTimer.Stop();
+        _wallpaperScaleTimer.Tick -= OnWallpaperScaleTimerTick;
+        _wallpaperScaleTimer.Tick += OnWallpaperScaleTimerTick;
+        _wallpaperScaleTimer.Start();
+    }
+
+    private void OnWallpaperScaleTimerTick(object? sender, EventArgs e)
+    {
+        _wallpaperScaleTimer?.Stop();
+        RefreshScaledWallpaper();
+    }
+
+    /// <summary>
+    /// 把壁纸按当前窗口像素尺寸预缩放一次，再贴到 <c>WallpaperImage</c> 上。
+    ///
+    /// 不这么做的话，<c>Stretch="UniformToFill"</c> 每帧重绘都要重新采样整张图：
+    /// 2560×1440 窗口实测这一步要 18–27 ms/帧，页面切换、对话框、窗口动画全都在替它交钱。
+    /// 动图/视频不参与（每帧都是新图，预缩放等于每帧多做一次全窗口绘制）。
+    /// </summary>
+    private void RefreshScaledWallpaper()
+    {
+        var viewModel = _wallpaperViewModel ?? DataContext as ShellViewModel;
+        var source = viewModel?.WallpaperImage;
+
+        if (source is null)
+        {
+            WallpaperImage.Source = null;
+            _scaledWallpaper = null;
+            _scaledWallpaperSource = null;
+            return;
+        }
+
+        // 会动的壁纸：原图直接贴，交给 Image 自己撑满（避免每帧重做一次全窗口缩放）。
+        if (viewModel!.IsWallpaperAnimated)
+        {
+            WallpaperImage.Stretch = Avalonia.Media.Stretch.UniformToFill;
+            WallpaperImage.Source = source;
+            _scaledWallpaper = null;
+            _scaledWallpaperSource = null;
+            return;
+        }
+
+        var scaling = RenderScaling <= 0 ? 1.0 : RenderScaling;
+        var width = (int)Math.Round(Bounds.Width * scaling);
+        var height = (int)Math.Round(Bounds.Height * scaling);
+        if (width < 2 || height < 2)
+        {
+            return;
+        }
+
+        var target = new PixelSize(width, height);
+        if (_scaledWallpaper is not null
+            && ReferenceEquals(_scaledWallpaperSource, source)
+            && _scaledWallpaperSize == target)
+        {
+            WallpaperImage.Stretch = Avalonia.Media.Stretch.Fill;
+            WallpaperImage.Source = _scaledWallpaper;
+            return;
+        }
+
+        var scaled = Services.WallpaperScaler.Scale(source, target);
+        if (scaled is null)
+        {
+            WallpaperImage.Source = source;
+            return;
+        }
+
+        _scaledWallpaper = scaled;
+        _scaledWallpaperSource = source;
+        _scaledWallpaperSize = target;
+
+        WallpaperImage.Stretch = Avalonia.Media.Stretch.Fill;
+        WallpaperImage.Source = scaled;
     }
 
     /// <summary>
@@ -63,6 +203,77 @@ public partial class MainWindow : Window
         // 走到这里说明"由调用方负责这次出现动画"，托盘那条路标记就此用掉。
         _trayRestorePending = false;
         _animator.PlayIntro();
+    }
+
+    /// <summary>
+    /// 图标轨开始展开 / 收起。
+    ///
+    /// 为什么这件事要报到窗口这里：轨道宽度一变，右边整页要重排、整窗要重画，
+    /// 这是"内部控件动画"里最贵的一种（不是改窗口尺寸，但每帧一样出整张图）。
+    /// 所以这段时间也走 <see cref="InteractionQuality"/>：壁纸降成低成本插值、卡片阴影先关掉。
+    /// 壁纸本身不停（图标轨只动 260ms，停一次视频再启要重新 seek，反而更卡）。
+    ///
+    /// 收回靠 <see cref="DispatcherTimer"/> 而不是 rAF：动画结束后就没有帧了，
+    /// rAF 那条路会永远等不到下一次回调，降质状态收不回来。
+    /// </summary>
+    public void BeginRailAnimation()
+    {
+        _railQuality?.Dispose();
+        _railQuality = _quality.Begin(
+            HeliumTodo.Core.Theming.RailMetrics.AnimationDurationMs,
+            pauseWallpaper: false);
+
+        _railQualityTimer?.Stop();
+        _railQualityTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(
+                HeliumTodo.Core.Theming.RailMetrics.AnimationDurationMs + 60),
+        };
+        _railQualityTimer.Tick += (_, _) =>
+        {
+            _railQualityTimer?.Stop();
+            _railQuality?.Dispose();
+            _railQuality = null;
+        };
+        _railQualityTimer.Start();
+
+        TraceRailFramesIfAsked();
+    }
+
+    /// <summary>
+    /// HELIUM_RAIL_TRACE=1 时逐帧打一条日志（帧序号、距上一帧多久、轨道当前宽度）。
+    /// 卡顿是"最慢一帧有多慢"的问题，只有逐帧间隔能说明，所以留着这条通道给探针用。
+    /// </summary>
+    private void TraceRailFramesIfAsked()
+    {
+        if (Environment.GetEnvironmentVariable("HELIUM_RAIL_TRACE") != "1")
+        {
+            return;
+        }
+
+        if (TopLevel.GetTopLevel(this) is not { } topLevel)
+        {
+            return;
+        }
+
+        var clock = Stopwatch.StartNew();
+        var last = 0.0;
+        var frame = 0;
+
+        void OnFrame(TimeSpan _)
+        {
+            frame++;
+            var elapsed = clock.Elapsed.TotalMilliseconds;
+            App.LogBackground($"[图标轨] 第 {frame} 帧 间隔 {elapsed - last:0.0} ms 已用 {elapsed:0.0} ms");
+            last = elapsed;
+
+            if (elapsed < HeliumTodo.Core.Theming.RailMetrics.AnimationDurationMs + 120)
+            {
+                topLevel.RequestAnimationFrame(OnFrame);
+            }
+        }
+
+        topLevel.RequestAnimationFrame(OnFrame);
     }
 
     /// <summary>

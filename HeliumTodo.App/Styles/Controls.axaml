@@ -236,10 +236,15 @@
     图标轨上的按钮：44×44 的圆角方块，只放一个字形。
     尺寸和圆角都来自令牌（RailItemSize / RadiusRailItem），改一处就全变。
   -->
+  <!-- 收起态：44×44 的方块（shell-check 钉着这个数）。
+       展开态由 .expanded 覆盖成"跟着轨道拉伸"——整个展开过程只有轨道一条 Width
+       在动，按钮是被动的，否则每帧会有 1 + N 条动画各自触发一次整页重排。 -->
   <Style Selector="Button.railItem">
     <Setter Property="Width" Value="{DynamicResource RailItemSize}" />
     <Setter Property="Height" Value="{DynamicResource RailItemSize}" />
     <Setter Property="Padding" Value="0" />
+    <!-- 不许在横向上留边距：收起态这里必须是 44×44（shell-check 钉着），
+         展开态按钮跟着轨道拉伸（宽度由轨道决定，见条目模板的 Stretch）。 -->
     <Setter Property="Margin" Value="0,3" />
     <Setter Property="CornerRadius" Value="{DynamicResource RadiusRailItem}" />
     <Setter Property="Background" Value="Transparent" />
@@ -247,6 +252,11 @@
     <Setter Property="HorizontalAlignment" Value="Center" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Button.railItem.expanded">
+    <Setter Property="Width" Value="NaN" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
   </Style>
 
   <Style Selector="Button.railItem /template/ ContentPresenter">

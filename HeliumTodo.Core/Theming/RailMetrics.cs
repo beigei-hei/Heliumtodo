@@ -18,6 +18,13 @@ public static class RailMetrics
     /// <summary>展开态轨道宽度（图标 + 名称）。</summary>
     public const double ExpandedRailWidth = 188;
 
+    /// <summary>
+    /// 展开 / 收起动画的时长（毫秒）。
+    /// 界面上的 <c>DoubleTransition</c>、MainWindow 里"动起来的时候降质"的时长、
+    /// 以及自检里的断言都读这一个数 —— 三处对不上就会出现"动画早停了但降质还没恢复"。
+    /// </summary>
+    public const int AnimationDurationMs = 260;
+
     /// <summary>轨道的外边距之和（左 8 + 右 4），按钮宽度要把它扣掉。</summary>
     public const double HorizontalMargin = 12;
 

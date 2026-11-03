@@ -79,6 +79,8 @@ public partial class ShellView : UserControl
     {
         if (DataContext is not ShellViewModel shell) return;
 
+        // 先报一声再切：轨道一宽，整页重排 + 整窗重画，这段时间要降质（见 MainWindow.BeginRailAnimation）。
+        (TopLevel.GetTopLevel(this) as MainWindow)?.BeginRailAnimation();
         shell.ToggleRailCommand.Execute(null);
     }
 

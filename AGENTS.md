@@ -8,7 +8,7 @@
 
 1. **先给验收标准**：把用户的话拆成 3–6 条可验证的行为，再说怎么改。
 2. **先想怎么证明**：能写单测就写单测；界面改动必须准备无头渲染 + 像素统计的验证方式（Agent 不能看图，"看着挺好"不算证据）。
-3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（186/186）、`--shell`、十五项 `--check`、指纹基线，全绿才交付。
+3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（187/187）、`--shell`、十五项 `--check`、指纹基线，全绿才交付。
 4. **收尾同步文档**：`PROGRESS.md`（这一轮）、`ARCHITECTURE.md`（新约定）、`UI_TEXT_MAP.md`（改了界面文案时）、指纹基线（`-Update` 后复查）。
 
 ## 分层铁律
@@ -29,6 +29,13 @@
 - 卡片内容必须向内缩：`Border.card` 用 `Padding="8"`，里面再套一层同半径（`RadiusCard`）且 `ClipToBounds="True"` 的容器才放滚动区，否则悬停色块会压在圆角上。
 - 图标轨宽度只能取自 `RailMetrics`（收起 56 / 展开 188 / 条目 44 / 176），别在 XAML 里写数字。
 - 改 XAML 时小心 `FINAL` 属性（`ComboBox.currentValue` 之类）与名字冲突（`Name="WindowEdge"` 会遮住 `WindowEdge` 枚举）。
+- **内部控件动画只许一条属性在动**：图标轨展开时整窗只有轨道的 `Width` 在动，条目按钮用
+  `Classes.expanded` 切成"跟着拉伸"，自己**不许**再挂一条 `Width` 过渡（否则每帧 1+N 次整页重排）。
+  文字淡入用 `Opacity`（不改布局），不许用 `IsVisible` 切。
+- **壁纸必须先缩放到窗口像素**（`HeliumTodo.App/Services/WallpaperScaler.cs`）：把 4K 原图直接丢给
+  `Image Stretch="UniformToFill"` 会让软件渲染每帧重采样一次（2560×1440 上 +27 ms/帧）。
+- 过渡时长不许在 XAML 里写死数字：读 `RailMetrics.AnimationDurationMs` /
+  `WindowTransitionPolicy.DurationMs`，界面、降质时长、自检断言三处共用一个数。
 
 ## 动效铁律
 

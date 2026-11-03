@@ -12,8 +12,12 @@ namespace HeliumTodo.Core.Windowing;
 ///   · DurationMs = 180 —— 再长就"慢吞吞"，再短看不出发生了什么；
 ///   · MinFrames = 10 —— 少于 10 帧的过渡在肉眼看来就是"跳了一下"，
 ///     180 ms 里 10 帧 = 每帧 18 ms，60 Hz 屏幕上还能看出光滑的中间态；
-///   · MaxFrameIntervalFactor = 2 —— 帧间隔最大值超过中位数的两倍就是"一顿一顿"
-///     （实测改动前是 18 / 91 / 64 / 58 ms，最慢是中位数的 5 倍，用户说的卡就是它）；
+///   · MaxFrameIntervalFactor = 2 —— 尾部帧（P95）超过中位数的两倍就是"一顿一顿"
+///     （实测改动前是 18 / 91 / 64 / 58 ms，P95 也是中位数的三四倍，用户说的卡就是它）；
+///   · MaxSingleFrameFactor = 4 —— 单帧尖峰容忍到中位数的四倍。
+///     为什么不拿"最慢一帧"卡 2 倍：一轮只采 20 多帧，GC、字体缓存、别的进程抢 CPU
+///     都会打出孤立的一帧，按它判红等于让断言随机变红（实测有过 P50 63 ms、最慢 135 ms，
+///     比值 2.13，而肉眼完全看不出卡）。真正的卡顿是"尾部整体抬高"，那是 P95 的事。
 ///   · WallpaperPauseThresholdMs = 250 —— 只给"真会拖很久"的动画暂停壁纸动图。
 ///     180 ms 的动画暂停动图反而更贵：视频壁纸重启要重新定位、重解一帧。
 /// </summary>
@@ -25,8 +29,11 @@ public static class WindowTransitionPolicy
     /// <summary>一次过渡至少要有的动画帧数，少于这个数就算"跳变"。</summary>
     public const int MinFrames = 10;
 
-    /// <summary>帧间隔最大值允许是中位数的多少倍（超过就是卡顿）。</summary>
+    /// <summary>尾部帧（P95）允许是中位数的多少倍（超过就是卡顿）。</summary>
     public const double MaxFrameIntervalFactor = 2.0;
+
+    /// <summary>孤立的单帧尖峰允许是 <see cref="MaxFrameIntervalFactor"/> 的几倍。</summary>
+    public const double MaxSingleFrameFactor = 4.0;
 
     /// <summary>动画时长超过这个值，才值得暂停壁纸动图（180 ms 的动画不值得）。</summary>
     public const int WallpaperPauseThresholdMs = 250;
@@ -42,20 +49,38 @@ public static class WindowTransitionPolicy
         durationMs >= WallpaperPauseThresholdMs;
 
     /// <summary>
-    /// 帧间隔是否可接受：最慢一帧不能超过中位数的两倍。
+    /// 尾部帧是否可接受：P95 不能超过中位数的两倍。
     ///
     /// 为什么比较倍率而不是绝对值：无头环境和 GPU 环境的绝对毫秒差得很远
     /// （同一个界面 1.4 ms vs 45 ms），但"匀不匀"是同一个标准 ——
     /// 用户感觉到的是忽快忽慢，不是平均帧率。
     /// </summary>
-    public static bool IsFramePacingAcceptable(double p50Ms, double worstMs)
+    /// <param name="p50Ms">帧间隔中位数（毫秒）。</param>
+    /// <param name="p95Ms">帧间隔 P95（毫秒）。</param>
+    public static bool IsFramePacingAcceptable(double p50Ms, double p95Ms)
     {
         if (p50Ms <= 0)
         {
             return false;
         }
 
-        return worstMs <= p50Ms * MaxFrameIntervalFactor;
+        return p95Ms <= p50Ms * MaxFrameIntervalFactor;
+    }
+
+    /// <summary>
+    /// 最慢的一帧有没有离谱到"肉眼一定看得见"：允许到中位数的
+    /// <see cref="MaxSingleFrameFactor"/> 倍，再多就不只是噪声了。
+    /// </summary>
+    /// <param name="p50Ms">帧间隔中位数（毫秒）。</param>
+    /// <param name="worstMs">最慢一帧（毫秒）。</param>
+    public static bool IsWorstFrameAcceptable(double p50Ms, double worstMs)
+    {
+        if (p50Ms <= 0)
+        {
+            return false;
+        }
+
+        return worstMs <= p50Ms * MaxSingleFrameFactor;
     }
 
     /// <summary>

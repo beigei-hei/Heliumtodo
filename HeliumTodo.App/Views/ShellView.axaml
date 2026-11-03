@@ -37,34 +37,41 @@
     <!--
       图标轨里一个按钮：圆角 12、选中时强调色实心。
 
-      宽度不再写死 44，而是绑 ItemWidth（收起 44 / 展开 176）。
-      Width 上的 Transition 让它跟着轨道一起"拉"开 —— 只要一条 Width 过渡，
-      图标与名称的相对位置就自动跟着走，不用另外做位移动画。
+      Width 显式设成 NaN（= 不指定），让按钮跟着轨道的可用宽度自己涨落。
+      【为什么不给按钮也挂一条 Width 过渡】
+        轨道本身已经在动，按钮只要"填满"，位置自然跟得上 —— 不需要第二条动画。
+        以前这里各挂一条 260ms 的 Width 过渡，于是每帧有 1 + N 条动画各自改一次宽度，
+        每次都让整页重新测量；肉眼看到的就是"拉的时候一卡一卡"。
+        现在全窗口只有一条属性在动（轨道 Width），按钮是被动跟随。
     -->
     <DataTemplate x:Key="RailItemTemplate" DataType="vm:NavigationItemViewModel">
       <Button Classes="railItem"
               Classes.active="{Binding IsSelected}"
+              Classes.expanded="{Binding IsExpanded}"
               Tag="{Binding}"
-              Width="{Binding ItemWidth}"
               HorizontalContentAlignment="Left"
               Click="OnRailItemClick"
               ToolTip.Tip="{Binding Title}">
-        <Button.Transitions>
-          <Transitions>
-            <DoubleTransition Property="Width" Duration="0:0:0.26">
-              <DoubleTransition.Easing>
-                <CubicEaseOut />
-              </DoubleTransition.Easing>
-            </DoubleTransition>
-          </Transitions>
-        </Button.Transitions>
         <StackPanel Orientation="Horizontal" Spacing="10" Margin="13,0" HorizontalAlignment="Left">
           <TextBlock Classes="railGlyph"
                      Text="{Binding Icon}"
                      FontFamily="{DynamicResource IconFont}" />
           <TextBlock Classes="railLabel"
                      Text="{Binding Title}"
-                     IsVisible="{Binding IsExpanded}" />
+                     Opacity="{Binding RailLabelOpacity}">
+            <!-- 名称淡入淡出跟上轨道宽度。Opacity 不改布局，所以这条过渡每帧
+                 只是写一个属性；它不能放进样式（样式里的 Transitions 会让
+                 XAML 编译器内部报错），只能写在控件上。 -->
+            <TextBlock.Transitions>
+              <Transitions>
+                <DoubleTransition Property="Opacity" Duration="{Binding RailAnimationDuration}">
+                  <DoubleTransition.Easing>
+                    <CubicEaseOut />
+                  </DoubleTransition.Easing>
+                </DoubleTransition>
+              </Transitions>
+            </TextBlock.Transitions>
+          </TextBlock>
         </StackPanel>
       </Button>
     </DataTemplate>
@@ -142,9 +149,11 @@
           CubicEaseOut = 起步快、收尾慢（Windows 自己的展开动画也是这个手感），
           0.26 秒比页面切换（0.18）略长一点，才看得出"拉"的过程。
         -->
+        <!-- 时长绑 VM 的 RailAnimationDuration（源头是 Core 的 RailMetrics.AnimationDurationMs）：
+             降质时长、自检断言读的都是同一个数，改一次就全改。 -->
         <Border.Transitions>
           <Transitions>
-            <DoubleTransition Property="Width" Duration="0:0:0.26">
+            <DoubleTransition Property="Width" Duration="{Binding RailAnimationDuration}">
               <DoubleTransition.Easing>
                 <CubicEaseOut />
               </DoubleTransition.Easing>

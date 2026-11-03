@@ -30,12 +30,12 @@ public class WindowTransitionPolicyTests
     {
         // 这两组正是真机上量到的：改动前 18 / 91 ms（最慢是中位数的 5 倍，用户说卡），
         // 改动后 20 / 48 ms（2.3 倍，仍在临界线上）。
-        Assert.False(WindowTransitionPolicy.IsFramePacingAcceptable(p50Ms: 18, worstMs: 91));
-        Assert.False(WindowTransitionPolicy.IsFramePacingAcceptable(p50Ms: 20, worstMs: 48));
+        Assert.False(WindowTransitionPolicy.IsFramePacingAcceptable(p50Ms: 18, p95Ms: 91));
+        Assert.False(WindowTransitionPolicy.IsFramePacingAcceptable(p50Ms: 20, p95Ms: 48));
 
         // 均匀的过渡才合格：最慢一帧没超过中位数的两倍。
-        Assert.True(WindowTransitionPolicy.IsFramePacingAcceptable(p50Ms: 16.7, worstMs: 33.4));
-        Assert.True(WindowTransitionPolicy.IsFramePacingAcceptable(p50Ms: 11.8, worstMs: 23.4));
+        Assert.True(WindowTransitionPolicy.IsFramePacingAcceptable(p50Ms: 16.7, p95Ms: 33.4));
+        Assert.True(WindowTransitionPolicy.IsFramePacingAcceptable(p50Ms: 11.8, p95Ms: 23.4));
     }
 
     [Fact]
@@ -43,8 +43,28 @@ public class WindowTransitionPolicyTests
     {
         // p50 为 0 说明根本没采到帧（动画没跑起来、或者被提前 Settle 掉）。
         // 这种情况必须判"不合格"，否则一个跑不起来的动画也能"通过"检查。
-        Assert.False(WindowTransitionPolicy.IsFramePacingAcceptable(p50Ms: 0, worstMs: 0));
-        Assert.False(WindowTransitionPolicy.IsFramePacingAcceptable(p50Ms: -5, worstMs: 10));
+        Assert.False(WindowTransitionPolicy.IsFramePacingAcceptable(p50Ms: 0, p95Ms: 0));
+        Assert.False(WindowTransitionPolicy.IsFramePacingAcceptable(p50Ms: -5, p95Ms: 10));
+    }
+
+    /// <summary>
+    /// 孤立的单帧尖峰不该判红，连续抬高才该判红。
+    ///
+    /// 为什么值得测：一轮只采 20 多帧，GC 或别的进程抢一下就会打出孤立的一帧；
+    /// 早期版本拿"最慢一帧 ≤ 2 × P50"当判据，结果这条自检随机变红
+    /// （实测 P50 63 ms、最慢 135 ms，比值 2.13，肉眼完全看不出卡）。
+    /// </summary>
+    [Fact]
+    public void 孤立的单帧尖峰可以容忍但连续抬高不行()
+    {
+        // 基准帧 63 ms，尖峰 135 ms（2.13 倍）：只是噪声，放行。
+        Assert.True(WindowTransitionPolicy.IsWorstFrameAcceptable(p50Ms: 63.2, worstMs: 134.6));
+
+        // 基准帧 18 ms，尖峰 91 ms（5 倍）：这就是用户说的卡，必须拦下。
+        Assert.False(WindowTransitionPolicy.IsWorstFrameAcceptable(p50Ms: 18, worstMs: 91));
+
+        // 没有任何帧数据时不能判"合格"。
+        Assert.False(WindowTransitionPolicy.IsWorstFrameAcceptable(p50Ms: 0, worstMs: 0));
     }
 
     [Fact]

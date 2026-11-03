@@ -68,7 +68,8 @@ function Capture-Bytes([System.Drawing.Bitmap]$bitmap) {
 }
 
 $exe = (Resolve-Path (Join-Path $PSScriptRoot '..\HeliumTodo.App\bin\Debug\net10.0\HeliumTodo.App.exe')).Path
-$sandbox = Join-Path $PSScriptRoot ('_probe-native-' + [guid]::NewGuid().ToString('N'))
+# 沙盒放系统临时目录：以前放在仓库里，探针中途崩掉就会在 tools/ 下留一堆垃圾目录。
+$sandbox = Join-Path ([System.IO.Path]::GetTempPath()) ('helium-probe-native-' + [guid]::NewGuid().ToString('N'))
 $null = New-Item -ItemType Directory -Path $sandbox
 
 $proc = Start-HeliumApp -Exe $exe -Environment @{ HELIUM_CONFIG_DIR = $sandbox }

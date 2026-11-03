@@ -9,7 +9,10 @@
 function Start-HeliumApp {
     param(
         [Parameter(Mandatory = $true)][string]$Exe,
-        [hashtable]$Environment = @{}
+        [hashtable]$Environment = @{},
+        # 传给应用的参数（例如 --wallpaper=...）。用 ArgumentList 逐条加，
+        # 而不是拼一个字符串：路径里有空格（"dsh project"）拼字符串会被拆开。
+        [string[]]$Arguments = @()
     )
 
     foreach ($key in $Environment.Keys) {
@@ -26,6 +29,10 @@ function Start-HeliumApp {
     # 脚本结束了管道也不会 EOF —— 外面 `| tail` 会一直等（踩过：探针"卡住"其实是这个）。
     $info.RedirectStandardOutput = $true
     $info.RedirectStandardError = $true
+
+    foreach ($argument in $Arguments) {
+        $info.ArgumentList.Add($argument)
+    }
 
     return [System.Diagnostics.Process]::Start($info)
 }

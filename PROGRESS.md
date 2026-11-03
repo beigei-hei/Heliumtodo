@@ -3968,3 +3968,97 @@ build 0 警告 0 错误。
 - 十五项 `--check` 全部 `exit=0`（新增 `--anim-check`；`--perf-check` 八条断言全绿）
 - `--shell` → 7/7「全部页面渲染正常 ✔」
 - 指纹基线 177 文件，`git status --short` 为空
+## 2026-11-03 · 图标轨展开卡顿：钱不在过渡条数上，在"每帧重采样壁纸 + 整页重排"上
+
+> 用户第 (m13608) 轮反馈：**"外部的动效已经恢复正常，但问题变为内部控件（如显示功能详细面板）
+> 的控件展开动效出现问题"**。进一步确认：**左侧图标轨展开/收起**时"有动画但很卡、掉帧"。
+
+### 先量，再改
+
+| 场景（真机，260 ms 过渡） | 结果 |
+| --- | --- |
+| `--perf-check` 里"每帧写 `navRail.Width`，过渡还挂着" | **264–267 ms/帧（4 fps）** ← 假数 |
+| 只写一次、让过渡自己跑 | 3.6 ms/帧 ← 也是假数（无头里过渡不逐帧跑） |
+| 关掉轨道过渡后按帧写宽（诚实值，1400×900） | 20.1 ms/帧 |
+| 同上 + 降质（关阴影、低品质壁纸） | 19.7 ms/帧 → 降质几乎没用 |
+
+**第一条数字是这轮最大的教训**：我们在循环里每帧写一次 `Width`，过渡自己也每帧写一次，
+两边互相拉扯，量出来的是"打架的成本"，不是动画的成本。改性能之前先确认探针没有和被测对象打架。
+
+1400×900 下把老写法（每个按钮自己一条 `Width` 过渡）和新写法（只有轨道一条）都跑一遍：
+老 10.6–11.6 ms、新 12.1–14 ms —— **几乎一样，说明"1 + N 条过渡"不是主因**。
+换到 2560×1440（用户的实际屏幕）才露出真相：
+
+| 2560×1440 展开一次（真机） | ms/帧 | 折合 |
+| --- | --- | --- |
+| 有壁纸 + 降质开（改动前） | 50.2 | 20 fps |
+| 无壁纸 + 降质开 | 23.3 | 43 fps |
+| 有壁纸 + 降质关 | 139.8 | 7 fps |
+| 有壁纸 + 壁纸预缩放 + 降质开（改动后） | **31.7 / P50 23.1** | **≈43 fps** |
+| 同上，GPU 后端（`HELIUM_RENDER=angle`） | **13.5 / P50 12.2** | **≈74 fps** |
+
+结论：**大头是"壁纸每帧重新采样整张图"（约 +27 ms）和"整页重排"（约 +14 ms）**。
+过渡条数只是其中很小一块。
+
+### 改了什么
+
+1. **壁纸先缩放到窗口像素**（新文件 `HeliumTodo.App/Services/WallpaperScaler.cs`）：
+   `Scale(IImage source, PixelSize target)` 按 `UniformToFill` 规则算居中裁切，用
+   `RenderTargetBitmap` 画一张与窗口像素 1:1 的位图；`WallpaperImage` 改成 `Stretch="Fill"`，
+   尺寸变化时用 160 ms 防抖重做一次。动图壁纸例外（直接把原图交给 `UniformToFill`，
+   反正它每帧都要换）。**这是本轮最快的一刀：+27 ms → 0。**
+2. **全窗口只许一条属性在动**：条目按钮去掉自己的 `Width` 绑定与 `Transitions`，
+   用 `Classes.expanded="{Binding IsExpanded}"` 在展开态切成 `Width="NaN"` + `Stretch`
+   （收起态仍是 44×44，`--shell-check` 钉着这个数）。
+3. **名称改用 `Opacity` 淡入淡出**，不再用 `IsVisible` 切换：
+   可见性一改，布局树整段换一遍，展开第一帧要多花 25 ms。
+4. **动画期间顺手降质**：`MainWindow.BeginRailAnimation()` 把整段过渡包进
+   `InteractionQuality.Begin(RailMetrics.AnimationDurationMs, pauseWallpaper: false)`。
+   不开 `pauseWallpaper` 是因为 260 ms 的动画停一次视频再启要重新 seek，比不停更糟。
+   收尾用 `DispatcherTimer`（动画结束后没有帧，`RequestAnimationFrame` 永远等不到回调）。
+5. **时长只有一个来源**：`RailMetrics.AnimationDurationMs = 260`，界面过渡、降质时长、
+   自检断言三处共读。
+
+### 一个 XAML 编译器坑
+
+把 `<DoubleTransition>` 放进样式（`<Setter Property="Transitions">`）会让 XAML 编译器
+**内部**抛异常，不是报错而是一串 `AVLN2000: Internal compiler error: Index was out of range … (ResolveContentPropertyTransformer)`。
+过渡只能写在控件本身上。另外 XML 注释里不许出现 `--`（`--shell-check` 这种写法直接把文件编崩）。
+
+### 断言口径：把"最慢一帧"拆成 P95 + 尖峰
+
+`--perf-check` 原来有一条"最慢一帧 < 2 × P50"，这轮它随机变红：
+实测 `P50 63.2 ms / 最慢 134.6 ms`（比值 2.13），肉眼完全看不出卡 —— 一轮只采 20 多帧，
+GC 或别的进程抢一下就会打出孤立的一帧。于是拆成两条：
+
+| 断言 | 判据 | 作用 |
+| --- | --- | --- |
+| 帧间隔没有失控 | `P95 < 2 × P50` | 尾部整体抬高 = 真卡顿 |
+| 最慢一帧没有离谱 | `最慢 < 4 × P50` | 拦住"单帧 5 倍"那种明显跳变 |
+
+规则在 `HeliumTodo.Core/Windowing/WindowTransitionPolicy.cs`（`IsFramePacingAcceptable` /
+`IsWorstFrameAcceptable`），`--perf-check` 与真机探针用同一条。
+
+### 新增/改动的验证方式
+
+- `tools/probe-rail-anim.ps1`（真机）：开 `HELIUM_RAIL_TRACE=1` + `HELIUM_RAIL_TEST=1`，
+  读 `background.log` 里的 `[图标轨] 第 N 帧 间隔 X ms 已用 Y ms`，只统计动画窗口内
+  （`已用 ≤ 260 ms`）且丢掉第一帧，判据 **帧数 ≥ 10 / P50 ≤ 16.7 ms / P95 ≤ 33.3 ms**，
+  最慢一帧只记录不判红（单帧尖峰不是体感）。
+  实测 1400×900：**21 帧，P50 11.1 ms，P95 13.9 ms（≈86 fps）**。
+- `--rail-check` 20 → **23 条**：按钮宽从"钉 176"改成"跟着轨道一起变"的关系式、
+  新增"导航按钮自己没有宽度动画"、名称改用三条透明度断言（展开不透明 / 始终在布局里 / 收起透明）。
+- `--perf-check` 8 → **10 条**，N/O 两档重写成"临时摘掉轨道过渡再按帧写宽"，删掉会打架的 P 档。
+
+### 门禁
+
+- `dotnet build HeliumTodo.slnx -c Debug` → 0 警告 0 错误
+- `SelfTest` → **187/187**（新增「孤立的单帧尖峰可以容忍但连续抬高不行」）
+- 十五项 `--check` 全部 `exit=0`；`--shell` → 7/7
+- 真机 `probe-rail-anim.ps1` → 21 帧 / P50 11.1 ms ✔
+
+### 剩下的那一截
+
+2560×1440 + 壁纸 + **软件渲染**仍然只有 ≈25–43 fps（整页重排 + 全窗光栅化的固定成本）。
+同一台机器换 GPU 后端（`HELIUM_RENDER=angle`）直接到 **16 帧 / 74 fps**。
+所以"要不要把默认渲染后端从 `Software` 改成 `Auto`"这个待拍板项，现在多了一组更硬的数字。

@@ -56,7 +56,7 @@ internal sealed class InteractionQuality
     /// 才值得停掉动图壁纸 —— 视频壁纸重启要重新 seek + 解码首帧，
     /// 为一个 180ms 的过渡付这个代价是负收益。拖拽改大小不断言时长，按"很久"算。
     /// </param>
-    public IDisposable Begin(int expectedDurationMs = int.MaxValue)
+    public IDisposable Begin(int expectedDurationMs = int.MaxValue, bool pauseWallpaper = true)
     {
         if (_disabled)
         {
@@ -65,7 +65,7 @@ internal sealed class InteractionQuality
 
         if (_depth++ == 0)
         {
-            Enter(expectedDurationMs);
+            Enter(expectedDurationMs, pauseWallpaper);
         }
 
         return new Scope(this);
@@ -79,7 +79,7 @@ internal sealed class InteractionQuality
     private static readonly bool _disabled =
         Environment.GetEnvironmentVariable("HELIUM_NO_INTERACTION_QUALITY") == "1";
 
-    private void Enter(int expectedDurationMs)
+    private void Enter(int expectedDurationMs, bool pauseWallpaper)
     {
         if (ResolveWallpaper() is { } image)
         {
@@ -90,7 +90,9 @@ internal sealed class InteractionQuality
 
         // 只有"动得够久"才值得停掉动图壁纸：视频壁纸重启要重新 seek + 解码首帧，
         // 为一个 180ms 的过渡付这个代价是负收益。规则在 Core 里，能单测。
-        if (WindowTransitionPolicy.ShouldPauseWallpaper(expectedDurationMs))
+        // 图标轨展开这种 260ms 的动画传 pauseWallpaper: false —— 它停得下、动完再播时
+        // 视频要重新 seek，肉眼看到的是"卡一下"，比不停还糟。
+        if (pauseWallpaper && WindowTransitionPolicy.ShouldPauseWallpaper(expectedDurationMs))
         {
             PauseWallpaperAnimation();
         }

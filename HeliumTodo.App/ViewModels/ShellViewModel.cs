@@ -42,13 +42,29 @@ public sealed partial class ShellViewModel : ViewModelBase
     /// <summary>当前轨道宽度（收起 56 / 展开 188），界面绑它，Transition 负责动画。</summary>
     public double RailWidth => RailMetrics.RailWidth(IsRailExpanded);
 
+    /// <summary>
+    /// 轨道宽度过渡的时长。
+    /// 从 <see cref="RailMetrics.AnimationDurationMs"/> 来，XAML 只绑定、不写字面量 ——
+    /// 否则改时长要同时改 XAML、改降质时长、改自检三处。
+    /// </summary>
+    public TimeSpan RailAnimationDuration => TimeSpan.FromMilliseconds(RailMetrics.AnimationDurationMs);
+
     /// <summary>当前每个导航按钮的宽度，条目模板绑它。</summary>
     public double RailItemWidth => RailMetrics.ItemWidth(IsRailExpanded);
+
+    /// <summary>
+    /// 条目名称的透明度（收起 0 / 展开 1）。
+    /// 这里刻意不用 IsVisible：改可见性会把整棵布局树换一遍，展开动画的第一帧
+    /// 要为 7 个名称重新排版一次（实测那一帧要 25 ms，是整段动画里唯一的尖峰）。
+    /// 名称一直待在布局里、只是透明，轨道用 ClipToBounds 裁掉超出的部分即可。
+    /// </summary>
+    public double RailLabelOpacity => IsRailExpanded ? 1.0 : 0.0;
 
     partial void OnIsRailExpandedChanged(bool value)
     {
         OnPropertyChanged(nameof(RailWidth));
         OnPropertyChanged(nameof(RailItemWidth));
+        OnPropertyChanged(nameof(RailLabelOpacity));
         OnPropertyChanged(nameof(RailToggleGlyph));
 
         // 条目自己也要知道 —— 模板里拿不到外壳 VM（数据上下文是条目本身），
@@ -109,6 +125,13 @@ public sealed partial class ShellViewModel : ViewModelBase
 
     private readonly WallpaperService? _wallpaper;
 
+    /// <summary>
+    /// 壁纸是不是会动的（动图 / 视频）。
+    /// 窗口按这个决定"要不要把图预缩放成窗口尺寸"：动图每帧都是新图，
+    /// 预缩放等于每帧多做一次全窗口绘制，不划算（见 WallpaperScaler 的注释）。
+    /// </summary>
+    public bool IsWallpaperAnimated => _wallpaper?.IsAnimated == true;
+
     public ShellViewModel(IServiceProvider services, PluginHost pluginHost)
     {
         _services = services;
@@ -141,6 +164,7 @@ public sealed partial class ShellViewModel : ViewModelBase
 
     private void RefreshWallpaper()
     {
+        OnPropertyChanged(nameof(IsWallpaperAnimated));
         WallpaperImage = _wallpaper?.CurrentFrame;
         IsWallpaperVisible = _wallpaper is { IsLoaded: true } && WallpaperImage is not null;
     }
@@ -260,10 +284,26 @@ public sealed partial class NavigationItemViewModel : ObservableObject
     [ObservableProperty]
     private bool _isExpanded;
 
+    /// <summary>
+    /// 名称的透明度（收起 0 / 展开 1），模板绑它而不是绑 IsVisible。
+    ///
+    /// 为什么不用可见性：改可见性会把整棵布局树换一遍，展开动画的第一帧要为
+    /// 所有名称重新排一次版（实测那一帧 25 ms，是整段动画里唯一的尖峰）。
+    /// 名称一直待在布局里、只是透明，轨道用 ClipToBounds 裁掉超出的部分。
+    /// </summary>
+    public double RailLabelOpacity => IsExpanded ? 1.0 : 0.0;
+
+    /// <summary>名称淡入的时长（和轨道宽度同一个数，都来自 RailMetrics）。</summary>
+    public TimeSpan RailAnimationDuration => TimeSpan.FromMilliseconds(RailMetrics.AnimationDurationMs);
+
     /// <summary>条目宽度：收起 44、展开 176（和轨道同源，见 RailMetrics）。</summary>
     public double ItemWidth => HeliumTodo.Core.Theming.RailMetrics.ItemWidth(IsExpanded);
 
-    partial void OnIsExpandedChanged(bool value) => OnPropertyChanged(nameof(ItemWidth));
+    partial void OnIsExpandedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(RailLabelOpacity));
+        OnPropertyChanged(nameof(ItemWidth));
+    }
 
     public NavigationItemViewModel(string icon, string title, Func<object> pageFactory)
     {

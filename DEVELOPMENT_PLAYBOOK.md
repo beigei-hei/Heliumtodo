@@ -212,7 +212,7 @@ pwsh tools\check-file-integrity.ps1
 **跑（约 3 分钟）**
 ```powershell
 dotnet build HeliumTodo.slnx -c Debug                                  # 应为 0 警告 0 错误
-dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll   # 应为 186/186
+dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll   # 应为 187/187
 dotnet HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll --shell
 pwsh tools\check-file-integrity.ps1                                    # 应为 158 文件一致
 ```
