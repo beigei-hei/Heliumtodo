@@ -33,43 +33,33 @@ internal static class Program
             .WithInterFont()              // 内置 Inter 字体，避免换台电脑字体就变了
             .LogToTrace();                // 日志输出到调试窗口
 
-        // 默认用软件渲染，理由见 CreateWin32Options 的注释。
+        // 默认用自动（显卡）渲染，理由见 CreateWin32Options 的注释。
         return builder.With(CreateWin32Options());
     }
 
     /// <summary>
-    /// 决定用哪个渲染后端：默认软件渲染，<c>HELIUM_RENDER</c> 环境变量可以覆盖。
+    /// 决定用哪个渲染后端。优先级：<c>HELIUM_RENDER</c> 环境变量 &gt; 设置页里的「底层设置」&gt;
+    /// 出厂默认（自动，也就是 Windows 上的 ANGLE → D3D11）。
     ///
-    /// 【为什么默认软件渲染？】
-    ///   Windows 上 Avalonia 默认走 ANGLE → D3D11，也就是把画面交给显卡驱动合成。
-    ///   代价是会把这套驱动模块全部映射进进程：实测这台机器上一次启动就多出
-    ///   nvgpucomp64 (94 MB) + nvwgf2umx (86 MB) + nvppex (7 MB)，线程从 19 条涨到 84 条，
-    ///   私有工作集 48 MB → 69 MB。
-    ///   而这个界面是纯 2D 的卡片 + 少量 180ms 动画，软件渲染（Skia CPU）完全够用，
-    ///   所以把默认换成软件渲染，用一点 CPU 换回二十多兆内存和六十多条线程。
+    /// 【为什么默认交给显卡？这笔账算过两次】
+    ///   第一次（0.3.3）把默认定成软件渲染，图的是省内存：ANGLE 会把整套显卡驱动模块
+    ///   映射进进程 —— 实测这台机器上多出 nvgpucomp64（94 MB）+ nvwgf2umx（86 MB）
+    ///   + nvppex（7 MB），线程 19 → 84 条，句柄 481 → 846，私有字节 78.2 → 256.9 MB。
+    ///   当时的判断是"这个界面纯 2D，Skia 在 CPU 上完全够用"，所以用 CPU 换内存。
     ///
-    /// 为什么要留环境变量口子？
-    ///   4K 屏 + 大量动画的用户可能更想要 GPU；渲染后端必须在 Avalonia 初始化
-    ///   「之前」定下来（那时配置文件还没读），所以只能走环境变量而不是设置项。
-    ///   想换回显卡渲染：<c>set HELIUM_RENDER=angle</c>，另外还有 <c>wgl</c> / <c>vulkan</c>。
-    /// </summary>
-    /// <summary>
-    /// 决定用哪个渲染后端。优先级：<c>HELIUM_RENDER</c> 环境变量 &gt; 设置页里的「底层设置」&gt; 默认软件渲染。
+    ///   第二次（0.3.5）改回来自动。原因是窗口动效补齐之后，软件渲染的固定开销藏不住了：
+    ///   每次改窗口尺寸要 45 ms（2560×1440 上是整页重排 + 全窗光栅化），
+    ///   图标轨展开动画只有 25–43 fps；同一台机器换 ANGLE 是 74 fps。
+    ///   也就是说——省下来的二十多兆私有内存，是用"动效掉一半帧"换的，不划算。
     ///
-    /// 【为什么默认软件渲染？】
-    ///   Windows 上 Avalonia 默认走 ANGLE → D3D11，也就是把画面交给显卡驱动合成。
-    ///   代价是会把这套驱动模块全部映射进进程：实测这台机器上一次启动就多出
-    ///   nvgpucomp64 (94 MB) + nvwgf2umx (86 MB) + nvppex (7 MB)，线程从 19 条涨到 84 条，
-    ///   私有工作集 48 MB → 69 MB。
-    ///   而这个界面是纯 2D 的卡片 + 少量 180ms 动画，软件渲染（Skia CPU）完全够用，
-    ///   所以把默认换成软件渲染，用一点 CPU 换回二十多兆内存和六十多条线程。
+    ///   想省回内存随时可以改：设置 → 底层设置 → 渲染后端选"软件渲染"，
+    ///   或者设环境变量 <c>HELIUM_RENDER=software</c>。两个方向的数字都记在 TECH_STACK.md 里。
     ///
-    /// 【现在可以在设置里改了】
-    ///   设置 → 底层设置 → 渲染后端，可选 Avalonia 自带渲染器 / OpenGL / 软件 / Vulkan。
-    ///   因为渲染后端必须在 Avalonia 初始化「之前」定下来（那时配置文件都还没读），
-    ///   这个设置只在启动时生效一次，改完要重启程序。
-    ///   环境变量仍然优先，用于"界面看不清了"时兜底：
-    ///   <c>set HELIUM_RENDER=angle</c>，另外还有 <c>wgl</c> / <c>vulkan</c> / <c>software</c>。
+    /// 【为什么还要留环境变量这个口子？】
+    ///   渲染后端必须在 Avalonia 初始化「之前」定下来（那时配置文件都还没读），
+    ///   所以真正读配置是 <see cref="RenderBackendChoice.Resolve"/> 自己开一个 ConfigService 干的。
+    ///   环境变量排在配置前面，是为了"界面已经看不清、点不动设置页"时还能救回来：
+    ///   <c>set HELIUM_RENDER=software</c>（或 angle / wgl / vulkan）就能起来。
     /// </summary>
     private static Win32PlatformOptions CreateWin32Options()
     {

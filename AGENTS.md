@@ -66,6 +66,7 @@
 - 不提交/遗留临时物：`output/`、`_probe-*`、`tools/_*.py`、`.tmp-*`。
 - 不改 `PROGRESS.md` 里的历史小节（旧版本号与旧数字是当时的事实）。
 - 不擅自升级 Avalonia / SkiaSharp 版本（SkiaSharp 必须与 Avalonia 传递依赖同版，否则运行期崩）。
+- 不把默认渲染后端改回 `Software`：默认是 `Auto`（显卡），理由是动效帧率（见 `ARCHITECTURE.md` §18.2 与 §19.9）。想省内存是**用户**在设置页里选，不是我们替他选。
 - 不在写法里引入 `unsafe`（项目未开 `AllowUnsafeBlocks`）。
 - 不为了省事关掉自检项（`--layout-check` 这类是为了防回归，红了要修根因）。
 

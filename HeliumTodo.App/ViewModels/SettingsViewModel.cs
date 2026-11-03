@@ -625,18 +625,18 @@ public sealed partial class SettingsViewModel : ViewModelBase
     //
     // 这一组放在「底层设置」里、默认收起，还要配一句"如非遇到渲染问题请勿调整" ——
     // 因为它不是功能开关，而是"界面画不出来时的救命绳"：
-    //   · 平时用软件渲染最省内存（见 Program.cs 里的实测数字）
-    //   · 但 4K 屏 + 大量动画，或者某个显卡驱动跟 Skia 的 CPU 路径不对付时，
-    //     换回显卡渲染才是解法
+    //   · 默认用显卡渲染（Avalonia 自带渲染器 → ANGLE → D3D11），窗口动效才跟得上 60 Hz
+    //   · 软件渲染省内存，但 2560×1440 上展开动画只有 25–43 fps（见 TECH_STACK.md）
+    //   · 某个显卡驱动不对劲、或者就是想在无显卡机器上跑，再选回软件渲染
     // 调错了不会弄坏数据，最坏就是画面更费资源或者起不来 —— 起不来时把
     // config.json 里的 RenderBackend 改成 "software"（或者设环境变量）就能救回来。
 
     /// <summary>可选的渲染后端。顺序、文案都按产品要求写死在这里，界面只负责摆。</summary>
     public ObservableCollection<RenderBackendOption> RenderBackends { get; } =
     [
+        new(RenderBackendSettings.Auto, "Avalonia 自带渲染器（默认，最流畅）"),
+        new(RenderBackendSettings.Software, "软件渲染（省内存，动画会掉帧）"),
         new(RenderBackendSettings.OpenGl, "OpenGL"),
-        new(RenderBackendSettings.Auto, "Avalonia 自带渲染器（默认）"),
-        new(RenderBackendSettings.Software, "软件渲染"),
         new(RenderBackendSettings.Vulkan, "Vulkan"),
     ];
 

@@ -344,10 +344,26 @@ public partial class MainWindow : Window
             && App.Services.GetService(typeof(Core.Configuration.ConfigService))
                 is Core.Configuration.ConfigService config)
         {
+            // 默认尺寸是 1920×1080（见 AppConfig.WindowWidth）。这里只做"配置被改坏了"的范围检查。
             Width = Math.Clamp(config.Current.WindowWidth, MinWidth, 4000);
             Height = Math.Clamp(config.Current.WindowHeight, MinHeight, 4000);
 
-            if (config.Current.StartMaximized)
+            // 屏幕装不下这个尺寸就最大化。
+            // 为什么必须管：Windows 建窗口只把宽度收进屏幕，高度照给 —— 实测这台
+            // 2560×1600 @150%（工作区 1706×1019 DIP）上请求 1920×1080 会得到
+            // 1724 DIP 宽、1084 DIP 高，底下那一截就探到屏幕外去了。
+            // 最大化之后宽度和高度都由系统按工作区给，正好铺满，比"露出半个窗口"体面。
+            var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
+            var fitsOnScreen = true;
+            if (screen is { } current)
+            {
+                var scaling = current.Scaling > 0 ? current.Scaling : 1.0;
+                var workWidth = current.WorkingArea.Width / scaling;
+                var workHeight = current.WorkingArea.Height / scaling;
+                fitsOnScreen = workWidth >= Width && workHeight >= Height;
+            }
+
+            if (config.Current.StartMaximized || !fitsOnScreen)
             {
                 WindowState = WindowState.Maximized;
             }

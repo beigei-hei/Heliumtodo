@@ -29,8 +29,23 @@ public static class RenderBackendSettings
     /// <summary>Vulkan。</summary>
     public const string Vulkan = "vulkan";
 
-    /// <summary>出厂默认值：软件渲染（理由见 Program.cs 的注释，简单说就是省内存）。</summary>
-    public const string Default = Software;
+    /// <summary>
+    /// 出厂默认值：<see cref="Auto"/>（Windows 上就是 ANGLE → D3D11）。
+    ///
+    /// 【这里改过一次，理由也换过一次，别改回去】
+    ///   0.3.3 曾经把默认值定成软件渲染，换来的好处是省内存：
+    ///   ANGLE 会把整套显卡驱动映射进进程（nvgpucomp64.dll 94 MB + nvwgf2umx.dll 86 MB），
+    ///   实测私有字节 78.2 MB → 256.9 MB、线程 19 → 84、句柄 481 → 846。
+    ///
+    ///   但 0.3.5 补完窗口动效之后，天平反过来了：软件渲染下每次改窗口尺寸要
+    ///   45 ms（2560×1440 上整页重排 + 全窗光栅化的固定成本），2560×1440 的展开动画
+    ///   只有 25–43 fps；同一台机器换 ANGLE 直接到 74 fps。用户明确要求"流畅优先"，
+    ///   所以默认值改回自动，内存那一笔照旧记在 TECH_STACK.md 里当已知代价。
+    ///
+    ///   想省回内存：设置页「底层设置 → 渲染后端」选回"软件渲染"，或者设
+    ///   环境变量 HELIUM_RENDER=software。
+    /// </summary>
+    public const string Default = Auto;
 
     /// <summary>
     /// 把配置文件里/环境变量里写的东西归一化成上面四个常量之一。

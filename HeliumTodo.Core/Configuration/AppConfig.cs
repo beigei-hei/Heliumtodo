@@ -60,11 +60,19 @@ public sealed class AppConfig
     /// </summary>
     public const int WallpaperCardOpacity = 82;
 
-    /// <summary>窗口宽度。</summary>
-    public double WindowWidth { get; set; } = 1280;
+    /// <summary>
+    /// 窗口宽度（首次启动 / 恢复默认时的尺寸）。
+    ///
+    /// 为什么是 1920×1080：三大核心功能里「每日工作流」和「专注时长」都是横向排布的，
+    /// 1400×900 那张布局在 1080p 屏上左右两侧的字会挤在一起；1920 是 1080p 屏的整数倍，
+    /// 也是"开箱即最大化"的常见做法。屏幕比它小时不用我们处理 —— Avalonia 建窗口时
+    /// 会把窗口收进屏幕工作区（实测 2560×1600 @150% 上得到 ≈1724×1080 DIP），
+    /// 所以这里写 1920×1080 不会在小屏上顶出屏幕。
+    /// </summary>
+    public double WindowWidth { get; set; } = 1920;
 
     /// <summary>窗口高度。</summary>
-    public double WindowHeight { get; set; } = 820;
+    public double WindowHeight { get; set; } = 1080;
 
     /// <summary>启动时窗口是否最大化。</summary>
     public bool StartMaximized { get; set; }

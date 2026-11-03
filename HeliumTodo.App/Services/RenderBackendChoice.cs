@@ -16,7 +16,7 @@ namespace HeliumTodo.App.Services;
 ///   读完把结果存成静态字段，等设置页建好了再回头看"当前生效的是哪个"。
 ///
 /// 【优先级】
-///   HELIUM_RENDER 环境变量 &gt; config.json 的 RenderBackend &gt; 出厂默认（软件渲染）。
+///   HELIUM_RENDER 环境变量 &gt; config.json 的 RenderBackend &gt; 出厂默认（自动/显卡）。
 ///   环境变量排第一是留给排障用的：设置项要重启才生效，
 ///   而"怀疑渲染出问题"的时候往往连界面都看不清，这时候用环境变量最快。
 /// </summary>

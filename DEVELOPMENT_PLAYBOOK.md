@@ -180,6 +180,11 @@ pwsh tools\check-file-integrity.ps1
 | `--reminder-check` | 提醒收集（窗口、去重、重复日程） |
 | `--window-check` | 窗口装饰、圆角、最大化动画的纯算术 |
 | `--restart-prompt-check` | 改渲染后端 → 确认弹窗 → 保存/取消/调试器分支（17 项） |
+| `tools/probe-defaults.ps1` | 真机：窗口默认 1920×1080（屏小则铺满工作区）、启动日志里的渲染后端是自动 |
+| `tools/probe-window-style.ps1` | 真机：`GWL_STYLE` 含 `WS_CAPTION`、窗口矩形 = 客户区 |
+| `tools/probe-native-anim.ps1` | 真机：最小化/最大化由 DWM 播过渡（采可见像素面积序列） |
+| `tools/probe-rail-anim.ps1` | 真机：图标轨展开的帧间隔（帧数 ≥ 10、P50 ≤ 16.7 ms、P95 ≤ 33.3 ms） |
+| `tools/probe-minimize-restore.ps1` | 真机：最小化立刻收尾、从任务栏回来补播出现动画 |
 | `--notice-check` | 提示条占一行、不压内容（5 项） |
 | `--appearance-check` | 明暗模式、卡片玻璃浓度、壁纸灰蒙版（14 项） |
 | `--layout-check` | 六页分区一致：左 12 / 顶 64 / 卡片间无漏底色 / 标题 24px（6 页 × 6 项） |

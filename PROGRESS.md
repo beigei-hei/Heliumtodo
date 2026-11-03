@@ -4124,3 +4124,76 @@ GC 或别的进程抢一下就会打出孤立的一帧。于是拆成两条：
 2. **`Start-Process` 在这个会话里等于死锁**。凡是要起子进程，一律走 `probe-common.ps1`。
 3. **无头截图的 `--wallpaper` 是个幌子**：它只改 VM 状态。以后再加"渲染图层"的东西，
    要确认截图路径真的会画到它。
+## 2026-11-03 · 出厂默认值：窗口 1920×1080，渲染后端改回显卡
+
+`User said (m14125)`：
+
+> 修改默认打开窗口大小为1920*1080，更改项目版本号为0.3.5-alpha，并且根据昨日的修改的反馈，允许默认渲染后端改成Auto
+
+### 三件事的实际状态
+
+| 要求 | 状态 | 说明 |
+| --- | --- | --- |
+| 默认窗口 1920×1080 | **改了两处** | `AppConfig.WindowWidth/Height`（真正生效的那处，`OnOpened` 会拿它覆盖 XAML）与 `MainWindow.axaml`（设计期的初值） |
+| 版本号 0.3.5-alpha | **本来就是** | `Directory.Build.props` 已经写着 `0.3.5-alpha` / `0.3.5.0`，代码与文档里的引用也全是 0.3.5；这一条无需改动 |
+| 默认后端改 `Auto` | **改了** | `RenderBackendSettings.Default` 从 `Software` 改成 `Auto`，设置页选项顺序与文案、测试断言、启动日志跟着改 |
+
+### 默认尺寸：屏幕装不下就最大化
+
+只改数字是不够的。实测这台机器 **2560×1600 @150%**（工作区 1706×1019 DIP）：
+
+- 请求 1920×1080 DIP，Windows 只把**宽度**收进屏幕（得 1724 DIP），**高度照给**（1084 DIP）——
+  底下那一截探到屏幕外去了；
+- 所以 `MainWindow.OnOpened` 补了一条判断：算一下工作区折成 DIP 装不装得下，
+  装不下就 `WindowState = Maximized`。最大化之后宽高都由系统按工作区给，正好铺满。
+
+真机验证（新增 `tools/probe-defaults.ps1`）：
+
+```
+  屏幕工作区 2560x1528 px
+  客户区 2560x1528 px　DPI 144（缩放 1.5）　折合 1707x1019 DIP
+  ✔ 默认窗口尺寸对得上（期望 1707×1019 DIP）
+  启动日志：… 渲染后端=Avalonia 自带渲染器
+  ✔ 默认渲染后端是自动（显卡）
+```
+
+（探测脚本自己先 `SetProcessDpiAwarenessContext`，否则 PowerShell 是 DPI 不感知的，
+`GetClientRect` 拿到的数会被 Windows 除以缩放 —— 第一次就量出个 1147×704 的假尺寸。）
+
+### 默认后端：这笔账算过两次
+
+| 版本 | 默认 | 理由 |
+| --- | --- | --- |
+| 0.3.3 | `Software` | 省内存：ANGLE 把 `nvgpucomp64`(94 MB) + `nvwgf2umx`(86 MB) + `nvppex`(7 MB) 映射进进程，私有字节 78.2 → 256.9 MB、线程 19 → 84、句柄 481 → 846 |
+| **0.3.5** | **`Auto`** | 动效流畅：软件渲染每改一次窗口尺寸 45 ms，2560×1440 上图标轨展开只有 25–43 fps，同机 ANGLE 74 fps |
+
+一句话：**省下来的二十多兆私有内存，是用"动效掉一半帧"换的**。想省回去随时可以在
+设置页「底层设置 → 渲染后端」选"软件渲染"，或设 `HELIUM_RENDER=software`。
+
+### 改了哪些文件
+
+| 文件 | 改动 |
+| --- | --- |
+| `HeliumTodo.Core/Configuration/AppConfig.cs` | `WindowWidth = 1920` / `WindowHeight = 1080`；注释写明"屏小会最大化" |
+| `HeliumTodo.App/Views/MainWindow.axaml` | `Width="1920" Height="1080"` |
+| `HeliumTodo.App/Views/MainWindow.axaml.cs` | `OnOpened` 里"装不下就最大化" |
+| `HeliumTodo.Core/Configuration/RenderBackendSettings.cs` | `Default = Auto` + 两次取舍的完整注释 |
+| `HeliumTodo.App/ViewModels/SettingsViewModel.cs` | 选项顺序 Auto 优先，文案"（默认，最流畅）"/"（省内存，动画会掉帧）" |
+| `HeliumTodo.App/Program.cs` | 两段重复的文档注释合并成一段，讲清两次取舍 |
+| `HeliumTodo.App/App.axaml.cs` | 启动日志加"渲染后端=…（环境变量指定）" |
+| `HeliumTodo.Tests/RenderBackendSettingsTests.cs` | `默认后端应是自动显卡渲染()`；显示名回落到 `Default` 而不是写死软件渲染 |
+| `tools/probe-defaults.ps1`（新） | 真机验证上面两件事 |
+
+### 门禁
+
+- `dotnet build HeliumTodo.slnx -c Debug` → 0 警告 0 错误
+- `SelfTest` → **187/187**
+- 十五项 `--check` 全部 `exit=0`、失败 0；`--shell` → 7/7
+- 真机 `probe-defaults.ps1` → 两项 ✔
+
+### 两条经验
+
+1. **"默认值"有两处，改一处等于没改**。`AppConfig` 的默认值会在 `OnOpened` 覆盖 XAML，
+   所以只改 XAML 只在设计器里看得见。以后加默认值，先找"谁最后赋值"。
+2. **系统不一定替你收窗口**。Windows 只把宽度收进屏幕、高度照给；"开箱 1080p"这种需求
+   必须自己判断一次工作区，否则用户第一眼看到的是探出屏幕的窗口。

@@ -16,12 +16,15 @@ namespace HeliumTodo.Tests;
 public class RenderBackendSettingsTests
 {
     [Fact]
-    public void 默认后端应是软件渲染()
+    public void 默认后端应是自动显卡渲染()
     {
-        // 默认值不是随手定的：软件渲染省掉整套显卡驱动映射（实测 −178 MB 私有字节），
-        // 这条要是被谁改了，内存会悄悄涨回去而没人发现。
-        Assert.Equal("software", RenderBackendSettings.Default);
-        Assert.Equal(RenderBackendSettings.Software, new AppConfig().RenderBackend);
+        // 默认值不是随手定的，它换过一次方向：
+        //   · 0.3.3 定成软件渲染 —— 省掉整套显卡驱动映射（实测 −178 MB 私有字节）；
+        //   · 0.3.5 改回自动 —— 软件渲染下 2560×1440 的窗口动效只有 25–43 fps，
+        //     换 ANGLE 是 74 fps，用户明确要流畅优先。
+        // 谁要改这个值，先看 TECH_STACK.md 里两边的数字。
+        Assert.Equal("auto", RenderBackendSettings.Default);
+        Assert.Equal(RenderBackendSettings.Auto, new AppConfig().RenderBackend);
     }
 
     [Fact]
@@ -71,8 +74,9 @@ public class RenderBackendSettingsTests
         Assert.Equal("OpenGL", RenderBackendSettings.DisplayName(RenderBackendSettings.OpenGl));
         Assert.Equal("Vulkan", RenderBackendSettings.DisplayName(RenderBackendSettings.Vulkan));
 
-        // 写错的值也必须有名字可显示（界面不能出现空白项）
-        Assert.Equal("软件渲染", RenderBackendSettings.DisplayName("???"));
+        // 写错的值也必须有名字可显示（界面不能出现空白项），回落目标就是默认后端
+        Assert.Equal(RenderBackendSettings.DisplayName(RenderBackendSettings.Default),
+            RenderBackendSettings.DisplayName("???"));
     }
 
     [Fact]

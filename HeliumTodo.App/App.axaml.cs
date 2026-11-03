@@ -227,7 +227,9 @@ public partial class App : Application
 
         LogBackground($"[环境] 会话={System.Diagnostics.Process.GetCurrentProcess().SessionId}"
                       + $" 管理员={IsElevated()}"
-                      + $" 资源管理器={DescribeExplorer()}");
+                      + $" 资源管理器={DescribeExplorer()}"
+                      + $" 渲染后端={Core.Configuration.RenderBackendSettings.DisplayName(HeliumTodo.App.Services.RenderBackendChoice.ActiveKey)}"
+                      + $"{(_hasEnvironmentOverride ? "（环境变量指定）" : string.Empty)}");
 
         _tray.Trace = LogBackground;
 
@@ -329,6 +331,10 @@ public partial class App : Application
             return "查不到";
         }
     }
+
+    /// <summary>这次的后端是不是环境变量硬点的（环境变量优先于设置页，界面上要提示一句）。</summary>
+    private static bool _hasEnvironmentOverride =>
+        !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("HELIUM_RENDER"));
 
     internal static void LogBackground(string message)
     {
