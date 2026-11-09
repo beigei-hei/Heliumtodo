@@ -1,4 +1,4 @@
-﻿# 验证「最小化 / 最大化」是 DWM 在播过渡动画，而不是硬切。
+# 验证「最小化 / 最大化」是 DWM 在播过渡动画，而不是硬切。
 #
 # 为什么需要这个脚本：
 #   DWM 的原生过渡**只改视觉，不改窗口矩形** —— 所以以前那个采样 GetWindowRect
@@ -67,7 +67,7 @@ function Capture-Bytes([System.Drawing.Bitmap]$bitmap) {
     }
 }
 
-$exe = (Resolve-Path (Join-Path $PSScriptRoot '..\HeliumTodo.App\bin\Debug\net10.0\HeliumTodo.App.exe')).Path
+$exe = (Resolve-Path (Join-Path $PSScriptRoot '..\HeliumTodo.Desktop\bin\Debug\net10.0\HeliumTodo.Desktop.exe')).Path
 # 沙盒放系统临时目录：以前放在仓库里，探针中途崩掉就会在 tools/ 下留一堆垃圾目录。
 $sandbox = Join-Path ([System.IO.Path]::GetTempPath()) ('helium-probe-native-' + [guid]::NewGuid().ToString('N'))
 $null = New-Item -ItemType Directory -Path $sandbox

@@ -1,9 +1,9 @@
-﻿# 查 DWM 对这个窗口的"额外开关"：
+# 查 DWM 对这个窗口的"额外开关"：
 #   attr 1 = DWMWA_NCRENDERING_ENABLED   —— DWM 有没有在画非客户区（阴影/边框/圆角都靠它）
 #   attr 3 = DWMWA_TRANSITIONS_FORCEDISABLED —— 这个窗口是不是被强制关掉了过渡动画
 # 后者为 TRUE 的话，最大化一定跳变，而且跟我们自己的代码没关系。
 param(
-    [string]$ExePath = "HeliumTodo.App\bin\Debug\net10.0\HeliumTodo.App.exe"
+    [string]$ExePath = "HeliumTodo.Desktop\bin\Debug\net10.0\HeliumTodo.Desktop.exe"
 )
 
 $ErrorActionPreference = "Stop"

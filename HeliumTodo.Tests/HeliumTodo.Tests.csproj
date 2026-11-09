@@ -22,14 +22,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HeliumTodo.Core\HeliumTodo.Core.csproj" />
+    <ProjectReference Include="..\HeliumTodo.Application\HeliumTodo.Application.csproj" />
+    <ProjectReference Include="..\HeliumTodo.Domain\HeliumTodo.Domain.csproj" />
     <!--
       联机的测试要在本机真开两个 TCP 端口互相对话，
-      而传输层的实现（LanPeerTransport）在 Data 层，所以要引用它。
-      这也是唯一引用 Data 的测试文件所在的项目 ——
-      其余测试都只依赖 Core，保持"纯逻辑"的轻量。
+      而传输层的实现（LanPeerTransport）在 Infrastructure 层，所以要引用它。
+      这也是唯一引用 Infrastructure 的测试文件所在的项目 ——
+      其余测试都只依赖 Domain，保持"纯逻辑"的轻量。
     -->
-    <ProjectReference Include="..\HeliumTodo.Data\HeliumTodo.Data.csproj" />
+    <ProjectReference Include="..\HeliumTodo.Infrastructure\HeliumTodo.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

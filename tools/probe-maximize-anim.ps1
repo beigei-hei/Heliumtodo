@@ -1,4 +1,4 @@
-﻿# 验证"最大化是不是真的在动"。
+# 验证"最大化是不是真的在动"。
 #
 # 思路：自己写的动画是每帧改 Position/Width/Height，
 # 所以从外面（GetWindowRect）能采到中间尺寸。
@@ -6,7 +6,7 @@
 #
 # 触发方式：给程序设 HELIUM_MAXIMIZE_TEST=1，它启动 1.5 秒后自己点一次最大化。
 param(
-    [string]$ExePath = "HeliumTodo.App\bin\Debug\net10.0\HeliumTodo.App.exe"
+    [string]$ExePath = "HeliumTodo.Desktop\bin\Debug\net10.0\HeliumTodo.Desktop.exe"
 )
 
 $ErrorActionPreference = "Stop"

@@ -1,7 +1,7 @@
-﻿# 量一下"最大化"以后窗口到底占了多大。
+# 量一下"最大化"以后窗口到底占了多大。
 # 关键点：最大化必须停在工作区（不能盖住任务栏），否则自定义边框就玩坏了。
 param(
-    [string]$ExePath = "HeliumTodo.App\bin\Debug\net10.0\HeliumTodo.App.exe"
+    [string]$ExePath = "HeliumTodo.Desktop\bin\Debug\net10.0\HeliumTodo.Desktop.exe"
 )
 
 $ErrorActionPreference = "Stop"

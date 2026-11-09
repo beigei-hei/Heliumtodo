@@ -81,9 +81,9 @@
 
 - **触发**：准备拆文件 / 抽接口 / 判断"这坨逻辑该放哪一层"。
 - **铁律（本项目已定型）**：
-  - `HeliumTodo.Core` **不许引用 Avalonia、EF Core**（换了界面框架、换了数据库，它一行不用改）。
-  - 纯逻辑（可测的算术、规则）优先放进 `Core`，界面只做装配。实例：`TimelineMetrics`（时间轴左侧刻度宽 46 + 间隙 8）、`PlaybackLimits`（30 帧/秒）、`RestartPolicy`（调试器里不许自己重启）都属于"抽出来才好测"。
-  - 界面层的重活抽到 `HeliumTodo.App/Windowing/`、`Services/`，`MainWindow.axaml.cs` 只做装配。
+  - `HeliumTodo.Domain` **不许引用 Avalonia、EF Core**（换了界面框架、换了数据库，它一行不用改）。
+  - 纯逻辑（可测的算术、规则）优先放进 `Domain`，界面只做装配。实例：`TimelineMetrics`（时间轴左侧刻度宽 46 + 间隙 8）、`PlaybackLimits`（30 帧/秒）、`RestartPolicy`（调试器里不许自己重启）都属于"抽出来才好测"。
+  - 界面层的重活抽到 `HeliumTodo.Desktop/Windowing/`、`Services/`，`MainWindow.axaml.cs` 只做装配。
 
 ### 7. `code-review` — 收尾审查
 
@@ -154,10 +154,10 @@ dotnet build HeliumTodo.slnx -c Debug
 dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll
 
 # ③ 界面渲染：6 个页面 + 外壳，输出到 output/render/
-dotnet HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll --shell
+dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --shell
 
 # ④ 十二项行为自检（每项都要 exit=0 且 fails=0）
-$rc = "HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll"
+$rc = "HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll"
 foreach ($c in "--shell-check","--refresh-check","--room-check","--backup-check",
                "--folder-check","--timeline-check","--reminder-check","--window-check",
                "--restart-prompt-check","--notice-check","--appearance-check","--layout-check") {
@@ -219,15 +219,15 @@ pwsh tools\check-file-integrity.ps1
 ```powershell
 dotnet build HeliumTodo.slnx -c Debug                                  # 应为 0 警告 0 错误
 dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll   # 应为 190/190
-dotnet HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll --shell
+dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --shell
 pwsh tools\check-file-integrity.ps1                                    # 应为 158 文件一致
 ```
 四步全绿 = 环境没问题，可以开始改东西。
 
 **第一次改代码时注意**
 - 用 `HeliumTodo.slnx`（不是 `.sln`），SDK 必须 10.0.401+（见 `global.json`）。
-- 只改界面：改 `HeliumTodo.App/Views/*.axaml` + 对应 ViewModel；**不要顺手改 `Core`**。
-- 只改算法：改 `Core` → 先在 `HeliumTodo.Tests` 里加红测试。
+- 只改界面：改 `HeliumTodo.Desktop/Views/*.axaml` + 对应 ViewModel；**不要顺手改 `Domain`**。
+- 只改算法：改 `Domain` → 先在 `HeliumTodo.Tests` 里加红测试。
 - 任何"看起来是样式问题"的界面 bug，先怀疑**主题字典优先级**与**控件 FINAL 属性**（`ARCHITECTURE.md` §19.6 / §19.4）。
 
 ---
@@ -238,7 +238,7 @@ pwsh tools\check-file-integrity.ps1                                    # 应为 
 
 1. **版本管理已就位**（2026-11-02）。`main` = 发布线、`dev` = 开发线，标签打版本（当前 `v0.3.5-alpha`）。`.gitignore` 挡掉了 `bin/`、`obj/`、`dist/`、`Data/`、`output/`、`_probe-*`、`.vs/`、`.idea/`；`.gitattributes` 统一按 LF 存。约定：每轮一个提交，消息写"做了什么 + 为什么"；交付前 `git status` 必须是干净的（临时物不许混进来）。仓库外的整包备份放 `D:\代码\dsh project\HeliumTodo-backups\`（`git archive` 导出的源码 zip）。
 2. **`GLOSSARY.md`**（`domain-modeling` 的标准产物）。目前术语散在 `ARCHITECTURE.md` 里；建议把"日程 / 待办 / 专注 / 时间块 / 冲突 / 车道(lane)"等词各写一句定义。
-3. **`docs/adr/`**：重大决策（软件渲染为默认、Media Foundation 而非 ffmpeg、`Core` 不许引用 Avalonia）值得各留一份 ADR。现在它们只写在 `PROGRESS.md` 的叙述里。
+3. **`docs/adr/`**：重大决策（软件渲染为默认、Media Foundation 而非 ffmpeg、`Domain` 不许引用 Avalonia）值得各留一份 ADR。现在它们只写在 `PROGRESS.md` 的叙述里。
 4. **构建提速**（已诊断、待实施）：验证回路用 `--no-build`、把 12 次启动合并成单进程 `--all-checks`。实测 12 项自检串行 `--no-build` 约 57.5 秒，带构建检查 70 秒以上；单进程可省掉重复的 Avalonia 初始化。
 5. **C++ 移植工程**（`cpp/`）不在本工作区。本手册只覆盖 C# 版本；`PORTING_TO_CPP.md` 与 `cpp/PORTING_PROGRESS.md` 是那边的独立流程。
 

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    HeliumTodo.Application —— 应用层（0.5.0 新增）
+    用例编排、DTO/结果类型、平台接口契约、配置与应用级抽象。
+    只允许依赖 HeliumTodo.Domain，不许引用 Avalonia 控件、EF Core、Npgsql。
+
+    P0 阶段只建立工程与依赖方向（见 DEVELOPMENT_SPEC.md §3.1）；
+    具体类型在 P1 从旧 Core 迁入，本阶段不搬任何逻辑。
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>HeliumTodo.Application</RootNamespace>
+    <AssemblyName>HeliumTodo.Application</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HeliumTodo.Domain\HeliumTodo.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

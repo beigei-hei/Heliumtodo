@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    HeliumTodo.Desktop —— Avalonia 桌面界面
+    FluentAvaloniaUI + Fluent 2 设计系统。
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>HeliumTodo.Desktop</RootNamespace>
+    <AssemblyName>HeliumTodo.Desktop</AssemblyName>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <!--
+      Avalonia 12 把文字排版（HarfBuzz 整形）拆成了独立包。
+      Avalonia 11 时代它埋在 Skia 里，所以老代码里看不到这个引用。
+    -->
+    <PackageReference Include="Avalonia.HarfBuzz" />
+    <PackageReference Include="FluentAvaloniaUI" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <!-- 自己解码壁纸的每一帧（APNG / GIF），需要直接调 Skia 的 API -->
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" />
+  </ItemGroup>
+
+  <!--
+    ⚠️ Avalonia 12 删掉了 Avalonia.Diagnostics 这个包（开发者工具窗口）。
+       我们已经把它从引用里去掉。
+       反正代码里从来没调用过 AttachDevTools()，等于只是个挂在依赖里的空引用。
+
+       以后要调试界面，Avalonia 12 改用 Avalonia DevTools 独立工具。
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\HeliumTodo.Application\HeliumTodo.Application.csproj" />
+    <ProjectReference Include="..\HeliumTodo.Domain\HeliumTodo.Domain.csproj" />
+    <!-- Infrastructure 只允许在组合根（Composition/App.axaml.cs）里出现 -->
+    <ProjectReference Include="..\HeliumTodo.Infrastructure\HeliumTodo.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

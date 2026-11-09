@@ -1,0 +1,131 @@
+<!--
+  SPDX-FileCopyrightText: 2025 Helium Todo contributors
+  SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:HeliumTodo.Desktop.ViewModels"
+        xmlns:views="using:HeliumTodo.Desktop.Views"
+        x:Class="HeliumTodo.Desktop.Views.MainWindow"
+        x:DataType="vm:ShellViewModel"
+        Title="Helium Todo"
+        Width="1920" Height="1080"
+        MinWidth="1080" MinHeight="720"
+        WindowStartupLocation="CenterScreen"
+        WindowDecorations="None"
+        Win32Properties.WindowCornerPreference="Round">
+
+  <!--
+    主窗口只做一件事：把 ShellView 放进来。
+    真正的界面结构（左侧导航栏 + 内容区）都在 ShellView 里。
+    这样分的好处是：主窗口管窗口本身（大小、标题、位置），
+    ShellView 管界面布局，各管各的。
+
+    壁纸是三层叠起来的：
+      ① Image      最底下，照片铺满（多出来的部分裁掉）
+      ② Border     蒙版，半透明白/黑，把照片压暗或提亮，保证文字看得清
+      ③ ShellView  界面本体，背景透明，所以照片能透上来
+
+    这三层都是"非壁纸模式"下直接隐藏掉的（IsVisible 绑 IsWallpaperVisible），
+    不用写额外的分支判断。没开壁纸时界面上看起来和原来一模一样。
+
+    ── 为什么是 WindowDecorations="None" ────────────────────────────────
+    这里踩过一个坑，记下来免得以后又改回去：
+
+      一开始用的是 BorderOnly（"只留边框、不要系统标题栏"）。系统标题栏是没了，
+      但**可调整大小的那一圈边框还归系统管**（Win32 的 WS_THICKFRAME）。
+      实测（tools/probe-window-frame.ps1，150% 缩放）：
+          窗口 1295x835，客户区只有 1280x820，客户区起点在窗口内 (7, 7)
+      也就是上 7px、左右 7/8px、下 8px 是「非客户区」，由系统用浅灰画（不是壁纸）。
+      壁纸只能铺在客户区里，于是窗口顶上留一条浅色空带、左右各留一条竖条 ——
+      用户看到的就是「用了壁纸以后上方还有空白」。
+
+      试过 ExtendClientAreaToDecorationsHint="True"：顶上那条从 7px 降到 1px，
+      但左右还是 7/8px 的竖条（PrintWindow 抓图确认过），治不干净。
+      也试过 WindowDecorations="None" 但什么都不补：铺满是铺满了，
+      可右边缘的命中码变成 HTCLIENT（不再是 HTRIGHT），拖边改大小失效。
+
+      所以最终方案是 None + 自己补一层改大小的抓手（见下面的 ④）：
+      实测窗口 1280x820 = 客户区 1280x820，四边非客户区都是 0，壁纸能铺到边。
+
+      ── 圆角和那圈 1px 描边 ──────────────────────────────────────────
+      WindowDecorations="None" 之后，Windows 11 也不给圆角了（它只给"有边框"的窗口裁圆），
+      所以还要两件事：
+        ① Win32Properties.WindowCornerPreference="Round" —— 这是 Avalonia 自带的
+           附加属性，内部转成 DWMWA_WINDOW_CORNER_PREFERENCE。不用写 P/Invoke。
+        ② 描边不要自己画！实测 DwmGetWindowAttribute(DWMWA_VISIBLE_FRAME_BORDER_THICKNESS)
+           返回 2px（150% 缩放 → 约 1 DIP），说明 DWM 在裁圆角的同时也画了那圈边框。
+           自己再叠一层只会变成"内外两条线"，看着比原生窗口脏。
+  -->
+  <Grid>
+    <!-- ① 壁纸 -->
+    <!-- Source 和 Stretch 由窗口代码管：静态壁纸会先被缩放成"窗口像素尺寸"
+         再贴上来，这样每帧重绘不用重新采样整张图（见 WallpaperScaler）。 -->
+    <Image Name="WallpaperImage"
+           Stretch="Fill"
+           IsVisible="{Binding IsWallpaperVisible}"
+           RenderOptions.BitmapInterpolationMode="HighQuality"
+           HorizontalAlignment="Stretch"
+           VerticalAlignment="Stretch" />
+
+    <!-- ② 蒙版 -->
+    <Border IsVisible="{Binding IsWallpaperVisible}"
+            Background="{DynamicResource WallpaperScrimBrush}"
+            Opacity="{DynamicResource WallpaperScrimOpacity}"
+            IsHitTestVisible="False" />
+
+    <!-- ②c 开场动画用的遮罩：从"不透明"淡到"透明"。
+         为什么不用 Window.Opacity：小于 1 的窗口不透明度会让 Win32 走
+         WS_EX_LAYERED（分层窗口）路径，每帧都要重新合成整窗（实测 37 ms/帧），
+         而且改扩展样式会让 DWM 重建重定向表面，系统原生的最小化/最大化过渡也就播不出来。 -->
+    <Border Name="IntroVeil"
+            IsVisible="False"
+            IsHitTestVisible="False"
+            Background="#FFFFFFFF" />
+
+    <!-- ③ 界面本体 -->
+    <views:ShellView />
+
+    <!--
+      ④ 改大小的抓手（没有系统边框之后的替代品）
+        四条边各 6px、四个角各 10px，背景透明但能接收鼠标。
+        角和边重叠，角写在后面所以盖在边上，鼠标落在角里就是"斜着拉"。
+        光标换形状（↔ ↕ ⤡）让用户知道这里能拉。
+        没有这层的话，WindowDecorations="None" 的窗口是拖不动的 ——
+        系统认为整块都是客户区，鼠标在边缘也只是普通点击。
+    -->
+    <Grid Name="ResizeGrips">
+      <Border Name="GripTop" Height="6" VerticalAlignment="Top"
+              Background="Transparent" Cursor="TopSide"
+              Tag="North" PointerPressed="OnResizeGripPressed" />
+      <Border Name="GripBottom" Height="6" VerticalAlignment="Bottom"
+              Background="Transparent" Cursor="BottomSide"
+              Tag="South" PointerPressed="OnResizeGripPressed" />
+      <Border Name="GripLeft" Width="6" HorizontalAlignment="Left"
+              Background="Transparent" Cursor="LeftSide"
+              Tag="West" PointerPressed="OnResizeGripPressed" />
+      <Border Name="GripRight" Width="6" HorizontalAlignment="Right"
+              Background="Transparent" Cursor="RightSide"
+              Tag="East" PointerPressed="OnResizeGripPressed" />
+
+      <Border Name="GripTopLeft" Width="10" Height="10"
+              HorizontalAlignment="Left" VerticalAlignment="Top"
+              Background="Transparent" Cursor="TopLeftCorner"
+              Tag="NorthWest" PointerPressed="OnResizeGripPressed" />
+      <Border Name="GripTopRight" Width="10" Height="10"
+              HorizontalAlignment="Right" VerticalAlignment="Top"
+              Background="Transparent" Cursor="TopRightCorner"
+              Tag="NorthEast" PointerPressed="OnResizeGripPressed" />
+      <Border Name="GripBottomLeft" Width="10" Height="10"
+              HorizontalAlignment="Left" VerticalAlignment="Bottom"
+              Background="Transparent" Cursor="BottomLeftCorner"
+              Tag="SouthWest" PointerPressed="OnResizeGripPressed" />
+      <Border Name="GripBottomRight" Width="10" Height="10"
+              HorizontalAlignment="Right" VerticalAlignment="Bottom"
+              Background="Transparent" Cursor="BottomRightCorner"
+              Tag="SouthEast" PointerPressed="OnResizeGripPressed" />
+    </Grid>
+  </Grid>
+
+</Window>

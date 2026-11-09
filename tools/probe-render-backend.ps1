@@ -1,4 +1,4 @@
-﻿# 验证「设置 → 底层设置 → 渲染后端」真的生效。
+# 验证「设置 → 底层设置 → 渲染后端」真的生效。
 #
 # 思路：渲染后端是"启动时读一次"的，光看界面看不出来。
 #   不同后端的差别在"进程里加载了哪些模块"：
@@ -15,7 +15,7 @@
 #   powershell -File tools\probe-render-backend.ps1 -Backend vulkan
 #   powershell -File tools\probe-render-backend.ps1 -EnvironmentOverride angle   # 测环境变量优先级
 param(
-    [string]$ExePath = "HeliumTodo.App\bin\Debug\net10.0\HeliumTodo.App.exe",
+    [string]$ExePath = "HeliumTodo.Desktop\bin\Debug\net10.0\HeliumTodo.Desktop.exe",
     [string]$Backend = "software",
     [string]$EnvironmentOverride = "",
     [int]$WaitSeconds = 8

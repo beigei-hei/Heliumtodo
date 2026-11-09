@@ -32,19 +32,19 @@
 
 | 项目 | 文件 | 行数 | 职责 |
 | --- | ---: | ---: | --- |
-| `HeliumTodo.Core` | 42 | 6 063 | 领域模型 + 纯算法 + 备份格式 + 提醒调度 + 窗口过渡规则（零 UI 依赖、零数据库依赖、零包引用） |
-| `HeliumTodo.Data` | 13 | 3 588 | EF Core 上下文、仓储、种子数据、网络传输、备份服务 |
-| `HeliumTodo.App` | 59 | 16 543 | Avalonia 界面、ViewModel、自绘控件、应用服务、窗口封装 |
+| `HeliumTodo.Domain` | 42 | 6 063 | 领域模型 + 纯算法 + 备份格式 + 提醒调度 + 窗口过渡规则（零 UI 依赖、零数据库依赖、零包引用） |
+| `HeliumTodo.Infrastructure` | 13 | 3 588 | EF Core 上下文、仓储、种子数据、网络传输、备份服务 |
+| `HeliumTodo.Desktop` | 59 | 16 543 | Avalonia 界面、ViewModel、自绘控件、应用服务、窗口封装 |
 | `HeliumTodo.Tests` | 21 | 3 520 | **190** 个 xunit 测试 |
 | `HeliumTodo.SelfTest` | 1 | 160 | 反射式测试运行器（绕过被拦的 `dotnet test`） |
-| `HeliumTodo.RenderCheck` | 1 | 3 753 | 无头渲染自检 + 15 个 `--check` 专项断言 |
+| `HeliumTodo.Verification` | 1 | 3 753 | 无头渲染自检 + 15 个 `--check` 专项断言 |
 
 ---
 
 ## 1. 总体分层
 
 ```
-┌─ 表现层 · HeliumTodo.App ───────────────────────────────────────────────
+┌─ 表现层 · HeliumTodo.Desktop ───────────────────────────────────────────────
 │
 │   MainWindow.axaml ── 壁纸三明治（Image / 蒙版 Border / ShellView）
 │        │
@@ -60,14 +60,14 @@
 │        每个页面 = View(.axaml) + ViewModel + 可选自绘控件
 │        插件可以往 MenuItems 里再塞页面（见第 14 节）
 │
-├─ 应用服务层 · HeliumTodo.App/Services ──────────────────────────────────
+├─ 应用服务层 · HeliumTodo.Desktop/Services ──────────────────────────────────
 │
 │   PluginHost        插件发现/加载/卸载（AssemblyLoadContext）
 │   ThemeService      主题 + 强调色 → 写入 Avalonia 资源字典
 │   WallpaperDecoder  SkiaSharp 解码 PNG/JPG/GIF/APNG → Bitmap 序列
 │   WallpaperService  DispatcherTimer 逐帧播放，对外只暴露 CurrentFrame
 │
-├─ 领域层 · HeliumTodo.Core ──────────────────────────────────────────────
+├─ 领域层 · HeliumTodo.Domain ──────────────────────────────────────────────
 │
 │   Models/           ScheduleItem · TodoItem · FocusSession · StudyRoom · Enums
 │   Services/         DayTimelineBuilder  ← 三大核心功能的交汇点
@@ -82,7 +82,7 @@
 │   Configuration/    AppConfig · ConfigService · AccentSources
 │   Plugins/          IHeliumPlugin · IPeerTransport（接口在此定义）
 │
-├─ 存储层 · HeliumTodo.Data ──────────────────────────────────────────────
+├─ 存储层 · HeliumTodo.Infrastructure ──────────────────────────────────────────────
 │
 │   HeliumDbContext   6 张表（Code-First，EnsureCreated 建库）
 │   Repositories      ScheduleRepository · TodoRepository
@@ -105,7 +105,7 @@
 
 | 约束 | 怎么保证的 |
 | --- | --- |
-| `Core` 不引用任何 UI / 数据库包 | `HeliumTodo.Core.csproj` **零** `PackageReference` |
+| `Core` 不引用任何 UI / 数据库包 | `HeliumTodo.Domain.csproj` **零** `PackageReference` |
 | `Core` 不认识 Avalonia | 全项目 `grep Avalonia` 在 Core 目录下为 0 命中 |
 | `Data` 只依赖 `Core` | csproj 里只有一条 `ProjectReference` |
 | 界面只通过接口碰网络 | ViewModel 依赖 `StudyRoomService`，不直接碰 `IPeerTransport` 实现 |
@@ -117,24 +117,24 @@
 
 ```
                         ┌──────────────────────┐
-                        │  HeliumTodo.Core     │   22 文件 / 4125 行
+                        │  HeliumTodo.Domain     │   22 文件 / 4125 行
                         │  领域模型 + 纯算法    │   零外部包依赖
                         └──────────┬───────────┘
                                    │ ProjectReference
                     ┌──────────────┴───────────────┐
                     │                              │
         ┌───────────▼──────────┐       ┌───────────▼────────────┐
-        │  HeliumTodo.Data     │       │   HeliumTodo.Tests     │  16 文件 / 3212 行
+        │  HeliumTodo.Infrastructure     │       │   HeliumTodo.Tests     │  16 文件 / 3212 行
         │  EF Core + 仓储 + 备份 │       │   168 个 xunit 测试     │
         └───────────┬──────────┘       └───────────┬────────────┘
                     │                              │
         ┌───────────▼──────────┐                   │
-        │  HeliumTodo.App      │                   │
+        │  HeliumTodo.Desktop      │                   │
         │  Avalonia 界面       │                   │
         └───────────┬──────────┘                   │
                     │                              │
         ┌───────────▼──────────┐       ┌───────────▼────────────┐
-        │ HeliumTodo.RenderCheck│      │  HeliumTodo.SelfTest   │
+        │ HeliumTodo.Verification│      │  HeliumTodo.SelfTest   │
         │ 无头渲染 7 项截图      │       │  反射跑测试（绕过 dotnet test）
         └──────────────────────┘       └────────────────────────┘
 ```
@@ -178,7 +178,7 @@
 ```
 
 > 「⑦ 插件」和第 ⑧ 步之间那条类型判断是**踩过坑的**：
-> `HeliumTodo.RenderCheck` 用无头模式自建窗口，如果这里无条件 new MainWindow，
+> `HeliumTodo.Verification` 用无头模式自建窗口，如果这里无条件 new MainWindow，
 > 无头环境下直接抛异常。
 
 ---
@@ -219,12 +219,12 @@
 
 | 页面（导航项） | View | ViewModel | 主要数据源 | 核心交互 |
 | --- | --- | --- | --- | --- |
-| 今日工作流 | [DashboardView.axaml](HeliumTodo.App/Views/DashboardView.axaml) 372 行 | `DashboardViewModel` 521 行 | `DayTimelineBuilder` 聚合的当日时间轴 | 时间轴点条目看详情、点待办直接勾完成 |
-| 日程 | [ScheduleView.axaml](HeliumTodo.App/Views/ScheduleView.axaml) 268 行 | `ScheduleViewModel` 475 行 | `ScheduleRepository` + `RecurrenceExpander` | 增删改 + 重复规则 + 按天分组 |
-| 待办事项 | [TodoView.axaml](HeliumTodo.App/Views/TodoView.axaml) 300 行 | `TodoViewModel` 424 行 | `TodoRepository` | 勾完成 / 优先级 / 到期 / 筛选 / 「开始专注」 |
-| 专注 | [FocusView.axaml](HeliumTodo.App/Views/FocusView.axaml) 287 行 | `FocusViewModel` 572 行 | `FocusTimerService` + `FocusRepository` | 时钟表盘、开始/暂停/放弃、干扰计数 |
-| 自习室 | [StudyRoomView.axaml](HeliumTodo.App/Views/StudyRoomView.axaml) 320 行 | `StudyRoomViewModel` 505 行 | `StudyRoomService` + `StudyRoomRepository` | 建房/加入、成员状态、聊天、共同专注 |
-| 设置（Footer 区） | [SettingsView.axaml](HeliumTodo.App/Views/SettingsView.axaml) 443 行 | `SettingsViewModel` 672 行 | `ConfigService` | 8 个折叠区：外观/壁纸/专注/自控/工作流/自习室/数据/插件/关于 |
+| 今日工作流 | [DashboardView.axaml](HeliumTodo.Desktop/Views/DashboardView.axaml) 372 行 | `DashboardViewModel` 521 行 | `DayTimelineBuilder` 聚合的当日时间轴 | 时间轴点条目看详情、点待办直接勾完成 |
+| 日程 | [ScheduleView.axaml](HeliumTodo.Desktop/Views/ScheduleView.axaml) 268 行 | `ScheduleViewModel` 475 行 | `ScheduleRepository` + `RecurrenceExpander` | 增删改 + 重复规则 + 按天分组 |
+| 待办事项 | [TodoView.axaml](HeliumTodo.Desktop/Views/TodoView.axaml) 300 行 | `TodoViewModel` 424 行 | `TodoRepository` | 勾完成 / 优先级 / 到期 / 筛选 / 「开始专注」 |
+| 专注 | [FocusView.axaml](HeliumTodo.Desktop/Views/FocusView.axaml) 287 行 | `FocusViewModel` 572 行 | `FocusTimerService` + `FocusRepository` | 时钟表盘、开始/暂停/放弃、干扰计数 |
+| 自习室 | [StudyRoomView.axaml](HeliumTodo.Desktop/Views/StudyRoomView.axaml) 320 行 | `StudyRoomViewModel` 505 行 | `StudyRoomService` + `StudyRoomRepository` | 建房/加入、成员状态、聊天、共同专注 |
+| 设置（Footer 区） | [SettingsView.axaml](HeliumTodo.Desktop/Views/SettingsView.axaml) 443 行 | `SettingsViewModel` 672 行 | `ConfigService` | 8 个折叠区：外观/壁纸/专注/自控/工作流/自习室/数据/插件/关于 |
 
 **公共部件**
 
@@ -303,7 +303,7 @@ Closing += OnClosing;
 对外只暴露两个动作：`ToggleMaximizeAnimated()`（标题栏双击 / 最大化按钮）、
 `PlayShowAnimation()`（首次显示、从托盘唤醒）。
 
-相关的另一件基础设施是 `HeliumTodo.App/Services/SingleInstanceGuard.cs`：
+相关的另一件基础设施是 `HeliumTodo.Desktop/Services/SingleInstanceGuard.cs`：
 `Mutex "Local\<appId>.lock"` + `EventWaitHandle "Local\<appId>.show"`，
 非首实例只负责 `RequestShow()` 然后自己退出。它有两个作用：
 
@@ -312,7 +312,7 @@ Closing += OnClosing;
   用户再双击一次程序也能把窗口叫回来 —— 这条退路不依赖任何平台特性。
 
 `<appId>` 默认是 `HeliumTodo`，可以用 `HELIUM_APP_ID` 换掉（规则在
-`HeliumTodo.Core/Lifecycle/AppIdentity.cs`）。留这个口子是因为**自检与探针需要在同一台
+`HeliumTodo.Domain/Lifecycle/AppIdentity.cs`）。留这个口子是因为**自检与探针需要在同一台
 机器上拉起两份互不相干的实例**：共用一个名字时，第二份会以为"已经有人在跑"、
 不建窗口，测试就卡在"等窗口"那一步 —— 现象完全不像"名字撞了"，本项目为此白花过一次时间。
 它顺带也是绿色版并存的实现基础。
@@ -402,7 +402,7 @@ DWM 判定"这是不是一个正常窗口"看的是 **`WS_CAPTION`**，不是 `W
   单调下降 95% / 86%）；
 - 不会长出标题栏 —— `WM_NCCALCSIZE` 依旧把非客户区抹成 0，壁纸照样铺满。
 
-代码在 `HeliumTodo.App/Windowing/WindowChrome.cs`：样式回调里加 `WS_CAPTION`，
+代码在 `HeliumTodo.Desktop/Windowing/WindowChrome.cs`：样式回调里加 `WS_CAPTION`，
 `Opened` 之后再显式 `DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED /*3*/, 0, 4)`
 （万一被系统/组策略关过）。
 
@@ -455,7 +455,7 @@ DWM 判定"这是不是一个正常窗口"看的是 **`WS_CAPTION`**，不是 `W
 `WindowDecorations="None"` 会丢掉 `WS_THICKFRAME`，而 Windows 判断"这是不是一个
 能最大化的普通窗口"看的正是它 —— 少了它，最大化直接跳变、没有 DWM 缩放动画。
 
-`HeliumTodo.App/Windowing/WindowChrome.cs`（早期叫 `Views/MainWindow.Win32.cs`）用 Avalonia 12 给的两个钩子解决：
+`HeliumTodo.Desktop/Windowing/WindowChrome.cs`（早期叫 `Views/MainWindow.Win32.cs`）用 Avalonia 12 给的两个钩子解决：
 
 ```csharp
 // ① 样式位加回来（注意委托返回的是 (style, exStyle) 元组）
@@ -492,7 +492,7 @@ cmd.exe /c start "" "<path>"          ← 最后一条
 NoticeText 里一次性列出每条的原因 + 完整路径
 ```
 
-- `HeliumTodo.App/Services/FolderLauncher.cs` 的 `AvaloniaFolderLauncher` 从
+- `HeliumTodo.Desktop/Services/FolderLauncher.cs` 的 `AvaloniaFolderLauncher` 从
   `IClassicDesktopStyleApplicationLifetime.MainWindow` 取 `TopLevel`（窗口藏到托盘时依然可用），
   调 `Launcher.LaunchDirectoryInfoAsync`。
 - 为什么保留后面四条：Launcher 在无头/受限环境会返回 false，
@@ -504,7 +504,7 @@ NoticeText 里一次性列出每条的原因 + 完整路径
 而是**汇集到一个函数**上：
 
 ```csharp
-// HeliumTodo.Core/Services/DayTimelineBuilder.cs:27
+// HeliumTodo.Domain/Services/DayTimelineBuilder.cs:27
 public static DayTimeline Build(
     DateOnly date,
     IEnumerable<ScheduleItem> schedules,
@@ -954,7 +954,7 @@ BackupPackageWriter.Write
 
 | 成员 | 位置 | 作用 |
 | --- | --- | --- |
-| `_exitRequested` | `HeliumTodo.App/App.axaml.cs` | 区分"用户点 ×"和"用户要退出" |
+| `_exitRequested` | `HeliumTodo.Desktop/App.axaml.cs` | 区分"用户点 ×"和"用户要退出" |
 | `StartBackgroundServices(desktop, pluginHost)` | 同上 | 起提醒定时器 + 托盘，挂 `Closing` |
 | `RestoreMainWindow()` | 同上 | 托盘「显示主界面」：`Show` + 还原 `WindowState` + `Activate` |
 | `BackupOnceAsync()` | 同上 | 托盘「立即备份一次」，`Task.Run` 里跑，不挡 UI |
@@ -984,17 +984,17 @@ ReminderService（App，30 秒一次）
 
 | 类型 | 文件 | 说明 |
 | --- | --- | --- |
-| 预设 | `HeliumTodo.Core/Models/ReminderPresets.cs` | 不提醒 / 开始时 / 5 / 10 / 30 分钟 / 1 / 2 小时，另有 `Compose(h, m)` 给自定义 |
-| 数据 | `HeliumTodo.Core/Notifications/ReminderItem.cs` | `ReminderSourceKind` + 一条待发提醒 |
-| 算法 | `HeliumTodo.Core/Notifications/ReminderPlanner.cs` | 纯函数，不碰数据库、不碰时间 |
-| 契约 | `HeliumTodo.Core/Notifications/INotificationService.cs` | `IsSupported` / `Notify` / `Activated` + `NullNotificationService` |
-| 调度 | `HeliumTodo.App/Services/ReminderService.cs` | `Timer` + `HashSet` 去重 + `ScanAsync()` 给自检 |
-| 平台 | `HeliumTodo.App/Services/WindowsToastNotifier.cs` | 转托盘气泡（Win10 起统一进通知中心） |
+| 预设 | `HeliumTodo.Domain/Models/ReminderPresets.cs` | 不提醒 / 开始时 / 5 / 10 / 30 分钟 / 1 / 2 小时，另有 `Compose(h, m)` 给自定义 |
+| 数据 | `HeliumTodo.Domain/Notifications/ReminderItem.cs` | `ReminderSourceKind` + 一条待发提醒 |
+| 算法 | `HeliumTodo.Domain/Notifications/ReminderPlanner.cs` | 纯函数，不碰数据库、不碰时间 |
+| 契约 | `HeliumTodo.Domain/Notifications/INotificationService.cs` | `IsSupported` / `Notify` / `Activated` + `NullNotificationService` |
+| 调度 | `HeliumTodo.Desktop/Services/ReminderService.cs` | `Timer` + `HashSet` 去重 + `ScanAsync()` 给自检 |
+| 平台 | `HeliumTodo.Desktop/Services/WindowsToastNotifier.cs` | 转托盘气泡（Win10 起统一进通知中心） |
 
 ### 12.3 托盘：为什么不用 WinForms 的 `NotifyIcon`
 
-用 `NotifyIcon` 得把 TFM 改成 `net10.0-windows`；而 `HeliumTodo.RenderCheck` 是
-`net10.0` 并且引用 `HeliumTodo.App`，一改就是连锁反应。所以 `TrayService` 直接
+用 `NotifyIcon` 得把 TFM 改成 `net10.0-windows`；而 `HeliumTodo.Verification` 是
+`net10.0` 并且引用 `HeliumTodo.Desktop`，一改就是连锁反应。所以 `TrayService` 直接
 P/Invoke：`Shell_NotifyIconW` + 自建隐藏窗口 + 独立 STA 线程消息循环 + 手画图标
 （`CreateDIBSection` → `CreateIconIndirect`，32×32 圆角方块 + 白色 H）。
 
@@ -1004,7 +1004,7 @@ P/Invoke：`Shell_NotifyIconW` + 自建隐藏窗口 + 独立 STA 线程消息循
 ### 12.4 IPC：只有契约，没有实现
 
 ```
-IIpcChannel（HeliumTodo.Core/Ipc/IIpcChannel.cs）
+IIpcChannel（HeliumTodo.Domain/Ipc/IIpcChannel.cs）
 ├─ bool IsRunning
 ├─ string Endpoint
 ├─ Task StartAsync(CancellationToken) / Task StopAsync()
@@ -1152,7 +1152,7 @@ Helium todo demo/
 ├── Directory.Build.props              版本号 0.3.5-alpha 等全局属性
 ├── Directory.Packages.props           集中包版本管理
 │
-├── HeliumTodo.Core/                   领域层（零外部依赖）
+├── HeliumTodo.Domain/                   领域层（零外部依赖）
 │   ├── Models/                        Enums ScheduleItem TodoItem FocusSession StudyRoom
 │   ├── Services/                      DayTimelineBuilder(518) FocusTimerService(225)
 │   │                                  StudyRoomService(373) RecurrenceExpander(106)
@@ -1169,7 +1169,7 @@ Helium todo demo/
 │   ├── Plugins/                       IHeliumPlugin + IPeerTransport
 │   └── VersionInfo.cs
 │
-├── HeliumTodo.Data/                   存储 + 网络实现
+├── HeliumTodo.Infrastructure/                   存储 + 网络实现
 │   ├── HeliumDbContext.cs             6 张表
 │   ├── *Repository.cs                 4 个仓储
 │   ├── SeedData.cs                   首次运行示例数据
@@ -1178,7 +1178,7 @@ Helium todo demo/
 │   ├── LanPeerTransport.cs(1369)     局域网 P2P
 │   └── LocalOnlyPeerTransport.cs     纯本地占位
 │
-├── HeliumTodo.App/                    表现层
+├── HeliumTodo.Desktop/                    表现层
 │   ├── App.axaml(.cs)                 启动编排（七步）+ 资源字典
 │   ├── Program.cs / ViewLocator.cs
 │   ├── Views/                         6 页 + ShellView + MainWindow
@@ -1194,7 +1194,7 @@ Helium todo demo/
 │
 ├── HeliumTodo.Tests/                  168 个 xunit 测试（16 文件）
 ├── HeliumTodo.SelfTest/               反射式测试运行器
-├── HeliumTodo.RenderCheck/            无头渲染自检（7 页 + 12 项 --check）
+├── HeliumTodo.Verification/            无头渲染自检（7 页 + 12 项 --check）
 │
 ├── tools/
 │   ├── check-file-integrity.ps1       SHA256 指纹校验
@@ -1214,8 +1214,8 @@ Helium todo demo/
 ```powershell
 dotnet build HeliumTodo.slnx -c Debug
 dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll     # 116 测试
-dotnet HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll --shell          # 7 项渲染
-dotnet HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll --refresh-check  # 6 项联动
+dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --shell          # 7 项渲染
+dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --refresh-check  # 6 项联动
 powershell tools\check-file-integrity.ps1                                # 116 文件指纹
 ```
 
@@ -1437,7 +1437,7 @@ powershell -File tools\capture-window.ps1 -ExePath <App.exe> -OutPath out.png  #
 「XAML 里的一个数」和「ViewModel 里算出来的一个数」决定。这两个数一旦写岔，
 方块就会压住刻度文字（用户截图里 14:00/16:00/18:00 被整行盖住，就是这么来的）。
 
-约定：**只有一个来源**，`HeliumTodo.App/ViewModels/TimelineMetrics.cs`：
+约定：**只有一个来源**，`HeliumTodo.Desktop/ViewModels/TimelineMetrics.cs`：
 
 | 常量 | 值 | 用在哪 |
 | --- | ---: | --- |
@@ -1494,14 +1494,14 @@ X = inset + _entry.Lane * laneWidth;
 ```
 VS 调试 → 点「确认」→ 我们 Process.Start 一个新进程（不受调试器管）
         → 旧进程（调试器管的那个）退出 → VS 显示"调试已结束"
-        → 新进程还活着，抓着 bin\Debug\net10.0\HeliumTodo.App.exe
-        → 下一次编译：MSB3026 重试 10 次 → MSB3027「文件被 HeliumTodo.App (PID) 锁定」
+        → 新进程还活着，抓着 bin\Debug\net10.0\HeliumTodo.Desktop.exe
+        → 下一次编译：MSB3026 重试 10 次 → MSB3027「文件被 HeliumTodo.Desktop (PID) 锁定」
 ```
 
 而且新进程往往已经藏进托盘（窗口关了 → 我们的关闭拦截生效），
 用户在任务管理器之外根本找不到它，只能猜哪个进程该杀。
 
-三种结果的语义（`HeliumTodo.Core/Lifecycle/RestartPolicy.cs`）：
+三种结果的语义（`HeliumTodo.Domain/Lifecycle/RestartPolicy.cs`）：
 
 | 结果 | 谁产生 | 界面怎么说 |
 | --- | --- | --- |
@@ -1511,15 +1511,15 @@ VS 调试 → 点「确认」→ 我们 Process.Start 一个新进程（不受�
 
 调试器判断也做成了纯函数 `RestartPolicy.Decide(bool)`，好让单元测试钉住规则；
 `--restart-prompt-check` 则用 `HELIUM_FAKE_DEBUGGER=1` 模拟"调试器在场"，
-断言**配置照样存盘**、**没有偷偷开新进程**（对比 `HeliumTodo.App` 进程数）、
+断言**配置照样存盘**、**没有偷偷开新进程**（对比 `HeliumTodo.Desktop` 进程数）、
 提示语里带着「调试」二字。
 
 要是已经踩坑了（进程在跑、编译报 MSB3027）：
 
 ```powershell
-Get-CimInstance Win32_Process -Filter "Name='HeliumTodo.App.exe'" |
+Get-CimInstance Win32_Process -Filter "Name='HeliumTodo.Desktop.exe'" |
     Select-Object ProcessId, ParentProcessId, CommandLine
-Get-Process -Name HeliumTodo.App | Stop-Process -Force
+Get-Process -Name HeliumTodo.Desktop | Stop-Process -Force
 ```
 
 ### 19.4 提示条叠在功能区上方，卡片圆角只有一个来源
@@ -1551,7 +1551,7 @@ Get-Process -Name HeliumTodo.App | Stop-Process -Force
   `AVLN3000: Unable to find suitable setter or adder for property ZIndex`。
 - **底板不透明**，颜色跟着明暗走（`NoticeSurfaceBrush` 亮 `#FFF7F7F7` / 暗 `#FF2B2B2B`），
   所以即使叠着也看得清，不会再"透"出底下的字。
-- **3 秒自动消失**，规则在 `HeliumTodo.Core/Notifications/NoticePolicy.cs`
+- **3 秒自动消失**，规则在 `HeliumTodo.Domain/Notifications/NoticePolicy.cs`
   （`DisplayMilliseconds = 3000`、`ShouldExpire(elapsed)`）。
   ViewModel 用一个 200 ms 的 `DispatcherTimer` 轮询，`ExpireNotice(DateTime now)`
   把"现在"当参数传进去 —— 自检因此不用真的等 3 秒。
@@ -1570,7 +1570,7 @@ Get-Process -Name HeliumTodo.App | Stop-Process -Force
 ```
 
 `ClipToBounds` 不能省 —— 不裁剪的话控件自己的直角背景会从圆角外壳里冒出来。
-调圆角时只改 `HeliumTodo.App/Styles/DesignTokens.axaml` 里的 `RadiusCard`，
+调圆角时只改 `HeliumTodo.Desktop/Styles/DesignTokens.axaml` 里的 `RadiusCard`，
 不要在各个视图里写死数字。
 
 ### 19.5 分区统一：模块名在外，内容在内
@@ -1740,7 +1740,7 @@ Application.Current.Resources["CardSurfaceBrush"] = new SolidColorBrush(...);
 
 1. **不能用单点竖线扫描判缝**。输入框、内嵌面板的底色可能正好等于页底色，
    单点扫过去就误报。必须按整行判定 —— 真正的卡片间隙是整行贯穿的。
-2. **`CopyPixels` 需要非托管指针**，而 `HeliumTodo.RenderCheck` 没开 `AllowUnsafeBlocks`。
+2. **`CopyPixels` 需要非托管指针**，而 `HeliumTodo.Verification` 没开 `AllowUnsafeBlocks`。
    用 `Marshal.AllocHGlobal` + `CopyPixels(..., pointer, length, stride)` + `Marshal.Copy` 中转，
    比为一个自检工具改动全局编译选项划算。
 
@@ -1752,7 +1752,7 @@ Application.Current.Resources["CardSurfaceBrush"] = new SolidColorBrush(...);
 **① 壁纸蒙版只有一层，颜色和强度由明暗决定。**
 以前是两层：`WallpaperScrimBrush`（亮白 / 暗黑）+ 一层独立的"暗色灰蒙版"，
 暗色下两层灰叠在一起，像两张半透明纸。现在合并成一层，规则收进
-`HeliumTodo.Core/Theming/WallpaperScrim.cs`：
+`HeliumTodo.Domain/Theming/WallpaperScrim.cs`：
 
 | 项 | 亮色 | 暗色 |
 | --- | --- | --- |
@@ -1768,7 +1768,7 @@ Application.Current.Resources["CardSurfaceBrush"] = new SolidColorBrush(...);
 同一个坑：主题字典优先于应用级同名资源，代码赋值会静默失效）。
 
 **② 图标轨可以展开成"图标 + 名称"，宽度带非线性过渡。**
-尺寸集中在 `HeliumTodo.Core/Theming/RailMetrics.cs`：收起 56、展开 188、
+尺寸集中在 `HeliumTodo.Domain/Theming/RailMetrics.cs`：收起 56、展开 188、
 水平外边距 12、条目宽 44 / 176。两侧一起变才不会出现"容器拉开了、按钮没跟上、
 名称被裁成半截"这种事。动效是 `DoubleTransition` 260 ms + `CubicEaseOut`，
 挂在轨道 `Border` 的 `Width` 上：
@@ -1794,7 +1794,7 @@ Application.Current.Resources["CardSurfaceBrush"] = new SolidColorBrush(...);
 所以外层 `Background="Transparent"` 之后，十个分组里的 34 行仍在各刷一层白 ——
 叠在卡片上就是用户说的"控件下面垫了一层"（截图里能看到分组之间有一条更白的横带）。
 
-约定写成全局样式（`HeliumTodo.App/Styles/Controls.axaml`，样式优先级高于控件主题的 setter）：
+约定写成全局样式（`HeliumTodo.Desktop/Styles/Controls.axaml`，样式优先级高于控件主题的 setter）：
 
 ```xml
 <Style Selector="fa|FASettingsExpanderItem">
@@ -1841,7 +1841,7 @@ Application.Current.Resources["CardSurfaceBrush"] = new SolidColorBrush(...);
 | `--perf-check` | 10 | 改尺寸的固定成本（A–M 十三档）、降质确实更快、内容矩阵比改尺寸快一半、遮罩 Alpha 与纯重绘同量级、**P95 < 2×P50** 且**最慢一帧 < 4×P50**（分两条，避免孤立尖峰让自检随机变红） |
 | `--anim-check` | 16 | 政策数值（180ms/10 帧/5 帧下限/250ms 阈值）、动画中途被最小化后不透明度和变换都干净、遮罩被收掉、回来会重播、`Settle()` 干净、抓手不偏 |
 
-截图开关也跟着补齐（都在 `HeliumTodo.RenderCheck`）：
+截图开关也跟着补齐（都在 `HeliumTodo.Verification`）：
 
 - `HELIUM_DARK=1` / `HELIUM_CARD_OPACITY=NN`：现在是**全局**开关，`--shell` 也吃；
   以前只写在 `RenderPage` 里，导致 `--shell` 拍出来的"暗色图"和亮色一模一样。
@@ -1868,11 +1868,11 @@ Application.Current.Resources["CardSurfaceBrush"] = new SolidColorBrush(...);
 
 1. **能让系统播的就别自己播**。最小化/最大化/还原交给 DWM（`WS_CAPTION` 那个开关）。
    自己写的逐帧改矩形版本已经删了 —— 软件渲染下 5~6 帧跑完 180 ms，又慢又不均匀。
-2. **动画期间自动降质**：`HeliumTodo.App/Windowing/InteractionQuality.cs` 用引用计数包住一段交互，
+2. **动画期间自动降质**：`HeliumTodo.Desktop/Windowing/InteractionQuality.cs` 用引用计数包住一段交互，
    进入时把壁纸降成 `LowQuality`、关掉卡片阴影；退出时还原。拖拽
    （`WindowResizeGrips`）包着它；`HELIUM_NO_INTERACTION_QUALITY=1` 可整体关掉做对照。
    动图壁纸只在预计 > 250 ms 时才停（视频壁纸重启要重新 seek + 解码首帧，负收益），
-   规则在 `HeliumTodo.Core/Windowing/WindowTransitionPolicy.ShouldPauseWallpaper`。
+   规则在 `HeliumTodo.Domain/Windowing/WindowTransitionPolicy.ShouldPauseWallpaper`。
 3. **拖拽只按帧改一次窗口**：`OnPointerMoved` 只记目标值，用 `TopLevel.RequestAnimationFrame`
    合并到下一帧（鼠标回报率比显示器刷新率高得多）。
 4. **凡是要用代码改的资源，不许写进 `ThemeDictionaries`**：`CardSurfaceBrush`、`WallpaperScrimBrush`、
@@ -1900,7 +1900,7 @@ Application.Current.Resources["CardSurfaceBrush"] = new SolidColorBrush(...);
 1. **只有一条属性在动**。轨道 `Border` 的 `Width` 是唯一动的东西；条目按钮用
    `Classes.expanded` 切到"填满轨道"，自己不挂过渡；按钮里的名称用 `Opacity` 淡入淡出
    （`IsVisible` 会换一遍布局树，展开第一帧要多花 25 ms）。
-2. **壁纸必须先缩放到窗口像素**。`HeliumTodo.App/Services/WallpaperScaler.cs` 用
+2. **壁纸必须先缩放到窗口像素**。`HeliumTodo.Desktop/Services/WallpaperScaler.cs` 用
    `RenderTargetBitmap` 按 `UniformToFill` 裁一张与窗口 1:1 的图；把 4K 原图直接丢给
    `Image Stretch="UniformToFill"` 会让软件渲染**每帧重采样一次**（+27 ms/帧）。
    尺寸变化用 160 ms 防抖重做，源图和尺寸都没变就复用缓存；动图壁纸例外（直接把原图交出去）。
@@ -1922,4 +1922,53 @@ Application.Current.Resources["CardSurfaceBrush"] = new SolidColorBrush(...);
 中间绿 —— UniformToFill 的系数是 0.625，左右各裁 160 px，所以左缘只能看到红、右缘只能看到蓝，
 **颜色对得上就说明裁切居中且没左右翻转**。读像素的办法：`RenderTargetBitmap` 不能直接读，
 先 `CopyPixels` 到 `WriteableBitmap` 的 `ILockedFramebuffer`，再 `Marshal.Copy` 取中间一行。
+
+## 20. 0.5.0-alpha P0 的约定（2026-11-09）
+
+0.5.0 的目标架构写在 [`DEVELOPMENT_SPEC.md`](DEVELOPMENT_SPEC.md)；本文其余章节描述的是
+**当前实际运行的代码**。P0 只改了工程结构与许可证，运行行为与 0.3.5 相同，但有三条新约定：
+
+### 20.1 五个项目与依赖方向
+
+```
+Desktop ──► Application ──► Domain
+   │            ▲
+   └──► Infrastructure ──┘
+```
+
+- `Domain`：纯 BCL，没有 `PackageReference`，不许出现 `using Avalonia` / EF / Npgsql。
+- `Application`：用例与接口层（P0 只有 `ApplicationAssembly` 标记类，P1 开始搬服务）。
+- `Infrastructure`：EF Core + SQLite + 备份 + 联机传输。
+- `Desktop`：Avalonia 界面与组合根（`App.axaml.cs` 是唯一允许同时看到三层的文件）。
+- `Verification`：无头渲染、十五项 `--check`、探针入口。
+
+命名空间与项目名一一对应。**注意**：`HeliumTodo.Application` 会在名字查找里遮住
+`Avalonia.Application`，所以 `App : Avalonia.Application` 与所有 `Application.*` 调用点
+必须写全名；不要再尝试用文件级 `using Application = Avalonia.Application;` 绕过。
+
+### 20.2 插件接口关闭
+
+`IHeliumPlugin` / `IHeliumHostContext` 在 `HeliumTodo.Application/Plugins/`，
+整文件位于 `#if HELIUM_PLUGINS` 内且标了 `[Obsolete]`；默认不定义该符号。
+`PluginHost` 已删除，设置页「插件」分组只剩只读说明。恢复插件前先读规格 §9，
+重新设计可暴露类型、权限与版本兼容策略，不要直接把 `PluginHost.cs` 从历史里捡回来。
+
+### 20.3 许可证头是门禁的一部分
+
+每个 `.cs` / `.axaml` 头两行必须是：
+
+```csharp
+// SPDX-FileCopyrightText: 2025 Helium Todo contributors
+// SPDX-License-Identifier: GPL-3.0-only
+```
+
+（`.axaml` 用 XML 注释包住同样的两行。）`python tools/check-license-headers.py`
+扫描全部源文件，缺一个就退出 1。新增文件时先写头再写代码。
+
+### 20.4 尚未切换的技术栈（已知偏差）
+
+Material.Avalonia、PostgreSQL/Npgsql、EF Core 10、Avalonia 12.1.5 在当前环境装不上
+（NuGet HTTPS 在系统层失败，且本机没有 PostgreSQL）。因此 0.5.0-alpha 快照里
+FluentAvaloniaUI 3.1.0 与 EF Core 8.0.11 + SQLite 仍在服役。
+**不要把这份快照当成「已经迁移到 Material/PostgreSQL」**；P2/P3/P4 的验收条件见规格。
 

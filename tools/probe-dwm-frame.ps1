@@ -1,9 +1,9 @@
-﻿# 量一下 DWM 到底有没有给这个窗口画"可见边框"。
+# 量一下 DWM 到底有没有给这个窗口画"可见边框"。
 # DWMWA_VISIBLE_FRAME_BORDER_THICKNESS = 37，Win11 才有：
 #   返回 0  = DWM 没画边框，也就不会替窗口裁圆角 → 得自己画描边
 #   返回 1  = DWM 画了 1px 边框，圆角也归它 → 我们不该再画一层
 param(
-    [string]$ExePath = "HeliumTodo.App\bin\Debug\net10.0\HeliumTodo.App.exe"
+    [string]$ExePath = "HeliumTodo.Desktop\bin\Debug\net10.0\HeliumTodo.Desktop.exe"
 )
 
 $ErrorActionPreference = "Stop"

@@ -1,4 +1,7 @@
-using HeliumTodo.Core.Windowing;
+// SPDX-FileCopyrightText: 2025 Helium Todo contributors
+// SPDX-License-Identifier: GPL-3.0-only
+
+using HeliumTodo.Domain.Windowing;
 using Xunit;
 
 namespace HeliumTodo.Tests;

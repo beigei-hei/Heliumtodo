@@ -1,0 +1,245 @@
+<!--
+  SPDX-FileCopyrightText: 2025 Helium Todo contributors
+  SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="using:System">
+
+  <!--
+    ══════════════════════════════════════════════════════════════════════════
+      设计令牌（Design Tokens）
+    ══════════════════════════════════════════════════════════════════════════
+      这里集中放「界面上到处都要用的数值和颜色」。
+      好处：想统一调整间距/配色，只改这一个文件，所有界面跟着变。
+
+      数值全部参照微软 Fluent 2 设计系统：
+        · 间距用 4 的倍数（4 / 8 / 12 / 16 / 20 / 24 / 32）
+        · 圆角：小控件 4，卡片 8，大容器 12
+        · 字号：11 / 12 / 14 / 16 / 20 / 24 / 28
+    ══════════════════════════════════════════════════════════════════════════
+  -->
+
+  <!--
+    ══════════════════════════════════════════════════════════════════════════
+      壁纸蒙版
+    ══════════════════════════════════════════════════════════════════════════
+      壁纸直接铺在窗口底下，界面文字会压在照片上 —— 照片亮一块暗一块，
+      文字就跟背景搅在一起看不清了。所以上面盖一层半透明蒙版把对比度拉平。
+
+      为什么浅色主题盖白色、深色主题盖黑色？
+        浅色主题的文字是深色的，需要背景"变亮"才好读；
+        深色主题的文字是浅色的，需要背景"变暗"。
+        盖反了就成了白字压白底、黑字压黑底。
+
+      透明度不写死在这里，由用户设置决定（SettingsView 里那个滑块），
+      这里只定"什么颜色"。
+  -->
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="CardBorderBrush" Color="#66FFFFFF" />
+      <SolidColorBrush x:Key="CardInsetBrush" Color="#0F000000" />
+      <SolidColorBrush x:Key="ChipSurfaceBrush" Color="#12000000" />
+      <SolidColorBrush x:Key="SegmentedTrackBrush" Color="#12000000" />
+
+      <!-- 提示条：亮色近白底 + 深字 + 绿勾 -->
+      <SolidColorBrush x:Key="NoticeSurfaceBrush" Color="#FFF7F7F7" />
+      <SolidColorBrush x:Key="NoticeBorderBrush" Color="#22000000" />
+      <SolidColorBrush x:Key="NoticeForegroundBrush" Color="#FF1B1B1B" />
+      <SolidColorBrush x:Key="NoticeIconBrush" Color="#FF107C10" />
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Default">
+      <SolidColorBrush x:Key="CardBorderBrush" Color="#66FFFFFF" />
+      <SolidColorBrush x:Key="CardInsetBrush" Color="#0F000000" />
+      <SolidColorBrush x:Key="ChipSurfaceBrush" Color="#12000000" />
+      <SolidColorBrush x:Key="SegmentedTrackBrush" Color="#12000000" />
+
+      <SolidColorBrush x:Key="NoticeSurfaceBrush" Color="#FFF7F7F7" />
+      <SolidColorBrush x:Key="NoticeBorderBrush" Color="#22000000" />
+      <SolidColorBrush x:Key="NoticeForegroundBrush" Color="#FF1B1B1B" />
+      <SolidColorBrush x:Key="NoticeIconBrush" Color="#FF107C10" />
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="CardBorderBrush" Color="#1AFFFFFF" />
+      <SolidColorBrush x:Key="CardInsetBrush" Color="#14FFFFFF" />
+      <SolidColorBrush x:Key="ChipSurfaceBrush" Color="#18FFFFFF" />
+      <SolidColorBrush x:Key="SegmentedTrackBrush" Color="#18FFFFFF" />
+
+      <!-- 提示条：暗色深灰底 + 浅字，绿勾提亮一档，才不至于糊在暗背景里 -->
+      <SolidColorBrush x:Key="NoticeSurfaceBrush" Color="#FF2B2B2B" />
+      <SolidColorBrush x:Key="NoticeBorderBrush" Color="#33FFFFFF" />
+      <SolidColorBrush x:Key="NoticeForegroundBrush" Color="#FFF0F0F0" />
+      <SolidColorBrush x:Key="NoticeIconBrush" Color="#FF6CCB5F" />
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+
+  <!--
+    蒙版的不透明度（0 = 完全透明，1 = 完全不透明）。
+    这个值和主题无关，是用户自己拖的，所以放在主题字典外面。
+    默认 0.45 —— 照片的细节还看得出来，文字也压得住。
+  -->
+  <sys:Double x:Key="WallpaperScrimOpacity">0.45</sys:Double>
+
+  <!--
+    蒙版的颜色。它**故意不在上面的主题字典里**（和 CardSurfaceBrush 同一个坑）：
+    主题字典的优先级高于应用级同名资源，代码里再写同名 key 会静默不生效。
+    现在颜色由 App.ApplyWallpaperScrim() 按明暗算好写进来，这里只留个默认白。
+  -->
+  <SolidColorBrush x:Key="WallpaperScrimBrush" Color="#FFFFFF" />
+
+  <!--
+    卡片阴影。和 WallpaperScrimBrush 一样**故意不在主题字典里**：
+    窗口动画/拖拽期间要临时把它换成"没有阴影"（软件渲染下阴影模糊很贵，见 InteractionQuality），
+    而主题字典里的同名 key 优先级更高，代码赋值会静默失效 —— 这个坑在 CardSurfaceBrush 上踩过。
+    明暗两套值由 App.ApplyCardShadow() 在启动和切换明暗时写进来，这里留亮色那份当默认。
+  -->
+  <BoxShadows x:Key="CardShadow">0 8 24 0 #14000000</BoxShadows>
+
+  <!--
+    卡片表面。注意它**故意不在上面的主题字典里**：
+    它的颜色由 App.ApplyCardOpacity() 在运行时按"用户设的不透明度 + 当前明暗"算出来，
+    写进应用资源覆盖这个默认值。放进主题字典的话，
+    主题字典优先于同名的应用级资源，代码怎么写都不生效（踩过）。
+    默认值取不透明白 —— 没壁纸时就是这个样子。
+  -->
+  <SolidColorBrush x:Key="CardSurfaceBrush" Color="#FFFFFFFF" />
+
+
+  <!-- ───────────── 间距 ───────────── -->
+  <x:Double x:Key="SpaceXXS">2</x:Double>
+  <x:Double x:Key="SpaceXS">4</x:Double>
+  <x:Double x:Key="SpaceS">8</x:Double>
+  <x:Double x:Key="SpaceM">12</x:Double>
+  <x:Double x:Key="SpaceL">16</x:Double>
+  <x:Double x:Key="SpaceXL">20</x:Double>
+  <x:Double x:Key="SpaceXXL">24</x:Double>
+  <x:Double x:Key="Space3XL">32</x:Double>
+
+  <!--
+    ───────────── 圆角 ─────────────
+    前四个是 Fluent 2 的通用档位（小控件 4，按钮 6，卡片 8，大容器 12）。
+    后面两个是这次改版新加的"浮层卡片"档位：
+      浮层卡片要让壁纸透出来，边缘太方会显得硬，所以 18；
+      图标轨里的小方块介于两者之间，12。
+  -->
+  <CornerRadius x:Key="RadiusS">4</CornerRadius>
+  <CornerRadius x:Key="RadiusM">6</CornerRadius>
+  <CornerRadius x:Key="RadiusL">8</CornerRadius>
+  <CornerRadius x:Key="RadiusXL">12</CornerRadius>
+  <CornerRadius x:Key="RadiusRailItem">12</CornerRadius>
+  <CornerRadius x:Key="RadiusCard">18</CornerRadius>
+
+  <!-- ───────────── 外壳尺寸 ───────────── -->
+  <!-- 左侧图标轨：56 刚好放得下 44 的图标方块 + 两侧 6 的留白 -->
+  <x:Double x:Key="RailWidth">56</x:Double>
+  <x:Double x:Key="RailItemSize">44</x:Double>
+  <!-- 标题栏 48：再矮就放不下三个窗口按钮了 -->
+  <x:Double x:Key="TitleBarHeight">48</x:Double>
+  <!-- 卡片之间、卡片与窗口边缘的距离 -->
+  <x:Double x:Key="CardGap">12</x:Double>
+  <!-- 右侧栏：和卡片同宽看起来最稳，再窄就放不下两行元信息 -->
+  <x:Double x:Key="RightRailWidth">360</x:Double>
+
+  <!-- ───────────── 字号 ───────────── -->
+  <x:Double x:Key="FontCaption">11</x:Double>
+  <x:Double x:Key="FontSmall">12</x:Double>
+  <x:Double x:Key="FontBody">14</x:Double>
+  <x:Double x:Key="FontSubtitle">16</x:Double>
+  <x:Double x:Key="FontTitle">20</x:Double>
+  <x:Double x:Key="FontTitleLarge">24</x:Double>
+  <x:Double x:Key="FontDisplay">28</x:Double>
+
+  <!--
+    ───────────── 优先级配色 ─────────────
+    优先级越高，颜色越「热」：灰 → 蓝 → 橙 → 红。
+    这样在 24 小时时间轴上，一眼就能看出哪一段是重点。
+  -->
+  <Color x:Key="PriorityLowFill">#E8E8E8</Color>
+  <Color x:Key="PriorityLowBorder">#C7C7C7</Color>
+  <Color x:Key="PriorityLowText">#5C5C5C</Color>
+
+  <Color x:Key="PriorityNormalFill">#DCEBF9</Color>
+  <Color x:Key="PriorityNormalBorder">#0F6CBD</Color>
+  <Color x:Key="PriorityNormalText">#09457A</Color>
+
+  <!--
+    这两个颜色由代码根据当前强调色算出来（见 ThemeService.ApplyAccentColor）：
+      · AccentSoftFill —— 强调色混进大量背景色，用作"浅底"
+      · AccentSoftText —— 强调色压暗，用作"浅底上的文字"
+    写成 DynamicResource 是为了换主题色时能立刻跟着变。
+    下面这两个值是兜底（= 默认蓝色主题算出来的结果），
+    万一主题服务还没跑，界面也不会出现透明块。
+  -->
+  <Color x:Key="AccentSoftFill">#DCEBF9</Color>
+  <Color x:Key="AccentSoftText">#09457A</Color>
+
+  <Color x:Key="PriorityHighFill">#FDE7D6</Color>
+  <Color x:Key="PriorityHighBorder">#CA5010</Color>
+  <Color x:Key="PriorityHighText">#8A3609</Color>
+
+  <Color x:Key="PriorityUrgentFill">#FDD8D8</Color>
+  <Color x:Key="PriorityUrgentBorder">#C42B1C</Color>
+  <Color x:Key="PriorityUrgentText">#8B1A10</Color>
+
+  <SolidColorBrush x:Key="PriorityLowBrush" Color="{StaticResource PriorityLowFill}" />
+  <SolidColorBrush x:Key="PriorityNormalBrush" Color="{DynamicResource AccentSoftFill}" />
+  <SolidColorBrush x:Key="PriorityHighBrush" Color="{StaticResource PriorityHighFill}" />
+  <SolidColorBrush x:Key="PriorityUrgentBrush" Color="{StaticResource PriorityUrgentFill}" />
+
+  <SolidColorBrush x:Key="PriorityLowBorderBrush" Color="{StaticResource PriorityLowBorder}" />
+  <SolidColorBrush x:Key="PriorityNormalBorderBrush" Color="{DynamicResource SystemAccentColor}" />
+  <SolidColorBrush x:Key="PriorityHighBorderBrush" Color="{StaticResource PriorityHighBorder}" />
+  <SolidColorBrush x:Key="PriorityUrgentBorderBrush" Color="{StaticResource PriorityUrgentBorder}" />
+
+  <SolidColorBrush x:Key="PriorityLowTextBrush" Color="{StaticResource PriorityLowText}" />
+  <SolidColorBrush x:Key="PriorityNormalTextBrush" Color="{DynamicResource AccentSoftText}" />
+  <SolidColorBrush x:Key="PriorityHighTextBrush" Color="{StaticResource PriorityHighText}" />
+  <SolidColorBrush x:Key="PriorityUrgentTextBrush" Color="{StaticResource PriorityUrgentText}" />
+
+  <!--
+    ───────────── 时间轴条目配色 ─────────────
+    「日程」用蓝绿系，「待办」用紫系，「专注」用金色的强调色。
+    这样在时间轴上不用看文字，光看颜色就知道这条是什么类型。
+  -->
+  <SolidColorBrush x:Key="ScheduleEntryBrush" Color="{DynamicResource AccentSoftFill}" />
+  <SolidColorBrush x:Key="ScheduleEntryBorderBrush" Color="{DynamicResource SystemAccentColor}" />
+
+  <SolidColorBrush x:Key="TodoEntryBrush" Color="#E9E1F6" />
+  <SolidColorBrush x:Key="TodoEntryBorderBrush" Color="#5B2D8E" />
+
+  <SolidColorBrush x:Key="FocusEntryBrush" Color="#FFF1CC" />
+  <SolidColorBrush x:Key="FocusEntryBorderBrush" Color="#B8860B" />
+
+  <SolidColorBrush x:Key="RunningFocusEntryBrush" Color="#FFE08A" />
+  <SolidColorBrush x:Key="RunningFocusEntryBorderBrush" Color="#8A6D00" />
+
+  <!-- ───────────── 冲突配色 ───────────── -->
+  <SolidColorBrush x:Key="ConflictErrorBrush" Color="#C42B1C" />
+  <SolidColorBrush x:Key="ConflictWarningBrush" Color="#CA5010" />
+  <SolidColorBrush x:Key="ConflictInfoBrush" Color="{DynamicResource SystemAccentColor}" />
+  <SolidColorBrush x:Key="ConflictErrorFillBrush" Color="#FDE7E9" />
+  <SolidColorBrush x:Key="ConflictWarningFillBrush" Color="#FFF4E5" />
+  <SolidColorBrush x:Key="ConflictInfoFillBrush" Color="{DynamicResource AccentSoftFill}" />
+
+  <!-- ───────────── 时间轴网格 ───────────── -->
+  <SolidColorBrush x:Key="TimelineGridBrush" Color="#000000" Opacity="0.07" />
+  <SolidColorBrush x:Key="TimelineAxisBrush" Color="#000000" Opacity="0.30" />
+  <SolidColorBrush x:Key="TimelineNowBrush" Color="#C42B1C" />
+  <SolidColorBrush x:Key="TimelineSurfaceBrush" Color="#FFFFFF" />
+  <SolidColorBrush x:Key="TimelineHalfHourBrush" Color="#000000" Opacity="0.035" />
+
+  <!-- ───────────── 字体族 ───────────── -->
+  <FontFamily x:Key="AppFontFamily">Inter, Microsoft YaHei UI, Segoe UI, sans-serif</FontFamily>
+
+  <!--
+    ───────────── 图标字体 ─────────────
+    改版前的导航图标是 emoji（📅 🕐 ☑ ⏱ 👥 ⚙）。
+    emoji 是彩色位图，在 56px 的纯图标轨里大小不齐、颜色不受强调色控制，
+    所以换成系统自带的图标字体：
+      Windows 10 有 Segoe MDL2 Assets，Windows 11 有 Segoe Fluent Icons；
+      两个都写上，缺哪个自动后退到下一个。
+  -->
+  <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets, Segoe UI Symbol</FontFamily>
+
+</ResourceDictionary>

@@ -17,19 +17,24 @@
 -->
 <Solution>
 
-  <!-- 领域内核：模型 + 算法，不依赖界面框架 -->
-  <Folder Name="/内核/">
-    <Project Path="HeliumTodo.Core/HeliumTodo.Core.csproj" />
+  <!-- 领域：纯 BCL 的模型、规则与算法，不依赖界面框架 -->
+  <Folder Name="/领域/">
+    <Project Path="HeliumTodo.Domain/HeliumTodo.Domain.csproj" />
   </Folder>
 
-  <!-- 本地存储：EF Core + SQLite -->
-  <Folder Name="/存储/">
-    <Project Path="HeliumTodo.Data/HeliumTodo.Data.csproj" />
+  <!-- 应用：用例编排、契约与配置，只依赖 Domain -->
+  <Folder Name="/应用/">
+    <Project Path="HeliumTodo.Application/HeliumTodo.Application.csproj" />
+  </Folder>
+
+  <!-- 基础设施：EF Core + SQLite（0.5.0 计划切换 PostgreSQL） -->
+  <Folder Name="/基础设施/">
+    <Project Path="HeliumTodo.Infrastructure/HeliumTodo.Infrastructure.csproj" />
   </Folder>
 
   <!-- 界面：Avalonia + FluentAvaloniaUI -->
   <Folder Name="/界面/">
-    <Project Path="HeliumTodo.App/HeliumTodo.App.csproj" />
+    <Project Path="HeliumTodo.Desktop/HeliumTodo.Desktop.csproj" />
   </Folder>
 
   <!-- 测试与自检工具 -->
@@ -40,7 +45,7 @@
 
   <!-- 界面渲染自检：不开窗口也能把页面渲染成图片 -->
   <Folder Name="/工具/">
-    <Project Path="HeliumTodo.RenderCheck/HeliumTodo.RenderCheck.csproj" />
+    <Project Path="HeliumTodo.Verification/HeliumTodo.Verification.csproj" />
   </Folder>
 
 </Solution>

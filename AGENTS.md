@@ -1,6 +1,6 @@
 # AGENTS.md · 给 AI 的硬规则
 
-> 这是一个 **C# 12 / .NET 10 + Avalonia 12 + FluentAvalonia 3.1 + SQLite** 的本地优先桌面应用。
+> 这是一个 **C# 14 / .NET 10 + Avalonia 12 + FluentAvalonia 3.1 + SQLite** 的本地优先桌面应用（0.5.0-alpha P0）。
 > 改代码之前先读 [`DEVELOPMENT_PLAYBOOK.md`](DEVELOPMENT_PLAYBOOK.md)（流程）与 [`ARCHITECTURE.md`](ARCHITECTURE.md)（约定）。
 > 本文件只列**不许破**的规则，不解释为什么——解释在 playbook 里。
 
@@ -13,9 +13,9 @@
 
 ## 分层铁律
 
-- `HeliumTodo.Core` **不许** `using Avalonia`、**不许** 引用 EF Core / Sqlite。它必须能被纯控制台测试。
-- 依赖方向单向：`App → Data → Core`。`Data` 不许引用 `App`。
-- 可测的算术与规则放 `Core`（例：`TimelineMetrics` / `PlaybackLimits` / `RestartPolicy` / `ColorSchemes` / `RenderBackendSettings`）；界面层只做装配。
+- `HeliumTodo.Domain` **不许** `using Avalonia`、**不许** 引用 EF Core / Sqlite。它必须能被纯控制台测试。
+- 依赖方向单向：`Desktop → Application → Domain`；`Infrastructure → Application → Domain`。`Infrastructure` 不许引用 `Desktop`。
+- 可测的算术与规则放 `Domain`（例：`TimelineMetrics` / `PlaybackLimits` / `RestartPolicy` / `ColorSchemes` / `RenderBackendSettings`）；界面层只做装配。
 
 ## 界面铁律（都是踩过坑换来的）
 
@@ -32,7 +32,7 @@
 - **内部控件动画只许一条属性在动**：图标轨展开时整窗只有轨道的 `Width` 在动，条目按钮用
   `Classes.expanded` 切成"跟着拉伸"，自己**不许**再挂一条 `Width` 过渡（否则每帧 1+N 次整页重排）。
   文字淡入用 `Opacity`（不改布局），不许用 `IsVisible` 切。
-- **壁纸必须先缩放到窗口像素**（`HeliumTodo.App/Services/WallpaperScaler.cs`）：把 4K 原图直接丢给
+- **壁纸必须先缩放到窗口像素**（`HeliumTodo.Desktop/Services/WallpaperScaler.cs`）：把 4K 原图直接丢给
   `Image Stretch="UniformToFill"` 会让软件渲染每帧重采样一次（2560×1440 上 +27 ms/帧）。
 - 过渡时长不许在 XAML 里写死数字：读 `RailMetrics.AnimationDurationMs` /
   `WindowTransitionPolicy.DurationMs`，界面、降质时长、自检断言三处共用一个数。
@@ -68,6 +68,7 @@
 - 不擅自升级 Avalonia / SkiaSharp 版本（SkiaSharp 必须与 Avalonia 传递依赖同版，否则运行期崩）。
 - 不把默认渲染后端改回 `Software`：默认是 `Auto`（显卡），理由是动效帧率（见 `ARCHITECTURE.md` §18.2 与 §19.9）。想省内存是**用户**在设置页里选，不是我们替他选。
 - 不在写法里引入 `unsafe`（项目未开 `AllowUnsafeBlocks`）。
+- 新增 `.cs` / `.axaml` 必须带两行 SPDX 头（`python tools\check-license-headers.py` 会拦），见 `DEVELOPMENT_SPEC.md` §13.3。
 - 不为了省事关掉自检项（`--layout-check` 这类是为了防回归，红了要修根因）。
 - 不在 `OnFrameworkInitializationCompleted` 里直接 `desktop.Shutdown()`：此时消息循环还没起来，
   关了 Dispatcher 会让 `StartCore` 抛 `InvalidOperationException`，进程以 `0xE0434352` 退出。
@@ -86,9 +87,9 @@
 ```powershell
 dotnet build HeliumTodo.slnx -c Debug
 dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll
-dotnet HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll --shell
-dotnet HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll --layout-check
-dotnet HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll --perf-check
+dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --shell
+dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --layout-check
+dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --perf-check
 git status --short          # 交付前这里必须是空的
 git add -A && git commit -m "…"
 pwsh tools\check-file-integrity.ps1

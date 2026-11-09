@@ -1,6 +1,8 @@
-using HeliumTodo.Core.Networking;
-using HeliumTodo.Core.Plugins;
-using HeliumTodo.Data;
+// SPDX-FileCopyrightText: 2025 Helium Todo contributors
+// SPDX-License-Identifier: GPL-3.0-only
+
+using HeliumTodo.Domain.Networking;
+using HeliumTodo.Infrastructure;
 using Xunit;
 
 namespace HeliumTodo.Tests;

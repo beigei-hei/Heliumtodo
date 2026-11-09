@@ -1,0 +1,274 @@
+<!--
+  SPDX-FileCopyrightText: 2025 Helium Todo contributors
+  SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:HeliumTodo.Desktop.ViewModels"
+             xmlns:core="using:HeliumTodo.Domain.Models"
+             xmlns:controls="using:HeliumTodo.Desktop.Controls"
+             x:Class="HeliumTodo.Desktop.Views.ScheduleView"
+             x:DataType="vm:ScheduleViewModel">
+
+  <!--
+    日程（改版后）
+
+    整页只有一张卡片：卡片头（标题 + 概览数字 + 「新建」开关）、
+    可折叠的编辑区、然后是日程列表。
+
+    为什么编辑区做成折叠的：
+      新建/编辑表单有 6 行控件，一直摊开会把列表挤到只剩半屏。
+      默认收起、点「新建」或某条日程的铅笔才展开 —— 列表才是这一页的主视觉。
+  -->
+
+  <!--
+    页面分区统一模板（以今日工作流为模板）：
+      第 0 行 = 模块名称那一行（标题 + 概览 + 动作），独立在功能区外面；
+      第 1 行 = 功能区（卡片）。标题不再写进卡片头，见 TodoView 顶部的说明。
+  -->
+
+  <Grid RowDefinitions="Auto,*" Margin="12,4,12,12">
+
+    <!-- ══════════════════ 顶部：模块名称 ══════════════════ -->
+    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" MinHeight="40" Margin="4,0,4,20">
+
+      <!-- 标题与概览排成一行（和今日工作流一样），切页时标题不会上下跳 -->
+      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10"
+                  VerticalAlignment="Center">
+        <TextBlock Text="日程" Classes="pageHeader" />
+        <TextBlock Text="{Binding SummaryText}" Classes="pageCaption" VerticalAlignment="Center" />
+      </StackPanel>
+
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+        <!-- 概览数字与待办页同一种排法（数字 + 单位横排），标题行高度才一致 -->
+        <StackPanel Orientation="Horizontal" Spacing="5">
+          <TextBlock Text="{Binding TodayCount}" Classes="pageMetric" />
+          <TextBlock Text="今天" Classes="pageCaption" VerticalAlignment="Center"
+                     Margin="0,2,0,0" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="5">
+          <TextBlock Text="{Binding WeekCount}" Classes="pageMetric" />
+          <TextBlock Text="未来 7 天" Classes="pageCaption" VerticalAlignment="Center"
+                     Margin="0,2,0,0" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="5">
+          <TextBlock Text="{Binding BusyTodayText}" Classes="pageMetric" />
+          <TextBlock Text="今天占用" Classes="pageCaption" VerticalAlignment="Center"
+                     Margin="0,2,0,0" />
+        </StackPanel>
+
+        <!--
+          新建开关：展开/收起编辑区。
+          直接双向绑 IsEditorOpen —— 点列表里的铅笔按钮时 VM 也会把它置 true，
+          所以「点编辑 → 表单自动展开」这条链路是通的。
+        -->
+        <ToggleButton x:Name="EditorToggle"
+                      Content="＋ 新建"
+                      IsChecked="{Binding IsEditorOpen}"
+                      VerticalAlignment="Center" />
+      </StackPanel>
+    </Grid>
+
+    <!-- ══════════════════ 功能区：一张卡 ══════════════════ -->
+    <Border Grid.Row="1" Classes="card" Padding="0" ClipToBounds="True">
+      <Grid RowDefinitions="Auto,*">
+
+        <!-- ══════════ 编辑区（可折叠） ══════════ -->
+        <Border Grid.Row="0"
+                IsVisible="{Binding IsEditorOpen}"
+                Background="{DynamicResource CardInsetBrush}"
+                BorderBrush="{DynamicResource CardInsetBrush}"
+                BorderThickness="0,1,0,1">
+          <StackPanel Spacing="10" Margin="20,14">
+
+            <TextBlock Text="{Binding EditorTitle}" Classes="section" Margin="0" />
+
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+              <TextBox Grid.Column="0" Text="{Binding NewTitle}"
+                       PlaceholderText="日程名称，例如：高等数学" />
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <Button Content="取消" Command="{Binding CancelEditCommand}"
+                        IsVisible="{Binding IsEditing}" />
+                <Button Content="保存" Classes="accent" Command="{Binding SaveCommand}" />
+              </StackPanel>
+            </Grid>
+
+            <WrapPanel Orientation="Horizontal">
+
+              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,8">
+                <TextBlock Text="开始" Classes="caption" VerticalAlignment="Center" />
+                <DatePicker SelectedDate="{Binding StartDate}" />
+                <TimePicker ClockIdentifier="24HourClock" SelectedTime="{Binding StartTime}" />
+              </StackPanel>
+
+              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,8">
+                <TextBlock Text="时长" Classes="caption" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding DurationMinutes}" Minimum="5" Maximum="1440"
+                               Increment="5" FormatString="0" MinWidth="104" />
+                <TextBlock Text="分钟" Classes="caption" VerticalAlignment="Center" />
+              </StackPanel>
+
+              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,8">
+                <TextBlock Text="优先级" Classes="caption" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding PriorityOptions}"
+                          SelectedItem="{Binding NewPriority}" MinWidth="86">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate DataType="core:Priority">
+                      <TextBlock Text="{Binding Converter={StaticResource PriorityText}}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
+
+              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,16,8">
+                <TextBlock Text="时段" Classes="caption" VerticalAlignment="Center" />
+                <!-- 用转换器把枚举变成中文：Morning → 上午 -->
+                <ComboBox ItemsSource="{Binding BlockOptions}"
+                          SelectedItem="{Binding NewBlock}" MinWidth="86">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate DataType="core:TimeBlock">
+                      <TextBlock Text="{Binding Converter={StaticResource TimeBlockText}}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
+
+              <!-- 提醒：和待办页共用同一个选择器 -->
+              <controls:ReminderPicker DataContext="{Binding Reminder}" />
+            </WrapPanel>
+
+            <!-- 备注 + 重复 -->
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+              <TextBox Grid.Column="0" Text="{Binding NewNotes}"
+                       PlaceholderText="备注 / 地点，例如：三教 305" />
+
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <TextBlock Text="重复" Classes="caption" VerticalAlignment="Center" />
+                <!--
+                  这里必须用 ItemsSource + SelectedValue 的方式。
+                  如果直接写 <ComboBoxItem Tag="daily"> 这样的子元素，
+                  Avalonia 不会去读 Tag，结果是 SelectedValue 绑不上、下拉框空白 —— 之前就是这个 bug。
+                -->
+                <ComboBox ItemsSource="{Binding RecurrenceOptions}"
+                          SelectedValue="{Binding RecurrenceKind}"
+                          SelectedValueBinding="{Binding Key}"
+                          MinWidth="110">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate DataType="vm:RecurrenceOption">
+                      <TextBlock Text="{Binding Label}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </StackPanel>
+            </Grid>
+
+            <!-- 每周重复时选择星期几 -->
+            <StackPanel Orientation="Horizontal" Spacing="14" IsVisible="{Binding IsWeekly}">
+              <TextBlock Text="星期" Classes="caption" VerticalAlignment="Center" />
+              <CheckBox Content="一" IsChecked="{Binding Monday}" />
+              <CheckBox Content="二" IsChecked="{Binding Tuesday}" />
+              <CheckBox Content="三" IsChecked="{Binding Wednesday}" />
+              <CheckBox Content="四" IsChecked="{Binding Thursday}" />
+              <CheckBox Content="五" IsChecked="{Binding Friday}" />
+              <CheckBox Content="六" IsChecked="{Binding Saturday}" />
+              <CheckBox Content="日" IsChecked="{Binding Sunday}" />
+            </StackPanel>
+
+            <!-- 输入不合法时的提示 -->
+            <TextBlock Text="{Binding ErrorMessage}" Classes="caption" TextWrapping="Wrap"
+                       Foreground="{DynamicResource ConflictErrorBrush}"
+                       IsVisible="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </StackPanel>
+        </Border>
+
+        <!-- ══════════ 日程列表（按天分组） ══════════ -->
+        <Grid Grid.Row="1" RowDefinitions="Auto,*" RowSpacing="8" Margin="0,10,0,0">
+
+          <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="20,0,20,0">
+            <TextBlock Text="接下来" Classes="caption" VerticalAlignment="Center" />
+            <ComboBox ItemsSource="{Binding LookaheadOptions}"
+                      SelectedItem="{Binding LookaheadDays}" MinWidth="110">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="x:Int32">
+                  <TextBlock Text="{Binding StringFormat='{}{0} 天'}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+            <!-- 列表真的为空时才显示 -->
+            <TextBlock Text="{Binding EmptyHint}" Classes="caption" VerticalAlignment="Center"
+                       IsVisible="{Binding !DayGroups.Count}" />
+          </StackPanel>
+
+          <ScrollViewer Grid.Row="1" Padding="12,0,12,12" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding DayGroups}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:ScheduleDayGroup">
+                  <StackPanel Margin="8,0,8,14">
+
+                    <!-- 日期标题 -->
+                    <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,6">
+                      <TextBlock Text="{Binding HeaderText}" FontWeight="SemiBold" FontSize="14" />
+                      <Border Classes="chip" Background="{DynamicResource SystemAccentColor}">
+                        <TextBlock Text="{Binding CountText}" Foreground="White" />
+                      </Border>
+                    </StackPanel>
+
+                    <!-- 这一天的日程 -->
+                    <ItemsControl ItemsSource="{Binding Items}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="vm:ScheduleOccurrence">
+                          <Border Classes="listRow" Padding="12,9">
+                            <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="12">
+
+                              <!-- 时间 -->
+                              <StackPanel Grid.Column="0" MinWidth="118" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding TimeRangeText}" FontWeight="SemiBold"
+                                           FontSize="13" />
+                                <TextBlock Text="{Binding DurationText}" Classes="caption" />
+                              </StackPanel>
+
+                              <!-- 优先级竖条 -->
+                              <Border Grid.Column="1" Width="4" CornerRadius="2"
+                                      VerticalAlignment="Stretch"
+                                      Background="{Binding Priority, Converter={StaticResource PriorityBrush}, ConverterParameter=Border}" />
+
+                              <!-- 标题 + 备注 -->
+                              <StackPanel Grid.Column="2" Spacing="2" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis" />
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                  <TextBlock Text="{Binding Notes}" Classes="caption"
+                                             IsVisible="{Binding Notes, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                  <TextBlock Text="{Binding RecurrenceText}" Classes="caption" />
+                                </StackPanel>
+                              </StackPanel>
+
+                              <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="4"
+                                          VerticalAlignment="Center">
+                                <Button FontSize="12" Padding="8,4" ToolTip.Tip="编辑"
+                                        Command="{Binding $parent[ItemsControl].((vm:ScheduleViewModel)DataContext).EditCommand}"
+                                        CommandParameter="{Binding}">
+                                  <TextBlock Text="&#xE70F;" FontFamily="{DynamicResource IconFont}" />
+                                </Button>
+                                <Button FontSize="12" Padding="8,4" ToolTip.Tip="删除整条日程"
+                                        Command="{Binding $parent[ItemsControl].((vm:ScheduleViewModel)DataContext).DeleteCommand}"
+                                        CommandParameter="{Binding}">
+                                  <TextBlock Text="&#xE74D;" FontFamily="{DynamicResource IconFont}" />
+                                </Button>
+                              </StackPanel>
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Grid>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

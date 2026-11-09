@@ -7,7 +7,7 @@
   <PropertyGroup>
     <!--
       版本号：开发阶段。
-        0.3.5-alpha
+        0.5.0-alpha
         │ │ │ └── 预发布标记：alpha = 内测版（比 dev 稳一点，功能还可能变）
         │ │ └──── 修订号：修 bug、微调
         │ └────── 次版本号：加功能
@@ -15,26 +15,33 @@
 
       注意版本号里用 -alpha 而不是 .alpha：
         这是语义化版本（SemVer）的写法。NuGet 和 .NET 的打包工具都只认
-        「数字.数字.数字-预发布标记」这种格式，写成 0.3.5.alpha 会被判为非法版本号。
-        想显示成「0.3.5.alpha」的话，那属于界面上怎么展示的问题，改界面文字就行，
+        「数字.数字.数字-预发布标记」这种格式，写成 0.5.0.alpha 会被判为非法版本号。
+        想显示成「0.5.0.alpha」的话，那属于界面上怎么展示的问题，改界面文字就行，
         但这里（程序集版本）必须是合法格式。
     -->
-    <Version>0.3.5-alpha</Version>
-    <AssemblyVersion>0.3.5.0</AssemblyVersion>
-    <FileVersion>0.3.5.0</FileVersion>
+    <Version>0.5.0-alpha</Version>
+    <AssemblyVersion>0.5.0.0</AssemblyVersion>
+    <FileVersion>0.5.0.0</FileVersion>
 
     <!-- 产品信息 -->
     <Product>Helium Todo</Product>
     <Company>Helium</Company>
-    <Copyright>Copyright (c) 2025 Helium</Copyright>
+    <Copyright>Copyright (c) 2025 Helium Todo contributors</Copyright>
 
-    <!-- 语言特性：C# 12 + 可空引用类型（写代码时能提前发现 null 问题） -->
-    <LangVersion>12.0</LangVersion>
+    <!-- 语言特性：C# 14（.NET 10 默认）+ 可空引用类型（写代码时能提前发现 null 问题） -->
+    <LangVersion>14</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <!-- 不让警告挡住编译，但会把警告打出来提醒 -->
+    <!--
+      不让警告挡住编译，但会把警告打出来提醒。
+
+      NU1900 = 「取不到包漏洞数据」。离线沙箱里 nuget.org 不可达时每次还原都会记一条，
+      它会一直从 project.assets.json 里被重放到构建输出，把「0 警告」门禁弄脏。
+      只屏蔽这一条「数据源不可达」，真实的漏洞警告（NU1901–NU1904）仍然会报。
+    -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);NU1900</NoWarn>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <InvariantGlobalization>false</InvariantGlobalization>
 

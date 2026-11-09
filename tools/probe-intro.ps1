@@ -1,4 +1,4 @@
-﻿# 验证「窗口出现时的淡入 + 轻微放大」在真实窗口里确实逐帧播了。
+# 验证「窗口出现时的淡入 + 轻微放大」在真实窗口里确实逐帧播了。
 #
 # 为什么需要这个脚本：
 #   无头渲染环境里 DispatcherTimer 一次都不触发（实测），所以 --window-check 只能
@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 
 . (Join-Path $PSScriptRoot 'probe-common.ps1')
 
-$exe = Join-Path $PSScriptRoot '..\HeliumTodo.App\bin\Debug\net10.0\HeliumTodo.App.exe'
+$exe = Join-Path $PSScriptRoot '..\HeliumTodo.Desktop\bin\Debug\net10.0\HeliumTodo.Desktop.exe'
 $exe = (Resolve-Path $exe).Path
 
 $sandbox = Join-Path $PSScriptRoot '..\.tmp-intro'

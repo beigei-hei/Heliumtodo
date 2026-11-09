@@ -1,6 +1,8 @@
 # Helium Todo · 技术栈与运行时画像
 
-> 版本 **0.3.5-alpha** ｜ 本文对标的是仓库当前代码，不是计划。
+> 版本 **0.5.0-alpha（P0）** ｜ 本文对标的是仓库当前代码，不是计划。
+> 项目已按 `DEVELOPMENT_SPEC.md` 改名为 Domain / Application / Infrastructure / Desktop / Verification；
+> Material.Avalonia 与 PostgreSQL 目标栈因离线环境尚未切换（见规格 §20 偏差说明）。
 > 所有数字都是在开发机上实测出来的（命令写在每节末尾，可以自己复现）。
 
 ---
@@ -32,8 +34,8 @@
 
 | 需求 | 现成方案 | 本项目的做法 | 原因 |
 | --- | --- | --- | --- |
-| APNG 解码 | SkiaSharp | `HeliumTodo.Core/Imaging/ApngParser.cs`（手工拆帧） | Skia 的 `SKCodec` **不认 APNG**，`FrameCount` 返回 0 |
-| 托盘图标 | WinForms `NotifyIcon` | `HeliumTodo.App/Services/TrayService.cs`（纯 P/Invoke） | WinForms 会把 TFM 变成 `net10.0-windows`，而项目被无头渲染工具引用 |
+| APNG 解码 | SkiaSharp | `HeliumTodo.Domain/Imaging/ApngParser.cs`（手工拆帧） | Skia 的 `SKCodec` **不认 APNG**，`FrameCount` 返回 0 |
+| 托盘图标 | WinForms `NotifyIcon` | `HeliumTodo.Desktop/Services/TrayService.cs`（纯 P/Invoke） | WinForms 会把 TFM 变成 `net10.0-windows`，而项目被无头渲染工具引用 |
 | 系统通知 | WinRT `ToastNotificationManager` | `WindowsToastNotifier` → 托盘气泡 | WinRT 通知需要注册 AppUserModelID + 开始菜单快捷方式 + 额外互操作包 |
 | 窗口圆角 / 最大化动画 | DWM | 圆角用 `Win32Properties.WindowCornerPreference`；动画自己写 180 ms | 无边框窗口（`WindowDecorations="None"`）下 DWM 不给动画，实测确认过 |
 | 数据库迁移 | EF Migrations | `EnsureCreated()` + `EnsureColumns()` 手工补列 | 单机小应用，迁移文件比补列更难维护 |
@@ -45,39 +47,42 @@
 
 ```
 HeliumTodo.slnx
-├─ HeliumTodo.Core          领域模型 + 纯算法（不依赖 UI，也不依赖 EF）
-├─ HeliumTodo.Data          EF Core + SQLite + 备份 + 联机传输
-├─ HeliumTodo.App           Avalonia 界面（Views / ViewModels / Controls / Services / Windowing）
-├─ HeliumTodo.Tests         xunit 测试（168 个）
-├─ HeliumTodo.SelfTest      反射运行器（沙箱里替代 dotnet test）
-└─ HeliumTodo.RenderCheck   无头渲染 + 15 个专项自检 + 后台探针入口
+├─ HeliumTodo.Domain          领域模型 + 纯算法（不依赖 UI，也不依赖 EF）
+├─ HeliumTodo.Application     用例与接口层（P0 仅标记类，P1 搬服务）
+├─ HeliumTodo.Infrastructure  EF Core + SQLite + 备份 + 联机传输
+├─ HeliumTodo.Desktop         Avalonia 界面（Views / ViewModels / Controls / Services / Windowing）
+├─ HeliumTodo.Tests           xunit 测试（190 个）
+├─ HeliumTodo.SelfTest        反射运行器（沙箱里替代 dotnet test）
+└─ HeliumTodo.Verification    无头渲染 + 15 个专项自检 + 后台探针入口
 ```
 
 依赖方向（箭头 = 引用）：
 
 ```
-App ──► Data ──► Core
- │                 ▲
- └─────────────────┘
-Tests ──► Data ──► Core
+Desktop ──► Infrastructure ──► Application ──► Domain
+   │                              ▲
+   └──────────────────────────────┘
+Tests ──► Infrastructure / Application ──► Domain
 SelfTest ──► Tests
-RenderCheck ──► App
+Verification ──► Desktop / Application / Domain
 ```
 
-**硬约束**：`Core` 一个 `PackageReference` 都没有（只有 `System.*` 与 BCL），所以算法层可以被任何宿主复用 —— 这也是将来做 CLI / IPC 宿主的前提。
+**硬约束**：`Domain` 一个 `PackageReference` 都没有（只有 `System.*` 与 BCL），所以算法层可以被任何宿主复用 —— 这也是将来做 CLI / IPC 宿主的前提。
 
 ### 各层职责与规模（实测行数）
 
-只数 `.cs` 与 `.axaml`（不含 `.csproj` / `bin` / `obj`）：
+只数 `.cs` 与 `.axaml`（不含 `.csproj` / `bin` / `obj`）。
+下表数字是 0.3.5 实测、P0 只改名与补头（每文件 +2 行）后的近似值：
 
 | 项目 | 文件 | 行数 | 主要职责 |
 | --- | --- | --- | --- |
-| `Core` | 41 | 5 951 | 模型、重复规则、时间轴构建（并查集分列 + 冲突检测）、专注计时状态机、备份格式、提醒调度、IPC 契约、壁纸取色、窗口过渡规则 |
-| `Data` | 13 | 3 588 | `HeliumDbContext`、5 个仓储、种子数据、`.zip` 备份服务、局域网传输 |
-| `App` | 58 | 15 385 | 6 个页面 + 外壳、9 个 ViewModel、自绘控件、壁纸服务、托盘、提醒、窗口封装 |
+| `Domain` | 41 | 5 951 | 模型、重复规则、时间轴构建（并查集分列 + 冲突检测）、专注计时状态机、备份格式、提醒调度、IPC 契约、壁纸取色、窗口过渡规则 |
+| `Application` | 1 | ~20 | 目标分层中的用例/接口层；P0 只有一个 `ApplicationAssembly` 标记类 |
+| `Infrastructure` | 13 | 3 588 | `HeliumDbContext`、5 个仓储、种子数据、`.zip` 备份服务、局域网传输 |
+| `Desktop` | 58 | 15 385 | 6 个页面 + 外壳、9 个 ViewModel、自绘控件、壁纸服务、托盘、提醒、窗口封装 |
 | `Tests` | 21 | 3 620 | 190 个测试 |
 | `SelfTest` | 1 | 160 | 反射跑 `[Fact]`，支持 `async Task` |
-| `RenderCheck` | 1 | 3 584 | 7 页渲染截图 + 15 个 `--check` |
+| `Verification` | 1 | 3 584 | 7 页渲染截图 + 15 个 `--check` |
 
 ---
 
@@ -160,7 +165,7 @@ $env:HELIUM_RENDER = "angle"    # 或 software / wgl / vulkan / auto
 
 即动态壁纸的额外开销从 **+154 MB** 压到 **+63 MB**，而壁纸上面还盖着一层蒙版、缩到 1280 肉眼几乎看不出来。
 
-规则写在 `HeliumTodo.App/Services/WallpaperDecoder.cs`：
+规则写在 `HeliumTodo.Desktop/Services/WallpaperDecoder.cs`：
 
 - `MaxLongSide = 1920` —— 静态图（只占一帧）保持原样；
 - `MaxAnimatedLongSide = 1280` —— 动图一律缩到这个长边；
@@ -179,11 +184,11 @@ $env:HELIUM_RENDER = "angle"    # 或 software / wgl / vulkan / auto
 ```powershell
 # 内存采样（含私有工作集与模块明细）
 powershell -ExecutionPolicy Bypass -File tools\probe-memory.ps1 `
-  -ExePath HeliumTodo.App\bin\Debug\net10.0\HeliumTodo.App.exe -Seconds 20
+  -ExePath HeliumTodo.Desktop\bin\Debug\net10.0\HeliumTodo.Desktop.exe -Seconds 20
 
 # 抓真实窗口（用 PW_RENDERFULLCONTENT，否则 DirectComposition 内容全黑）
 powershell -ExecutionPolicy Bypass -File tools\capture-window.ps1 `
-  -ExePath HeliumTodo.App\bin\Debug\net10.0\HeliumTodo.App.exe `
+  -ExePath HeliumTodo.Desktop\bin\Debug\net10.0\HeliumTodo.Desktop.exe `
   -OutPath output\capture.png
 ```
 
@@ -193,13 +198,13 @@ powershell -ExecutionPolicy Bypass -File tools\capture-window.ps1 `
 
 | 模块 | 入口 | 关键技术点 |
 | --- | --- | --- |
-| 每日工作流 | `Core/Services/DayTimelineBuilder.cs` | 并查集分组 + 贪心分列算重叠偏移；`laneCount` = 组内最大并发；5 种冲突检测；12 小时过载阈值 |
-| 重复日程 | `Core/Services/RecurrenceExpander.cs` | `daily` / `weekly:N` / `monthly:N` / `weekday`，按天展开而不是预生成 |
-| 专注计时 | `Core/Services/FocusTimerService.cs` | `Idle/Focusing/Break/Paused` 四态；打扰计数；结束时把时长累加回待办的 `FocusedDuration` |
-| 自习室（局域网） | `Data/LanPeerTransport.cs` | 星形拓扑、一行一条 JSON、4 秒心跳 / 15 秒判掉线、UDP 广播发现、默认关闭 |
-| 备份 | `Core/Backup/*` + `Data/DataBackupService.cs` | 一个 `.zip` 装库 + 配置 + 壁纸；清单带 SHA256；替换/合并两种导入 |
-| 提醒 | `Core/Notifications/*` + `App/Services/ReminderService.cs` | 30 秒扫一次、2 分钟容差、`HashSet` 去重、落到 Windows 通知中心 |
-| 壁纸 | `Core/Imaging/ApngParser.cs` + `App/Services/WallpaperService.cs` | 手工拆 APNG、GIF 逐帧、模糊 + 蒙版、取主色 |
+| 每日工作流 | `Domain/Services/DayTimelineBuilder.cs` | 并查集分组 + 贪心分列算重叠偏移；`laneCount` = 组内最大并发；5 种冲突检测；12 小时过载阈值 |
+| 重复日程 | `Domain/Services/RecurrenceExpander.cs` | `daily` / `weekly:N` / `monthly:N` / `weekday`，按天展开而不是预生成 |
+| 专注计时 | `Domain/Services/FocusTimerService.cs` | `Idle/Focusing/Break/Paused` 四态；打扰计数；结束时把时长累加回待办的 `FocusedDuration` |
+| 自习室（局域网） | `Infrastructure/LanPeerTransport.cs` | 星形拓扑、一行一条 JSON、4 秒心跳 / 15 秒判掉线、UDP 广播发现、默认关闭 |
+| 备份 | `Domain/Backup/*` + `Infrastructure/DataBackupService.cs` | 一个 `.zip` 装库 + 配置 + 壁纸；清单带 SHA256；替换/合并两种导入 |
+| 提醒 | `Domain/Notifications/*` + `Desktop/Services/ReminderService.cs` | 30 秒扫一次、2 分钟容差、`HashSet` 去重、落到 Windows 通知中心 |
+| 壁纸 | `Domain/Imaging/ApngParser.cs` + `Desktop/Services/WallpaperService.cs` | 手工拆 APNG、GIF 逐帧、模糊 + 蒙版、取主色 |
 | 窗口外壳 | `App/Windowing/*` | 自绘标题栏 + 三列卡片 + 8 个改大小抓手 + 180 ms 最大化动画 + 单实例唤回 |
 
 ---
@@ -273,7 +278,7 @@ dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll
 
 ## 七、一句话总结
 
-> 它是一套 **.NET 10 + Avalonia 12 的本地优先桌面应用**：Core 层零依赖、可被任何宿主复用；
+> 它是一套 **.NET 10 + Avalonia 12 的本地优先桌面应用**：Domain 层零依赖、可被任何宿主复用；
 > Data 层把 SQLite、`.zip` 备份、局域网传输收在一起；App 层用自绘外壳做出三列卡片工作台。
 > 渲染走 Skia 软件光栅化（换来 −178 MB 私有内存、−65 个线程），动态壁纸按 1280 / 96 MB 限额，
 > 所以空配置下稳定在 **178 MB 工作集 / 47.7 MB 私有工作集**。

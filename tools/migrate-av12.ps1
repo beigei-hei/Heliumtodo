@@ -1,4 +1,4 @@
-﻿#requires -Version 5.1
+#requires -Version 5.1
 <#
     migrate-av12.ps1 —— 把项目从 Avalonia 11.3.2 + FluentAvaloniaUI 2.4.0
                         迁移到 Avalonia 12.1.2 + FluentAvaloniaUI 3.1.0
@@ -269,10 +269,10 @@ Write-Host ""
 Write-Host "② 目标框架 net8.0 → net10.0（6 个 csproj）" -ForegroundColor Yellow
 
 $csprojs = @(
-    'HeliumTodo.App\HeliumTodo.App.csproj'
-    'HeliumTodo.Core\HeliumTodo.Core.csproj'
-    'HeliumTodo.Data\HeliumTodo.Data.csproj'
-    'HeliumTodo.RenderCheck\HeliumTodo.RenderCheck.csproj'
+    'HeliumTodo.Desktop\HeliumTodo.Desktop.csproj'
+    'HeliumTodo.Domain\HeliumTodo.Domain.csproj'
+    'HeliumTodo.Infrastructure\HeliumTodo.Infrastructure.csproj'
+    'HeliumTodo.Verification\HeliumTodo.Verification.csproj'
     'HeliumTodo.SelfTest\HeliumTodo.SelfTest.csproj'
     'HeliumTodo.Tests\HeliumTodo.Tests.csproj'
 )
@@ -300,7 +300,7 @@ foreach ($p in $csprojs) {
 Write-Host ""
 Write-Host "③ 移除 Avalonia.Diagnostics（Avalonia 12 已删除该包）" -ForegroundColor Yellow
 
-Edit-Text -Path 'HeliumTodo.App\HeliumTodo.App.csproj' -Note '删 Diagnostics' -AllowNoMatch -Replacements @(
+Edit-Text -Path 'HeliumTodo.Desktop\HeliumTodo.Desktop.csproj' -Note '删 Diagnostics' -AllowNoMatch -Replacements @(
     @{
         Old = @'
   <ItemGroup Condition="'$(Configuration)' == 'Debug'">
@@ -327,7 +327,7 @@ Edit-Text -Path 'HeliumTodo.App\HeliumTodo.App.csproj' -Note '删 Diagnostics' -
 Write-Host ""
 Write-Host "④ 加 Avalonia.HarfBuzz 显式引用" -ForegroundColor Yellow
 
-foreach ($p in @('HeliumTodo.App\HeliumTodo.App.csproj', 'HeliumTodo.RenderCheck\HeliumTodo.RenderCheck.csproj')) {
+foreach ($p in @('HeliumTodo.Desktop\HeliumTodo.Desktop.csproj', 'HeliumTodo.Verification\HeliumTodo.Verification.csproj')) {
     # 脚本要能重复跑：已经有 HarfBuzz 引用就直接跳过，不然会加两遍
     $full = Join-Path $Root $p
     if ((Get-FileInfo -Path $full).Text.Contains('Avalonia.HarfBuzz')) {
@@ -355,11 +355,11 @@ foreach ($p in @('HeliumTodo.App\HeliumTodo.App.csproj', 'HeliumTodo.RenderCheck
 Write-Host ""
 Write-Host "⑤ App.axaml.cs：移除 BindingPlugins 相关代码" -ForegroundColor Yellow
 
-Edit-Text -Path 'HeliumTodo.App\App.axaml.cs' -Note '删 using' -AllowNoMatch -Replacements @(
+Edit-Text -Path 'HeliumTodo.Desktop\App.axaml.cs' -Note '删 using' -AllowNoMatch -Replacements @(
     @{ Old = "using Avalonia.Data.Core.Plugins;`n"; New = '' }
 )
 
-Edit-Text -Path 'HeliumTodo.App\App.axaml.cs' -Note '删调用' -AllowNoMatch -Replacements @(
+Edit-Text -Path 'HeliumTodo.Desktop\App.axaml.cs' -Note '删调用' -AllowNoMatch -Replacements @(
     @{
         Old = @'
     public override void OnFrameworkInitializationCompleted()
@@ -390,7 +390,7 @@ Edit-Text -Path 'HeliumTodo.App\App.axaml.cs' -Note '删调用' -AllowNoMatch -R
     }
 )
 
-Edit-Text -Path 'HeliumTodo.App\App.axaml.cs' -Note '删方法' -AllowNoMatch -Replacements @(
+Edit-Text -Path 'HeliumTodo.Desktop\App.axaml.cs' -Note '删方法' -AllowNoMatch -Replacements @(
     @{
         Old = @'
     /// <summary>
@@ -420,7 +420,7 @@ Edit-Text -Path 'HeliumTodo.App\App.axaml.cs' -Note '删方法' -AllowNoMatch -R
 Write-Host ""
 Write-Host "⑥ ShellView.axaml.cs：FA 前缀（C# 侧）" -ForegroundColor Yellow
 
-Edit-Text -Path 'HeliumTodo.App\Views\ShellView.axaml.cs' -Note 'FA 类型名' -AllowNoMatch -Replacements @(
+Edit-Text -Path 'HeliumTodo.Desktop\Views\ShellView.axaml.cs' -Note 'FA 类型名' -AllowNoMatch -Replacements @(
     @{ Old = 'NavigationViewSelectionChangedEventArgs e)'; New = 'FANavigationViewSelectionChangedEventArgs e)' }
     @{ Old = 'if (e.SelectedItem is NavigationViewItem { Tag: NavigationItemViewModel item })'
        New = 'if (e.SelectedItem is FANavigationViewItem { Tag: NavigationItemViewModel item })' }
@@ -470,10 +470,10 @@ $xamlRenames = @(
 )
 
 $xamlFiles = @(
-    'HeliumTodo.App\Views\ShellView.axaml'
-    'HeliumTodo.App\Views\SettingsView.axaml'
-    'HeliumTodo.App\Views\FocusView.axaml'
-    'HeliumTodo.App\Views\StudyRoomView.axaml'
+    'HeliumTodo.Desktop\Views\ShellView.axaml'
+    'HeliumTodo.Desktop\Views\SettingsView.axaml'
+    'HeliumTodo.Desktop\Views\FocusView.axaml'
+    'HeliumTodo.Desktop\Views\StudyRoomView.axaml'
 )
 
 foreach ($x in $xamlFiles) {
@@ -556,10 +556,10 @@ Write-Host "⑨ TextBox.Watermark → PlaceholderText（11 处）" -ForegroundCo
 # ⚠️ 只替换 Watermark，不要碰 ComboBox 已经在用的 PlaceholderText。
 #    匹配串带上等号（Watermark="）最保险，不会误伤别的东西。
 $wmFiles = @(
-    'HeliumTodo.App\Views\FocusView.axaml'
-    'HeliumTodo.App\Views\ScheduleView.axaml'
-    'HeliumTodo.App\Views\StudyRoomView.axaml'
-    'HeliumTodo.App\Views\TodoView.axaml'
+    'HeliumTodo.Desktop\Views\FocusView.axaml'
+    'HeliumTodo.Desktop\Views\ScheduleView.axaml'
+    'HeliumTodo.Desktop\Views\StudyRoomView.axaml'
+    'HeliumTodo.Desktop\Views\TodoView.axaml'
 )
 foreach ($x in $wmFiles) {
     Edit-Text -Path $x -Note 'Watermark→PlaceholderText' -Replacements @(
@@ -573,7 +573,7 @@ foreach ($x in $wmFiles) {
 Write-Host ""
 Write-Host "⑩ RenderCheck：两处 Avalonia 12 API 变化" -ForegroundColor Yellow
 
-Edit-Text -Path 'HeliumTodo.RenderCheck\Program.cs' -Note 'WindowDecorations' -Replacements @(
+Edit-Text -Path 'HeliumTodo.Verification\Program.cs' -Note 'WindowDecorations' -Replacements @(
     @{
         Old = @'
         var window = new Window

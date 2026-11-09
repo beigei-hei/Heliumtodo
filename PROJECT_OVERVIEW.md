@@ -35,12 +35,12 @@ C# 12 / .NET 10，界面用 Avalonia 12.1 + FluentAvaloniaUI 3.1（Fluent 2 设�
 分层很干净，而且是**单向依赖**：
 
 ```
-HeliumTodo.App  ──▶  HeliumTodo.Data  ──▶  HeliumTodo.Core
+HeliumTodo.Desktop  ──▶  HeliumTodo.Infrastructure  ──▶  HeliumTodo.Domain
  （界面）              （存储）              （纯逻辑，无任何外部依赖）
 ```
 
-`Core` 不引用 Avalonia、不引用 EF Core —— 所以它的单元测试跑得飞快（190 个测试约 2 秒，纯算法那部分只占几十毫秒），
-以后想换界面框架或换数据库，动的都是外层，`Core` 一行不用改。
+`Domain` 不引用 Avalonia、不引用 EF Core —— 所以它的单元测试跑得飞快（190 个测试约 2 秒，纯算法那部分只占几十毫秒），
+以后想换界面框架或换数据库，动的都是外层，`Domain` 一行不用改。
 
 ---
 
@@ -58,7 +58,7 @@ Helium todo demo/
 │   ├── config.json                     配置副本（便携模式下用这份）
 │   └── helium.db                       SQLite 数据库（76 KB）
 │
-├── HeliumTodo.App/                     【界面层】Avalonia 桌面程序
+├── HeliumTodo.Desktop/                     【界面层】Avalonia 桌面程序
 │   ├── Controls/                       自绘控件
 │   │   ├── ClockControls.cs            ClockFace(时钟表盘) + ProgressRing(圆环进度)
 │   │   ├── TimelineGrid.cs             24 小时时间轴的网格与刻度
@@ -113,9 +113,9 @@ Helium todo demo/
 │   ├── Program.cs                      入口点（含命令行参数处理）
 │   ├── ViewLocator.cs                  VM→View 的自动映射（约定优于配置）
 │   ├── app.manifest                    Windows 清单（DPI 感知等）
-│   └── HeliumTodo.App.csproj
+│   └── HeliumTodo.Desktop.csproj
 │
-├── HeliumTodo.Core/                    【领域内核】纯逻辑，零外部依赖
+├── HeliumTodo.Domain/                    【领域内核】纯逻辑，零外部依赖
 │   ├── Models/
 │   │   ├── Enums.cs                    优先级 / 时段 / 状态 等枚举 + 中文显示名
 │   │   ├── ScheduleItem.cs             日程模型
@@ -151,9 +151,9 @@ Helium todo demo/
 │   │   ├── BackupPackageReader.cs      读 .zip + 逐项校验 SHA256
 │   │   └── BackupInspection.cs         给界面看的「这份包能不能导」
 │   ├── VersionInfo.cs                  版本号（读程序集特性）
-│   └── HeliumTodo.Core.csproj
+│   └── HeliumTodo.Domain.csproj
 │
-├── HeliumTodo.Data/                    【存储层】EF Core + SQLite + 联机传输
+├── HeliumTodo.Infrastructure/                    【存储层】EF Core + SQLite + 联机传输
 │   ├── HeliumDbContext.cs              6 张表的映射
 │   ├── DataServiceCollectionExtensions.cs   AddHeliumData() 一行注册
 │   ├── DatabaseInitializer.cs          建表 / 首次灌示例数据
@@ -165,7 +165,7 @@ Helium todo demo/
 │   ├── StudyRoomRepository.cs          自习室仓储
 │   ├── LanPeerTransport.cs             ★ 局域网传输：双栈 TCP 监听 + UDP 房间广播发现
 │   ├── LocalOnlyPeerTransport.cs       本地模式（未联网时的占位实现）
-│   └── HeliumTodo.Data.csproj
+│   └── HeliumTodo.Infrastructure.csproj
 │
 ├── HeliumTodo.Tests/                   【单元测试】xunit，139 个用例
 │   ├── DayTimelineBuilderTests.cs      ★ 20 KB，覆盖错位算法与冲突检测
@@ -183,9 +183,9 @@ Helium todo demo/
 │   ├── Program.cs                      用反射直接调测试方法（受限环境也能跑）
 │   └── HeliumTodo.SelfTest.csproj
 │
-├── HeliumTodo.RenderCheck/             【界面自检】无头渲染成 PNG
+├── HeliumTodo.Verification/             【界面自检】无头渲染成 PNG
 │   ├── Program.cs                      6 个页面各渲染一张图（--shell 再加外壳），输出到 output/render/
-│   └── HeliumTodo.RenderCheck.csproj
+│   └── HeliumTodo.Verification.csproj
 │
 ├── output/                             渲染自检产出的 PNG
 │
@@ -233,8 +233,8 @@ Helium todo demo/
 
 | 项目 | NuGet 包 | 版本 | 用途 |
 | --- | --- | --- | --- |
-| **Core** | *（无）* | — | **故意零依赖**：这样单元测试不用拉起任何框架 |
-| **Data** | Microsoft.EntityFrameworkCore | 8.0.11 | ORM |
+| **Domain** | *（无）* | — | **故意零依赖**：这样单元测试不用拉起任何框架 |
+| **Infrastructure** | Microsoft.EntityFrameworkCore | 8.0.11 | ORM |
 | | Microsoft.EntityFrameworkCore.Sqlite | 8.0.11 | SQLite 驱动 |
 | | Microsoft.Extensions.DependencyInjection.Abstractions | 8.0.2 | DI 抽象 |
 | | Microsoft.Extensions.Logging | 8.0.1 | 日志抽象 |
@@ -251,7 +251,7 @@ Helium todo demo/
 | | xunit | 2.9.2 | 测试框架 |
 | | xunit.runner.visualstudio | 2.8.2 | VS/Rider 集成 |
 | **SelfTest** | xunit | 2.9.2 | 复用测试特性（`[Fact]`） |
-| **RenderCheck** | Avalonia + Avalonia.Headless | 12.1.2 | 无头渲染 |
+| **Verification** | Avalonia + Avalonia.Headless | 12.1.2 | 无头渲染 |
 | | 其余同 App | | |
 
 > **`Avalonia.Diagnostics` 已经不在了。** Avalonia 12 移除了这个包，
@@ -293,22 +293,22 @@ Helium todo demo/
                     └──────────┬──────────┘
                                │ 引用
                     ┌──────────▼──────────┐
-   HeliumTodo.Core  │    （被所有项目引用） │  ★ 零外部依赖
+   HeliumTodo.Domain  │    （被所有项目引用） │  ★ 零外部依赖
                     └──────────┬──────────┘
                      ┌─────────┴─────────┐
                      │                   │
           ┌──────────▼──────────┐  ┌─────▼───────────────┐
-          │  HeliumTodo.Data    │  │ HeliumTodo.SelfTest │
+          │  HeliumTodo.Infrastructure    │  │ HeliumTodo.SelfTest │
           │  EF Core + SQLite   │  │ (复用 Tests 的代码)  │
           └──────────┬──────────┘  └─────────────────────┘
                      │
           ┌──────────▼──────────┐
-          │  HeliumTodo.App     │  Avalonia + FluentAvaloniaUI
+          │  HeliumTodo.Desktop     │  Avalonia + FluentAvaloniaUI
           │  （界面 + 启动装配） │
           └──────────┬──────────┘
                      │ 引用
           ┌──────────▼──────────┐
-          │ HeliumTodo.RenderCheck │  无头渲染界面成 PNG
+          │ HeliumTodo.Verification │  无头渲染界面成 PNG
           └─────────────────────┘
 ```
 
@@ -339,11 +339,11 @@ Helium todo demo/
 
 | 层 | 项目 | 该放什么 | **不该**放什么 |
 | --- | --- | --- | --- |
-| 领域内核 | `HeliumTodo.Core` | 模型、算法、配置、扩展点接口 | 界面代码、EF Core、任何 NuGet 包 |
-| 存储 | `HeliumTodo.Data` | 数据库映射、仓储、种子数据 | 界面代码、业务规则 |
-| 界面 | `HeliumTodo.App` | 视图、视图模型、自绘控件、样式 | 业务算法（应该在 Core） |
+| 领域内核 | `HeliumTodo.Domain` | 模型、算法、配置、扩展点接口 | 界面代码、EF Core、任何 NuGet 包 |
+| 存储 | `HeliumTodo.Infrastructure` | 数据库映射、仓储、种子数据 | 界面代码、业务规则 |
+| 界面 | `HeliumTodo.Desktop` | 视图、视图模型、自绘控件、样式 | 业务算法（应该在 Domain） |
 
-这条边界是靠**单向依赖**强制保证的：`Core` 想引用 Avalonia 都引用不到（没这个包）。
+这条边界是靠**单向依赖**强制保证的：`Domain` 想引用 Avalonia 都引用不到（没这个包）。
 
 ### MVVM 怎么落地的
 
@@ -517,7 +517,7 @@ dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll
 # ③ 界面渲染自检：6 个页面各渲染成 PNG，输出到 output/render/
 #    不需要桌面环境，编译通过 ≠ 界面没问题，这一步才验证「画得对不对」
 #    加 --shell 会额外渲染整个主窗口（导航栏 + 内容区）成 外壳.png
-dotnet HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll --shell
+dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --shell
 
 # ④ 源文件完整性：166 个文件的 SHA256 指纹
 #    防止批量脚本改坏注释或字符串（编译器查不出来的那种）
@@ -526,7 +526,7 @@ pwsh tools\check-file-integrity.ps1
 # ⑤ 十二项行为自检（每项都要求 exit=0 且 fails=0）
 #    shell / refresh / room / backup / folder / timeline / reminder /
 #    window / restart-prompt / notice / appearance / layout
-$rc = "HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll"
+$rc = "HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll"
 foreach ($c in "--shell-check","--refresh-check","--room-check","--backup-check",
                "--folder-check","--timeline-check","--reminder-check","--window-check",
                "--restart-prompt-check","--notice-check","--appearance-check","--layout-check") {
@@ -619,22 +619,22 @@ HeliumTodo-backup-20261027-183012.zip
 
 | 我想改… | 去看这个文件 |
 | --- | --- |
-| **错位展示 / 冲突检测算法** | `HeliumTodo.Core/Services/DayTimelineBuilder.cs` ⭐ 最核心 |
-| 时间轴的显示效果 | `HeliumTodo.App/Controls/TimelineGrid.cs` + `Views/DashboardView.axaml` |
-| 时钟表盘 | `HeliumTodo.App/Controls/ClockControls.cs` |
-| **配色 / 字号 / 圆角 / 间距** | `HeliumTodo.App/Styles/DesignTokens.axaml` ⭐ 全在这 |
-| 控件外观（按钮、卡片…） | `HeliumTodo.App/Styles/Controls.axaml` |
-| **三大功能怎么联动** | `HeliumTodo.App/ViewModels/AppState.cs` ⭐ |
-| **备份 / 导出 / 导入** | `HeliumTodo.Data/DataBackupService.cs` ⭐ 唯一搬数据的地方；格式在 `Core/Backup/` |
-| 启动装配流程 | `HeliumTodo.App/App.axaml.cs` |
-| 导航栏有哪些页面 | `HeliumTodo.App/ViewModels/ShellViewModel.cs` 的 `BuildNavigation()` |
-| 数据库表结构 | `HeliumTodo.Data/HeliumDbContext.cs` |
-| 示例数据 | `HeliumTodo.Data/SeedData.cs` |
-| 配置项有哪些 | `HeliumTodo.Core/Configuration/AppConfig.cs` |
+| **错位展示 / 冲突检测算法** | `HeliumTodo.Domain/Services/DayTimelineBuilder.cs` ⭐ 最核心 |
+| 时间轴的显示效果 | `HeliumTodo.Desktop/Controls/TimelineGrid.cs` + `Views/DashboardView.axaml` |
+| 时钟表盘 | `HeliumTodo.Desktop/Controls/ClockControls.cs` |
+| **配色 / 字号 / 圆角 / 间距** | `HeliumTodo.Desktop/Styles/DesignTokens.axaml` ⭐ 全在这 |
+| 控件外观（按钮、卡片…） | `HeliumTodo.Desktop/Styles/Controls.axaml` |
+| **三大功能怎么联动** | `HeliumTodo.Desktop/ViewModels/AppState.cs` ⭐ |
+| **备份 / 导出 / 导入** | `HeliumTodo.Infrastructure/DataBackupService.cs` ⭐ 唯一搬数据的地方；格式在 `Domain/Backup/` |
+| 启动装配流程 | `HeliumTodo.Desktop/App.axaml.cs` |
+| 导航栏有哪些页面 | `HeliumTodo.Desktop/ViewModels/ShellViewModel.cs` 的 `BuildNavigation()` |
+| 数据库表结构 | `HeliumTodo.Infrastructure/HeliumDbContext.cs` |
+| 示例数据 | `HeliumTodo.Infrastructure/SeedData.cs` |
+| 配置项有哪些 | `HeliumTodo.Domain/Configuration/AppConfig.cs` |
 | **升级 NuGet 包版本** | `Directory.Packages.props` ⚠️ 注意盯着 DataGrid/ColorPicker 别混版 |
 | 版本号 | `Directory.Build.props` 的 `<Version>` |
 | 加新页面 | 1. 写 ViewModel（继承 `ViewModelBase`）<br>2. 写 View（`XxxView.axaml`，名字要和 VM 对应）<br>3. 在 `ShellViewModel.BuildNavigation()` 里注册 |
-| 加新算法 | 放 `HeliumTodo.Core/Services/`，然后去 `HeliumTodo.Tests/` 加测试 |
+| 加新算法 | 放 `HeliumTodo.Domain/Services/`，然后去 `HeliumTodo.Tests/` 加测试 |
 
 ---
 

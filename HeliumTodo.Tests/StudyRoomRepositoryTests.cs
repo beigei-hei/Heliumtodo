@@ -1,6 +1,9 @@
-using HeliumTodo.Core.Configuration;
-using HeliumTodo.Core.Models;
-using HeliumTodo.Data;
+// SPDX-FileCopyrightText: 2025 Helium Todo contributors
+// SPDX-License-Identifier: GPL-3.0-only
+
+using HeliumTodo.Domain.Configuration;
+using HeliumTodo.Domain.Models;
+using HeliumTodo.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;

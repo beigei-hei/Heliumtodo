@@ -1,4 +1,4 @@
-﻿# 生命周期探针：验证「关掉主界面不退出、进程还在后台跑」。
+# 生命周期探针：验证「关掉主界面不退出、进程还在后台跑」。
 #
 # 做法：启动真实程序 → 给它主窗口发一条 WM_CLOSE（等价于点右上角的 ×）
 # → 等 3 秒看进程还在不在 → 再结束它并清理临时配置目录。
@@ -7,7 +7,7 @@
 # 否则 Windows PowerShell 会按 GBK 去读，直接报 Unexpected token。
 
 param(
-    [string]$ExePath = "HeliumTodo.App\bin\Debug\net10.0\HeliumTodo.App.exe",
+    [string]$ExePath = "HeliumTodo.Desktop\bin\Debug\net10.0\HeliumTodo.Desktop.exe",
     [int]$WaitSeconds = 6
 )
 

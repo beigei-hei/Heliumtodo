@@ -4309,3 +4309,69 @@ Avalonia.Threading.Dispatcher.UIThread.Post(() => desktop.Shutdown());
 3. **PowerShell 的单元素数组会咬人**。`$hit[-1]` 在只有一个匹配时是**字符串的最后一个字符**，
    于是 `.Trim()` 报 `[System.Char] 不包含名为 Trim 的方法` —— 这个项目里第二次踩同一类坑，
    取索引前一律 `@($hit)[-1]`。
+
+## 2026-11-09 · 0.5.0-alpha P0：七项目改名、插件关闭、GPL 落地
+
+这一轮开始执行 [`DEVELOPMENT_SPEC.md`](DEVELOPMENT_SPEC.md) 的 0.5.0 重写，但**只做了 P0**。
+原因写在最前面，免得后来人以为忘了换 Material/PostgreSQL：
+
+- 本机 NuGet 的 HTTPS 在系统层就断了（`schannel: SEC_E_NO_CREDENTIALS`），
+  Material.Avalonia、Npgsql、EF Core 10、Avalonia 12.1.5 一个都装不下来；
+- 机器上没有 PostgreSQL 17，也没有 docker，P2 的「空库迁移 + 6 表往返」无法验证。
+
+按规格附录 A 的约定，不硬推不可验证的栈。所以 P0 先做**机械、可回滚**的部分：
+改名、发许可证、关插件、保持 15 项门禁全绿。FluentAvaloniaUI 与 SQLite 暂时保留。
+
+### 七个项目与命名空间
+
+| 旧 | 新 |
+| --- | --- |
+| `HeliumTodo.Core` | `HeliumTodo.Domain` |
+| `HeliumTodo.Data` | `HeliumTodo.Infrastructure` |
+| `HeliumTodo.App` | `HeliumTodo.Desktop` |
+| `HeliumTodo.RenderCheck` | `HeliumTodo.Verification` |
+| — | `HeliumTodo.Application`（P0 只放一个标记类，P1 才搬类型） |
+
+用 `git mv` 连目录带 `csproj` 一起改，再更新 `slnx`、16 个探针脚本路径、文档里的命令。
+依赖方向改成 `Desktop → Application → Domain`、`Infrastructure → Application → Domain`。
+
+**踩坑：`HeliumTodo.Application` 这个名字会遮住 `Avalonia.Application`。**
+在 `namespace HeliumTodo.*` 里写 `Application`，C# 的成员查找先看外层命名空间，
+`using Application = Avalonia.Application;` 也救不了，报 CS0118「是命名空间，却当类型用」。
+修法是显式写全名：`public partial class App : Avalonia.Application`，其余调用点同样加 `Avalonia.` 前缀。
+
+### 插件按 §9 关闭
+
+- 删掉 `HeliumTodo.Desktop/Services/PluginHost.cs`（380 行）与 5 个 ViewModel 里的注入、
+  DI 注册、事件回调、设置页插件列表。
+- `IHeliumPlugin` / `IHeliumHostContext` 移到 `HeliumTodo.Application/Plugins/`，
+  整文件包在 `#if HELIUM_PLUGINS` 里并标 `[Obsolete]`；默认不定义，等于关闭。
+- 设置页「插件」分组保留，内容换成只读说明；`plugins/` 目录存在时只记一行日志，不读取。
+- 原本挂在 `Domain/Plugins/` 里的联机契约（`IPeerTransport` 等）移到 `Domain/Networking/`，
+  避免把「插件」和「联机」两件事混在一个目录里。
+
+### 许可证
+
+- `LICENSE` = GPL-3.0 英文原文（35 149 字符），`COPYING` 指向它。
+- `LICENSES/` 放 MIT、Apache-2.0、PostgreSQL、OFL-1.1 原文；
+  Apache 文本从本机 `LICENSES.chromium.html` 的 `<pre>` 块提取（外网 HTTPS 不可用）。
+- `THIRD-PARTY-NOTICES.md` 按包逐个列出版本、许可证、版权行，并单独标注
+  「计划引入但当前未引用」的 Material/Npgsql/Behaviors——不把计划当既成事实。
+- 138 个 `.cs` / `.axaml` 全部补两行 SPDX 头；新增 `tools/check-license-headers.py` 做门禁
+  （扫描 138 个、合规 138 个）。
+
+### 版本与门禁
+
+- `Directory.Build.props`：`0.5.0-alpha` / `0.5.0.0` / `LangVersion 14`；界面与备份清单同步。
+- 构建 **0 警告 0 错误**（离线审计数据取不到，只压制 `NU1900`，`NU1901–1904` 仍报）。
+- `SelfTest` **190/190**；十五项 `--check` 全绿；`SPDX` 门禁全绿。
+
+### 四条经验
+
+1. **命名空间也是名字查找的一环**。多一个 `Application` 项目，就能让 `Avalonia.Application`
+   在整棵树里失效；别名 `using` 优先级低于外层命名空间成员。
+2. **PowerShell 的嵌套数组会摊平**。`@(@('0.3.5','0.5.0'))` 取 `[0]` 得到字符 `'0'`，
+   于是把文件里所有 `0` 换成了 `.`；批量替换前先把两列写成独立变量。
+3. **先量网络再定方案**。HTTPS 全断、HTTP 可用，决定了许可证只能从本机已有文件提取。
+4. **改完文本要验换行**。PowerShell 的 `-replace` 在 CRLF 文件上会留下 `\r\r\n`，
+   表现为编译报「字符无效」；统一用 `[regex]::Replace` + `\r?\n`。

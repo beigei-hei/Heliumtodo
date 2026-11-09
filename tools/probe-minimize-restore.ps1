@@ -1,4 +1,4 @@
-﻿# 真机探针：开场动画播到一半被最小化，再从任务栏点回来，状态是不是干净的。
+# 真机探针：开场动画播到一半被最小化，再从任务栏点回来，状态是不是干净的。
 #
 # 验的是 L4 修的那条路：
 #   · 进最小化时必须就地收尾 —— 否则遮罩/变换会跟着窗口一起被最小化，
@@ -9,7 +9,7 @@
 #   应用在状态变化处会记一行"[窗口] 状态 → …"，探针断言这两行都在。
 
 param(
-    [string]$Exe = "HeliumTodo.App\bin\Debug\net10.0\HeliumTodo.App.exe"
+    [string]$Exe = "HeliumTodo.Desktop\bin\Debug\net10.0\HeliumTodo.Desktop.exe"
 )
 
 $ErrorActionPreference = "Stop"

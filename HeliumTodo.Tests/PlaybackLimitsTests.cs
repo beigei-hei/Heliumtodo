@@ -1,4 +1,7 @@
-using HeliumTodo.Core.Media;
+// SPDX-FileCopyrightText: 2025 Helium Todo contributors
+// SPDX-License-Identifier: GPL-3.0-only
+
+using HeliumTodo.Domain.Media;
 using Xunit;
 
 namespace HeliumTodo.Tests;

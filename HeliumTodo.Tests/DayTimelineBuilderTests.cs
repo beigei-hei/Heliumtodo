@@ -1,5 +1,8 @@
-using HeliumTodo.Core.Models;
-using HeliumTodo.Core.Services;
+// SPDX-FileCopyrightText: 2025 Helium Todo contributors
+// SPDX-License-Identifier: GPL-3.0-only
+
+using HeliumTodo.Domain.Models;
+using HeliumTodo.Domain.Services;
 using Xunit;
 
 namespace HeliumTodo.Tests;

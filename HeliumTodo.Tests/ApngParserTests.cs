@@ -1,6 +1,9 @@
+// SPDX-FileCopyrightText: 2025 Helium Todo contributors
+// SPDX-License-Identifier: GPL-3.0-only
+
 using System.Buffers.Binary;
 using System.Text;
-using HeliumTodo.Core.Imaging;
+using HeliumTodo.Domain.Imaging;
 using Xunit;
 
 namespace HeliumTodo.Tests;

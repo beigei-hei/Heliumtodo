@@ -16,7 +16,7 @@ TEXT_ATTRS = (
 # 不参与「界面文字」统计的（控制台输出 / 测试 / 示例数据）
 SKIP_DIRS = {'bin', 'obj', '.git', 'output', 'Data', 'testdata', 'docs'}
 SKIP_FILES = {'SeedData.cs'}          # 示例数据，见文档最后一节单独说明
-SKIP_PROJECTS = ('HeliumTodo.Tests', 'HeliumTodo.SelfTest', 'HeliumTodo.RenderCheck')
+SKIP_PROJECTS = ('HeliumTodo.Tests', 'HeliumTodo.SelfTest', 'HeliumTodo.Verification')
 
 
 def strip_line_comments(code):
@@ -84,7 +84,7 @@ for base, dirs, files in os.walk(ROOT):
                 found[bucket].append((rel, hits))
         elif f.endswith('.cs'):
             top = rel.split(os.sep)[0]
-            if top == 'HeliumTodo.Core' or top == 'HeliumTodo.Data':
+            if top == 'HeliumTodo.Domain' or top == 'HeliumTodo.Infrastructure':
                 bucket = 'core'
             elif 'ViewModels' in rel:
                 bucket = 'vm'

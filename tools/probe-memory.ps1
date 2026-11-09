@@ -1,10 +1,10 @@
-﻿
+
 <#
   内存探针：启动真实 exe，按时间采样工作集 / 私有内存 / GC 堆，
   最后按体积列出已加载的模块（找出谁在吃内存）。
 
   用法：
-    powershell -File tools\probe-memory.ps1 -ExePath "...\HeliumTodo.App.exe" [-ConfigDir ...] [-Seconds 20]
+    powershell -File tools\probe-memory.ps1 -ExePath "...\HeliumTodo.Desktop.exe" [-ConfigDir ...] [-Seconds 20]
 #>
 param(
     [Parameter(Mandatory = $true)][string]$ExePath,

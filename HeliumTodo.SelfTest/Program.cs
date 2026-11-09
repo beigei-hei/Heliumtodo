@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Helium Todo contributors
+// SPDX-License-Identifier: GPL-3.0-only
+
 using System.Diagnostics;
 using System.Reflection;
 using Xunit;

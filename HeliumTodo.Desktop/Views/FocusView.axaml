@@ -1,0 +1,339 @@
+<!--
+  SPDX-FileCopyrightText: 2025 Helium Todo contributors
+  SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:HeliumTodo.Desktop.ViewModels"
+             xmlns:ctrl="using:HeliumTodo.Desktop.Controls"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:core="using:HeliumTodo.Domain.Models"
+             x:Class="HeliumTodo.Desktop.Views.FocusView"
+             x:DataType="vm:FocusViewModel">
+
+  <!--
+    专注（改版后）
+
+      ┌───────────────────────────────────┬──────────────────┐
+      │ 本次专注 / 预订 / 今日统计 / 记录 │      表盘        │
+      │ （左边一列卡片，可滚动）          │   （右侧栏 360） │
+      └───────────────────────────────────┴──────────────────┘
+
+    为什么把表盘挪到右边：
+      表盘是 1:1 的方块，放在左边会把左边那一列的宽度"撑"成 420 ——
+      但它其实是**展示**，不是操作区。挪到右侧栏之后，左边的表单卡片
+      才有地方横向铺开（"做什么 / 关联待办"那一行原来被挤得很窄）。
+      而且表盘高度固定，右侧栏天然适合放这种固定形状的东西。
+  -->
+
+  <!--
+    页面分区统一模板（以今日工作流为模板）：
+      第 0 行 = 模块名称那一行（标题 + 概览），独立在功能区外面；
+      第 1 行 = 提示条（有内容才占高度）；
+      第 2 行 = 功能区（左右两列卡片）。标题不再写进卡片头。
+  -->
+
+  <Grid RowDefinitions="Auto,Auto,*" Margin="12,4,12,12">
+
+    <!-- ══════════════════ 顶部：模块名称 ══════════════════ -->
+    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" MinHeight="40" Margin="4,0,4,20">
+      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+        <TextBlock Text="专注" Classes="pageHeader" />
+        <TextBlock Text="今天" Classes="pageCaption" VerticalAlignment="Center" />
+        <TextBlock Text="{Binding TodayTotalText}" Classes="pageCaption"
+                   VerticalAlignment="Center" />
+        <TextBlock Text="·" Classes="pageCaption" VerticalAlignment="Center" />
+        <TextBlock Text="{Binding TodaySessionCount}" Classes="pageCaption"
+                   VerticalAlignment="Center" />
+        <TextBlock Text="次" Classes="pageCaption" VerticalAlignment="Center" />
+      </StackPanel>
+    </Grid>
+
+    <!--
+      提示条：占一行，滚动区里面的东西不会被它盖住。
+      外面套一层 Panel 只为「收起时不留空白」—— IsVisible=false 的 Panel
+      完全不参与布局，所以下面那张 8px 的下边距也跟着一起消失。
+    -->
+    <Panel Grid.Row="1" Margin="0,0,0,8" IsVisible="{Binding IsNoticeVisible}">
+      <fa:FAInfoBar IsOpen="{Binding IsNoticeVisible}"
+                    Severity="Informational"
+                    Message="{Binding NoticeText}"
+                    IsClosable="True" />
+    </Panel>
+
+    <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+
+      <!-- ══════════ 左列：表单与记录 ══════════ -->
+      <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="12">
+
+          <!-- ───── 本次专注 ───── -->
+          <Border Classes="card" Padding="20,16">
+            <StackPanel Spacing="12">
+              <TextBlock Text="本次专注" Classes="cardHeader" />
+
+              <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="10">
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="做什么"
+                           Classes="caption" VerticalAlignment="Center" MinWidth="56" />
+                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SessionTitle}"
+                         PlaceholderText="不填就用关联待办的标题" />
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="关联待办"
+                           Classes="caption" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="1" Grid.Column="1"
+                          ItemsSource="{Binding AvailableTodos}"
+                          SelectedItem="{Binding TargetTodo}"
+                          HorizontalAlignment="Stretch"
+                          PlaceholderText="（可不选）">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate DataType="core:TodoItem">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{Binding Title}"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="1" Classes="caption"
+                                   Text="{Binding Priority, Converter={StaticResource PriorityText}}" />
+                      </Grid>
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </Grid>
+
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Text="时长" Classes="caption" VerticalAlignment="Center" />
+                <NumericUpDown Value="{Binding FocusMinutes}" Minimum="1" Maximum="480"
+                               Increment="5" FormatString="0" MinWidth="110"
+                               IsEnabled="{Binding IsIdle}" />
+                <TextBlock Text="分钟" Classes="caption" VerticalAlignment="Center" />
+
+                <!-- 常用时长快捷按钮 -->
+                <Button Content="25" FontSize="11" Padding="8,3" Command="{Binding SetPresetCommand}"
+                        CommandParameter="25" />
+                <Button Content="45" FontSize="11" Padding="8,3" Command="{Binding SetPresetCommand}"
+                        CommandParameter="45" />
+                <Button Content="60" FontSize="11" Padding="8,3" Command="{Binding SetPresetCommand}"
+                        CommandParameter="60" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <!-- ───── 预订专注时长 ───── -->
+          <Border Classes="card" Padding="20,16">
+            <StackPanel Spacing="10">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Text="预订专注时长" Classes="cardHeader" />
+                <Button Grid.Column="1" Content="＋ 预订一段" FontSize="12" Padding="10,4"
+                        Command="{Binding QuickReserveCommand}" />
+              </Grid>
+
+              <TextBlock Classes="caption" TextWrapping="Wrap"
+                         Text="预订好的时段会出现在「今日工作流」的时间轴上；如果那段时间已经安排了日程，时间轴会直接标出冲突。" />
+
+              <!-- 预订表单 -->
+              <StackPanel Spacing="8" IsVisible="{Binding IsReservePanelOpen}">
+                <TextBox Text="{Binding ReserveTitle}" PlaceholderText="要专注什么？（可不填）" />
+                <WrapPanel Orientation="Horizontal">
+                  <DatePicker SelectedDate="{Binding ReserveDate}" Margin="0,0,8,6" />
+                  <TimePicker ClockIdentifier="24HourClock" SelectedTime="{Binding ReserveTime}"
+                              Margin="0,0,8,6" />
+                  <NumericUpDown Value="{Binding ReserveMinutes}" Minimum="5" Maximum="480"
+                                 Increment="5" FormatString="0" MinWidth="110" Margin="0,0,8,6" />
+                  <TextBlock Text="分钟" Classes="caption" VerticalAlignment="Center" Margin="0,0,8,6" />
+                  <Button Content="保存预订" Command="{Binding SaveReservationCommand}"
+                          Margin="0,0,0,6" />
+                </WrapPanel>
+              </StackPanel>
+
+              <!-- 已预订列表 -->
+              <ItemsControl ItemsSource="{Binding Reservations}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="core:FocusSession">
+                    <Border Classes="listRow" Padding="10,8">
+                      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                          <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold"
+                                     TextTrimming="CharacterEllipsis" />
+                          <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Classes="caption"
+                                       Text="{Binding PlannedStart, StringFormat='{}{0:MM-dd HH:mm}'}" />
+                            <TextBlock Classes="caption"
+                                       Text="{Binding PlannedDuration, StringFormat='{}{0:hh\\:mm}'}" />
+                          </StackPanel>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="开始" FontSize="11" Padding="9,4"
+                                Command="{Binding $parent[ItemsControl].((vm:FocusViewModel)DataContext).StartReservationCommand}"
+                                CommandParameter="{Binding}" />
+                        <Button Grid.Column="2" Content="取消" FontSize="11" Padding="9,4"
+                                Command="{Binding $parent[ItemsControl].((vm:FocusViewModel)DataContext).CancelReservationCommand}"
+                                CommandParameter="{Binding}" />
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+
+          <!-- ───── 今日统计 ───── -->
+          <Border Classes="card" Padding="20,16">
+            <StackPanel Spacing="12">
+              <TextBlock Text="今日统计" Classes="cardHeader" />
+              <UniformGrid Columns="4">
+                <StackPanel>
+                  <TextBlock Text="{Binding TodayTotalText}" Classes="metric" FontSize="20" />
+                  <TextBlock Text="专注总时长" Classes="caption" />
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="{Binding TodaySessionCount}" Classes="metric" FontSize="20" />
+                  <TextBlock Text="完成次数" Classes="caption" />
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="{Binding AverageSessionText}" Classes="metric" FontSize="20" />
+                  <TextBlock Text="平均每次" Classes="caption" />
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="{Binding InterruptionTotal}" Classes="metric" FontSize="20" />
+                  <TextBlock Text="被打扰" Classes="caption" />
+                </StackPanel>
+              </UniformGrid>
+
+              <TextBlock Classes="caption">
+                <Run Text="累计专注：" />
+                <Run Text="{Binding AllTimeTotalText}" />
+              </TextBlock>
+            </StackPanel>
+          </Border>
+
+          <!-- ───── 今日专注记录 ───── -->
+          <Border Classes="card" Padding="20,16">
+            <StackPanel Spacing="8">
+              <TextBlock Text="今天的专注记录" Classes="cardHeader" />
+
+              <TextBlock Text="今天还没有完成任何专注。" Classes="caption"
+                         IsVisible="{Binding !TodaySessions.Count}" />
+
+              <ScrollViewer MaxHeight="240" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding TodaySessions}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="core:FocusSession">
+                      <Border Classes="listRow" Padding="10,8">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                          <TextBlock Grid.Column="0" Text="&#xE916;"
+                                     FontFamily="{DynamicResource IconFont}" FontSize="14"
+                                     VerticalAlignment="Center" Opacity="0.7" />
+                          <StackPanel Grid.Column="1" Spacing="2">
+                            <TextBlock Text="{Binding Title}" FontSize="13"
+                                       TextTrimming="CharacterEllipsis" />
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                              <TextBlock Classes="caption"
+                                         Text="{Binding StartedAt, StringFormat='{}{0:HH:mm}'}" />
+                              <TextBlock Classes="caption"
+                                         Text="{Binding ActualDuration, StringFormat='{}{0:hh\\:mm}'}" />
+                              <TextBlock Classes="caption"
+                                         Text="{Binding InterruptionCount, StringFormat='打扰 {0} 次'}" />
+                            </StackPanel>
+                          </StackPanel>
+                          <TextBlock Grid.Column="2" Text="&#xE73E;"
+                                     FontFamily="{DynamicResource IconFont}" FontSize="14"
+                                     Foreground="{DynamicResource SystemAccentColor}"
+                                     VerticalAlignment="Center" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </StackPanel>
+          </Border>
+
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- ══════════ 右列：表盘（固定 360 宽） ══════════ -->
+      <Border Grid.Column="1"
+              Classes="card"
+              Width="{DynamicResource RightRailWidth}"
+              Padding="20"
+              VerticalAlignment="Top">
+
+        <StackPanel Spacing="16" HorizontalAlignment="Center">
+
+          <!-- 状态 -->
+          <Border Classes="chip" HorizontalAlignment="Center"
+                  Background="{DynamicResource SystemAccentColor}">
+            <TextBlock Text="{Binding PhaseText}" Foreground="White" FontSize="12" />
+          </Border>
+
+          <!--
+            时钟本体：三层叠在一起
+              ① ProgressRing —— 外圈进度环
+              ② ClockFace    —— 表盘刻度与指针
+              ③ 中间的大字   —— 剩余时间
+          -->
+          <Grid Width="280" Height="280" HorizontalAlignment="Center">
+
+            <ctrl:ProgressRing Value="{Binding ClockProgress}" Thickness="7" />
+
+            <ctrl:ClockFace Progress="{Binding ClockProgress}"
+                            IsIdle="{Binding IsIdle}"
+                            IsPaused="{Binding IsPaused}"
+                            Margin="14" />
+
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="2">
+              <TextBlock Text="{Binding ClockText}"
+                         FontSize="38" FontWeight="Bold"
+                         HorizontalAlignment="Center"
+                         FontFamily="Inter, Consolas, monospace" />
+              <TextBlock Text="{Binding ProgressText}"
+                         Classes="caption" HorizontalAlignment="Center" />
+            </StackPanel>
+          </Grid>
+
+          <!-- 被打扰次数（自控模块的统计） -->
+          <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center"
+                      IsVisible="{Binding !IsIdle}">
+            <TextBlock Text="&#xE7BA;" FontFamily="{DynamicResource IconFont}"
+                       FontSize="12" VerticalAlignment="Center" Opacity="0.7" />
+            <TextBlock Classes="caption" VerticalAlignment="Center">
+              <Run Text="被打扰 " />
+              <Run Text="{Binding InterruptionCount}" />
+              <Run Text=" 次" />
+            </TextBlock>
+          </StackPanel>
+
+          <!-- 控制按钮 -->
+          <StackPanel Spacing="8">
+            <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    Classes="accent"
+                    Command="{Binding StartOrPauseCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="&#xE768;" FontFamily="{DynamicResource IconFont}"
+                           IsVisible="{Binding IsIdle}" VerticalAlignment="Center" />
+                <TextBlock Text="&#xE769;" FontFamily="{DynamicResource IconFont}"
+                           IsVisible="{Binding IsRunning}" VerticalAlignment="Center" />
+                <TextBlock Text="&#xE768;" FontFamily="{DynamicResource IconFont}"
+                           IsVisible="{Binding IsPaused}" VerticalAlignment="Center" />
+
+                <TextBlock Text="开始专注" IsVisible="{Binding IsIdle}" VerticalAlignment="Center" />
+                <TextBlock Text="暂停" IsVisible="{Binding IsRunning}" VerticalAlignment="Center" />
+                <TextBlock Text="继续" IsVisible="{Binding IsPaused}" VerticalAlignment="Center" />
+                <TextBlock Text="跳过休息" IsVisible="{Binding IsBreak}" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+              <Button Grid.Column="0" Content="完成" Command="{Binding FinishNowCommand}"
+                      IsVisible="{Binding !IsIdle}"
+                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+              <Button Grid.Column="1" Content="放弃" Command="{Binding AbandonCommand}"
+                      IsVisible="{Binding !IsIdle}"
+                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+            </Grid>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+    </Grid>
+  </Grid>
+</UserControl>

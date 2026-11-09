@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HeliumTodo.Core\HeliumTodo.Core.csproj" />
+    <ProjectReference Include="..\HeliumTodo.Domain\HeliumTodo.Domain.csproj" />
     <ProjectReference Include="..\HeliumTodo.Tests\HeliumTodo.Tests.csproj" />
   </ItemGroup>
 

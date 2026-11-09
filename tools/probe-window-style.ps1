@@ -1,4 +1,4 @@
-﻿# 验证窗口样式位里确实有 WS_CAPTION，且窗口矩形仍然等于客户区。
+# 验证窗口样式位里确实有 WS_CAPTION，且窗口矩形仍然等于客户区。
 #
 # 为什么需要这个脚本：
 #   DWM 愿不愿意给"最小化 / 最大化 / 还原"播过渡动画，看的是窗口有没有 WS_CAPTION
@@ -21,7 +21,7 @@ Add-Type -Namespace HeliumProbe -Name Native -MemberDefinition @'
 [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
 '@
 
-$exe = Join-Path $PSScriptRoot '..\HeliumTodo.App\bin\Debug\net10.0\HeliumTodo.App.exe'
+$exe = Join-Path $PSScriptRoot '..\HeliumTodo.Desktop\bin\Debug\net10.0\HeliumTodo.Desktop.exe'
 $exe = (Resolve-Path $exe).Path
 
 $sandbox = Join-Path $PSScriptRoot ('_probe-style-' + [guid]::NewGuid().ToString('N'))

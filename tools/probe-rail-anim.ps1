@@ -1,4 +1,4 @@
-﻿# 验证图标轨展开在真实窗口里是不是逐帧来的、有没有卡。
+# 验证图标轨展开在真实窗口里是不是逐帧来的、有没有卡。
 #
 # 为什么需要这个脚本：
 #   无头渲染里 --perf-check 能算出"改一次宽度要 20 ms"，但那是我们自己的计时循环，
@@ -16,7 +16,7 @@ $ErrorActionPreference = 'Stop'
 
 $durationMs = 260
 
-$exe = Join-Path $PSScriptRoot '..\HeliumTodo.App\bin\Debug\net10.0\HeliumTodo.App.exe'
+$exe = Join-Path $PSScriptRoot '..\HeliumTodo.Desktop\bin\Debug\net10.0\HeliumTodo.Desktop.exe'
 $exe = (Resolve-Path $exe).Path
 
 $sandbox = Join-Path $PSScriptRoot '..\.tmp-rail'
