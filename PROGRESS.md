@@ -4375,3 +4375,53 @@ Avalonia.Threading.Dispatcher.UIThread.Post(() => desktop.Shutdown());
 3. **先量网络再定方案**。HTTPS 全断、HTTP 可用，决定了许可证只能从本机已有文件提取。
 4. **改完文本要验换行**。PowerShell 的 `-replace` 在 CRLF 文件上会留下 `\r\r\n`，
    表现为编译报「字符无效」；统一用 `[regex]::Replace` + `\r?\n`。
+
+## 2026-11-09 · 0.5.0-alpha P1：Application 层立起来，契约按层归位
+
+P1 的目标是「先只搬不改」：把原本全堆在 Core（现 Domain）里的配置、进程间通信、
+通知契约搬进 Application，让依赖方向真的变成 `Desktop → Application → Domain`。
+行为一行没改，190 个原有测试原样通过。
+
+### 搬了什么
+
+| 类型 | 从 | 到 |
+| --- | --- | --- |
+| `AppConfig`、`ColorSchemes`、`AccentSources`、`RenderBackendSettings` | `Domain/Configuration` | `Application/Configuration` |
+| `IIpcChannel`、`IpcContracts`（含 `NullIpcChannel`） | `Domain/Ipc` | `Application/Ipc` |
+| `INotificationService`、`NullNotificationService` | `Domain/Notifications` | `Application/Abstractions` |
+| `StudyRoomService` | `Domain/Services` | `Application/Services` |
+| `NoticePolicy` | `Domain/Notifications` | `Domain/Policies` |
+| `ReminderPlanner` / `ReminderItem` | `Domain/Notifications` | `Domain/Services` / `Domain/Models` |
+
+`Domain/Configuration`、`Domain/Ipc`、`Domain/Notifications` 三个目录搬空后删掉。
+
+**这次搬迁暴露了一个真实的层次泄漏**：`StudyRoomService` 里用了 `ConfigService`，
+而配置属于应用层。它在 Domain 里能编译，只是因为当时两者同层；一搬到 Application 才断。
+这正说明「先搬不改」值得做——不搬，这层耦合会一直藏着。
+
+### 新增的接口与契约
+
+- `Domain/Abstractions/IClock.cs`：`DateTimeOffset UtcNow { get; }`，给提醒、备份时间戳用，
+  测试里可以换成固定时钟。
+- `Infrastructure/Platform/SystemClock.cs`：`IClock` 的系统实现。
+- `Application/Contracts/Result.cs`：`Result` / `Result<T>`，后续用例层统一用它表达成功失败，
+  不靠异常做流程控制。
+
+### 用测试锁住分层
+
+`HeliumTodo.Tests/ArchitectureTests.cs` 三条断言检查 `HeliumTodo.Domain` 的程序集引用：
+不得引用 Avalonia/FluentAvalonia、不得引用 EF Core/Npgsql/Sqlite、不得反向引用
+Application/Infrastructure。以后谁再往 Domain 里塞一个 `ConfigService`，构建先红。
+
+### 环境解冻
+
+P0 记录里的「HTTPS 全断」是当时的瞬时故障，现已恢复：
+`api.nuget.org` 走 `nuget.azure.cn` 镜像可正常还原，Material.Avalonia 3.21.0、
+EF Core 10.0.14、Npgsql 10.0.3、Avalonia 12.1.5 都已进本地缓存；
+PostgreSQL 17.11 以便携版跑在 `127.0.0.1:55432`（库 `helium_todo`，trust 认证）。
+P0 的「保留 FluentAvalonia + SQLite」不再是不可抗力，P2 起按规格换掉。
+
+### 门禁
+
+- 构建 **0 警告 0 错误**；`SelfTest` **196/196**（190 + 3 条架构 + 3 条 `Result`）。
+- 十五项 `--check`、SPDX、文件指纹在提交前复跑。

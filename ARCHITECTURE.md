@@ -1937,7 +1937,8 @@ Desktop ──► Application ──► Domain
 ```
 
 - `Domain`：纯 BCL，没有 `PackageReference`，不许出现 `using Avalonia` / EF / Npgsql。
-- `Application`：用例与接口层（P0 只有 `ApplicationAssembly` 标记类，P1 开始搬服务）。
+- `Application`：用例与接口层：配置（`Configuration`）、进程间通信（`Ipc`）、通知接口
+  （`Abstractions`）、`Result` 契约（`Contracts`）、跨仓储用例（`Services`）。
 - `Infrastructure`：EF Core + SQLite + 备份 + 联机传输。
 - `Desktop`：Avalonia 界面与组合根（`App.axaml.cs` 是唯一允许同时看到三层的文件）。
 - `Verification`：无头渲染、十五项 `--check`、探针入口。
@@ -1965,10 +1966,21 @@ Desktop ──► Application ──► Domain
 （`.axaml` 用 XML 注释包住同样的两行。）`python tools/check-license-headers.py`
 扫描全部源文件，缺一个就退出 1。新增文件时先写头再写代码。
 
-### 20.4 尚未切换的技术栈（已知偏差）
+### 20.4 尚未切换的技术栈（P0 时的偏差，P2 起解除）
 
-Material.Avalonia、PostgreSQL/Npgsql、EF Core 10、Avalonia 12.1.5 在当前环境装不上
-（NuGet HTTPS 在系统层失败，且本机没有 PostgreSQL）。因此 0.5.0-alpha 快照里
-FluentAvaloniaUI 3.1.0 与 EF Core 8.0.11 + SQLite 仍在服役。
-**不要把这份快照当成「已经迁移到 Material/PostgreSQL」**；P2/P3/P4 的验收条件见规格。
+P0 提交时 Material.Avalonia、PostgreSQL/Npgsql、EF Core 10、Avalonia 12.1.5 装不上
+（当时 NuGet HTTPS 在系统层失败，本机也没有 PostgreSQL），所以快照里保留
+FluentAvaloniaUI 3.1.0 与 EF Core 8.0.11 + SQLite。该环境问题后来消失：
+镜像还原可用，便携 PostgreSQL 17.11 跑在 `127.0.0.1:55432`。P2 起按规格切换数据库，
+P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
+
+### 20.5 P1 的契约归属
+
+- `Domain` 只留纯规则与领域类型：`Models`（实体/枚举）、`Services`（可测的纯逻辑）、
+  `Policies`（阈值与文案策略）、`Abstractions`（`IClock` 这类无依赖接口）、
+  `Backup` / `Imaging` / `Lifecycle` / `Media` / `Networking` / `Theming` / `Windowing`。
+- `Application` 持有「配置、IPC、通知、用例」。判断标准：**需要读配置、需要跨仓储、
+  需要触达平台能力**的东西属于应用层；只要输入输出都是纯数据的属于领域层。
+- 分层不是靠自觉：`HeliumTodo.Tests/ArchitectureTests.cs` 用程序集引用断言锁住
+  `Domain` 不引用 Avalonia / EF / Npgsql，也不反向引用 Application / Infrastructure。
 

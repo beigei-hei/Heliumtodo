@@ -366,60 +366,60 @@
 
 ### `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs`（54 处）
 
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:244` — `? "已切换到暗色模式：壁纸会自动压暗一档，浓度可以在「背景壁纸」里调。"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:245` — `: "已切换到亮色模式。";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:315` — `AccentSourceDefs.Wallpaper => "强调色改为跟随壁纸：壁纸换一帧，强调色也跟着重新算。",`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:316` — `AccentSourceDefs.Custom => "强调色改为自定义：下面那块调色板现在可以拖了。",`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:317` — `_ => "强调色改回跟随主题。",`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:383` — `[ObservableProperty] private string _wallpaperStatusText = "还没有选壁纸";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:406` — `WallpaperStatusText = "壁纸已关闭";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:414` — `WallpaperStatusText = "请先选一张图片";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:433` — `WallpaperStatusText = "还没有选壁纸";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:484` — `WallpaperStatusText = "正在加载…";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:491` — `: $"打不开这张图：{_wallpaper.Error}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:501` — `WallpaperStatusText = "还没有选壁纸";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:505` — `WallpaperStatusText = "壁纸已关闭";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:513` — `WallpaperStatusText = "还没加载";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:520` — `? $"动图 {_wallpaper.FrameCount}/{_wallpaper.SourceFrameCount} 帧"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:521` — `: "静态图";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:523` — `return $"{_wallpaper.PixelWidth}×{_wallpaper.PixelHeight} · {kind} · 主色调 {_wallpaper.Accent.ToHex()}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:544` — `? "已打开局域网联机：可以去自习室建房，或者填同学的 IP 连过去。"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:545` — `: "已关闭局域网联机：自习室只在本机用，不再监听端口。";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:631` — `new(RenderBackendSettings.Auto, "Avalonia 自带渲染器（默认，最流畅）"),`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:632` — `new(RenderBackendSettings.Software, "软件渲染（省内存，动画会掉帧）"),`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:703` — `NoticeText = $"渲染后端已保存为「{backendName}」。检测到正在调试器里运行，"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:704` — `+ "自动重启会把调试器甩掉、还会占住 exe 让下次编译失败；"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:705` — `+ "请用调试器的「重新启动」(Ctrl+Shift+F5)，或停止调试后重新运行。";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:711` — `NoticeText = $"渲染后端已保存为「{backendName}」，"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:712` — `+ "但自动重启没成功，请手动关闭后重新打开 Helium Todo。";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:748` — `NoticeText = $"已取消更改，渲染后端仍是「{backTo.DisplayText}」。";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:798` — `$"当前生效：{activeText}（由环境变量 HELIUM_RENDER 强制指定，这一项暂时不起作用）";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:804` — `? $"当前生效：{activeText}"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:805` — `: $"当前生效：{activeText}；重启程序后改为 {RenderBackendSettings.DisplayName(selectedKey)}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:843` — `NoticeText = $"配置已保存到：{_configService.ConfigFilePath}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:901` — `NoticeText = "已恢复默认设置。";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:936` — `[ObservableProperty] private string _backupStatusText = "还没有导出或导入过";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:976` — `BackupStatusText = "正在打包…";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:986` — `BackupStatusText = $"原位置不能写入，已改存到备份文件夹：{Path.GetFileName(result.Path)}"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:988` — `NoticeText = "那个文件夹系统不让写（多半是「受控文件夹访问」），备份已经放到「备份文件夹」里了。";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:993` — `BackupStatusText = $"已导出 {Path.GetFileName(result.Path)}"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1000` — `BackupStatusText = $"导出失败：{ex.Message}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1019` — `BackupStatusText = "正在检查这份备份…";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1027` — `BackupStatusText = $"这份文件不能导入：{inspection.Error}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1041` — `BackupStatusText = $"读不了这份备份：{ex.Message}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1073` — `? "正在替换…（会先备份当前数据）"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1074` — `: "正在合并…";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1089` — `BackupStatusText = $"导入失败：{ex.Message}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1190` — `NoticeText = $"打开文件夹失败：{ex.Message}（{path}）";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1207` — `reasons.Add("Avalonia Launcher：系统没有接受这次打开请求");`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1220` — `("外壳启动资源管理器", new ProcessStartInfo`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1226` — `("系统默认方式", new ProcessStartInfo`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1232` — `("直接启动资源管理器", new ProcessStartInfo`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1244` — `("经 cmd start 打开", new ProcessStartInfo`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1267` — `NoticeText = $"打开文件夹失败（{string.Join("；", reasons)}）路径：{path}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1287` — `AccentSourceDefs.Wallpaper => "从壁纸里自动提一个主色调",`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1288` — `AccentSourceDefs.Custom => "用下面的调色板自己调",`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1289` — `_ => "用主题自带的那套颜色",`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:245` — `? "已切换到暗色模式：壁纸会自动压暗一档，浓度可以在「背景壁纸」里调。"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:246` — `: "已切换到亮色模式。";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:316` — `AccentSourceDefs.Wallpaper => "强调色改为跟随壁纸：壁纸换一帧，强调色也跟着重新算。",`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:317` — `AccentSourceDefs.Custom => "强调色改为自定义：下面那块调色板现在可以拖了。",`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:318` — `_ => "强调色改回跟随主题。",`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:384` — `[ObservableProperty] private string _wallpaperStatusText = "还没有选壁纸";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:407` — `WallpaperStatusText = "壁纸已关闭";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:415` — `WallpaperStatusText = "请先选一张图片";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:434` — `WallpaperStatusText = "还没有选壁纸";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:485` — `WallpaperStatusText = "正在加载…";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:492` — `: $"打不开这张图：{_wallpaper.Error}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:502` — `WallpaperStatusText = "还没有选壁纸";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:506` — `WallpaperStatusText = "壁纸已关闭";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:514` — `WallpaperStatusText = "还没加载";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:521` — `? $"动图 {_wallpaper.FrameCount}/{_wallpaper.SourceFrameCount} 帧"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:522` — `: "静态图";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:524` — `return $"{_wallpaper.PixelWidth}×{_wallpaper.PixelHeight} · {kind} · 主色调 {_wallpaper.Accent.ToHex()}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:545` — `? "已打开局域网联机：可以去自习室建房，或者填同学的 IP 连过去。"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:546` — `: "已关闭局域网联机：自习室只在本机用，不再监听端口。";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:632` — `new(RenderBackendSettings.Auto, "Avalonia 自带渲染器（默认，最流畅）"),`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:633` — `new(RenderBackendSettings.Software, "软件渲染（省内存，动画会掉帧）"),`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:704` — `NoticeText = $"渲染后端已保存为「{backendName}」。检测到正在调试器里运行，"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:705` — `+ "自动重启会把调试器甩掉、还会占住 exe 让下次编译失败；"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:706` — `+ "请用调试器的「重新启动」(Ctrl+Shift+F5)，或停止调试后重新运行。";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:712` — `NoticeText = $"渲染后端已保存为「{backendName}」，"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:713` — `+ "但自动重启没成功，请手动关闭后重新打开 Helium Todo。";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:749` — `NoticeText = $"已取消更改，渲染后端仍是「{backTo.DisplayText}」。";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:799` — `$"当前生效：{activeText}（由环境变量 HELIUM_RENDER 强制指定，这一项暂时不起作用）";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:805` — `? $"当前生效：{activeText}"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:806` — `: $"当前生效：{activeText}；重启程序后改为 {RenderBackendSettings.DisplayName(selectedKey)}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:844` — `NoticeText = $"配置已保存到：{_configService.ConfigFilePath}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:902` — `NoticeText = "已恢复默认设置。";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:937` — `[ObservableProperty] private string _backupStatusText = "还没有导出或导入过";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:977` — `BackupStatusText = "正在打包…";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:987` — `BackupStatusText = $"原位置不能写入，已改存到备份文件夹：{Path.GetFileName(result.Path)}"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:989` — `NoticeText = "那个文件夹系统不让写（多半是「受控文件夹访问」），备份已经放到「备份文件夹」里了。";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:994` — `BackupStatusText = $"已导出 {Path.GetFileName(result.Path)}"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1001` — `BackupStatusText = $"导出失败：{ex.Message}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1020` — `BackupStatusText = "正在检查这份备份…";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1028` — `BackupStatusText = $"这份文件不能导入：{inspection.Error}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1042` — `BackupStatusText = $"读不了这份备份：{ex.Message}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1074` — `? "正在替换…（会先备份当前数据）"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1075` — `: "正在合并…";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1090` — `BackupStatusText = $"导入失败：{ex.Message}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1191` — `NoticeText = $"打开文件夹失败：{ex.Message}（{path}）";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1208` — `reasons.Add("Avalonia Launcher：系统没有接受这次打开请求");`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1221` — `("外壳启动资源管理器", new ProcessStartInfo`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1227` — `("系统默认方式", new ProcessStartInfo`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1233` — `("直接启动资源管理器", new ProcessStartInfo`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1245` — `("经 cmd start 打开", new ProcessStartInfo`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1268` — `NoticeText = $"打开文件夹失败（{string.Join("；", reasons)}）路径：{path}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1288` — `AccentSourceDefs.Wallpaper => "从壁纸里自动提一个主色调",`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1289` — `AccentSourceDefs.Custom => "用下面的调色板自己调",`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1290` — `_ => "用主题自带的那套颜色",`
 
 ### `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs`（7 处）
 
@@ -433,36 +433,36 @@
 
 ### `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs`（30 处）
 
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:45` — `_roomName = "期末冲刺自习室";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:128` — `public string CurrentRoomName => CurrentRoom?.Name ?? "还没有加入自习室";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:131` — `public string MemberCountText => $"{Members.Count} 人在线";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:134` — `[ObservableProperty] private string _myFocusTodayText = "0 分钟";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:144` — `[ObservableProperty] private string _focusTitle = "和大家一起专注";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:181` — `if (!IsOnlineAvailable) return "当前是本地模式，没法联机。";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:185` — `return "局域网联机默认关闭：到「设置 → 自习室」打开「局域网联机」后，才能和同学一起自习。";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:189` — `? $"已连接 · 共 {_roomService.LocalPort} 端口在监听"`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:190` — `: "局域网联机已就绪：填对方的 IP 点「连接」，或者让对方填你的地址。";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:219` — `return rtt <= 0 ? "正在测延迟…" : $"延迟 {rtt} 毫秒";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:234` — `var latency = p.RoundTripMs > 0 ? $"{p.RoundTripMs} ms" : "未测";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:251` — `: "未启动";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:269` — `NoticeText = "先填对方的 IP 地址，例如 192.168.1.5 或 [fe80::1]:47470";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:275` — `NoticeText = "局域网联机是关着的。到「设置 → 自习室」打开「局域网联机」再来。";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:279` — `NoticeText = "正在连接…";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:286` — `NoticeText = ok ? "连上了，可以让对方开始专注了。" : "没连上，看看地址和房间码对不对。";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:318` — `NoticeText = "请输入房间码。";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:336` — `NoticeText = $"已回到本地房间「{local.Name}」。";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:344` — `? "本地找不到这个房间。联机是关着的，先到「设置 → 自习室」打开「局域网联机」。"`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:345` — `: "本地找不到这个房间，而且当前是本地模式，没法联机。";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:352` — `? $"本地没有这个房间。请在下面填上房主的 IP 地址，再点「连接」。"`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:353` — `: "正在连接…";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:376` — `NoticeText = "已离开自习室。";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:385` — `NoticeText = "先创建或加入一个自习室吧。";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:390` — `var title = string.IsNullOrWhiteSpace(FocusTitle) ? "和大家一起专注" : FocusTitle;`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:447` — `NoticeText = "先创建一个自习室。";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:451` — `var names = new[] { "小张", "小李", "小王", "阿伟", "小陈" };`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:457` — `NoticeText = "示例队友已经加满了。";`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:477` — `SenderName = "系统",`
-- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:478` — `Content = $"「{name}」加入了自习室。",`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:46` — `_roomName = "期末冲刺自习室";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:129` — `public string CurrentRoomName => CurrentRoom?.Name ?? "还没有加入自习室";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:132` — `public string MemberCountText => $"{Members.Count} 人在线";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:135` — `[ObservableProperty] private string _myFocusTodayText = "0 分钟";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:145` — `[ObservableProperty] private string _focusTitle = "和大家一起专注";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:182` — `if (!IsOnlineAvailable) return "当前是本地模式，没法联机。";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:186` — `return "局域网联机默认关闭：到「设置 → 自习室」打开「局域网联机」后，才能和同学一起自习。";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:190` — `? $"已连接 · 共 {_roomService.LocalPort} 端口在监听"`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:191` — `: "局域网联机已就绪：填对方的 IP 点「连接」，或者让对方填你的地址。";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:220` — `return rtt <= 0 ? "正在测延迟…" : $"延迟 {rtt} 毫秒";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:235` — `var latency = p.RoundTripMs > 0 ? $"{p.RoundTripMs} ms" : "未测";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:252` — `: "未启动";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:270` — `NoticeText = "先填对方的 IP 地址，例如 192.168.1.5 或 [fe80::1]:47470";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:276` — `NoticeText = "局域网联机是关着的。到「设置 → 自习室」打开「局域网联机」再来。";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:280` — `NoticeText = "正在连接…";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:287` — `NoticeText = ok ? "连上了，可以让对方开始专注了。" : "没连上，看看地址和房间码对不对。";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:319` — `NoticeText = "请输入房间码。";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:337` — `NoticeText = $"已回到本地房间「{local.Name}」。";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:345` — `? "本地找不到这个房间。联机是关着的，先到「设置 → 自习室」打开「局域网联机」。"`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:346` — `: "本地找不到这个房间，而且当前是本地模式，没法联机。";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:353` — `? $"本地没有这个房间。请在下面填上房主的 IP 地址，再点「连接」。"`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:354` — `: "正在连接…";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:377` — `NoticeText = "已离开自习室。";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:386` — `NoticeText = "先创建或加入一个自习室吧。";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:391` — `var title = string.IsNullOrWhiteSpace(FocusTitle) ? "和大家一起专注" : FocusTitle;`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:448` — `NoticeText = "先创建一个自习室。";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:452` — `var names = new[] { "小张", "小李", "小王", "阿伟", "小陈" };`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:458` — `NoticeText = "示例队友已经加满了。";`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:478` — `SenderName = "系统",`
+- `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs:479` — `Content = $"「{name}」加入了自习室。",`
 
 ### `HeliumTodo.Desktop\ViewModels\TimelineEntryViewModel.cs`（12 处）
 
@@ -496,42 +496,94 @@
 
 共 39 个文件、250 处。
 
+### `HeliumTodo.Application\Configuration\AccentSources.cs`（3 处）
+
+- `HeliumTodo.Application\Configuration\AccentSources.cs:57` — `Wallpaper => "跟随壁纸",`
+- `HeliumTodo.Application\Configuration\AccentSources.cs:58` — `Custom => "自定义颜色",`
+- `HeliumTodo.Application\Configuration\AccentSources.cs:59` — `_ => "跟随主题",`
+
+### `HeliumTodo.Application\Configuration\AppConfig.cs`（2 处）
+
+- `HeliumTodo.Application\Configuration\AppConfig.cs:290` — `FallbackReason = $"{reason}；备用目录也不可用：{secondReason}";`
+- `HeliumTodo.Application\Configuration\AppConfig.cs:320` — `reason = $"{directory} 不可写（{ex.GetType().Name}: {ex.Message}）";`
+
+### `HeliumTodo.Application\Configuration\ColorSchemes.cs`（3 处）
+
+- `HeliumTodo.Application\Configuration\ColorSchemes.cs:51` — `"深色" or "夜间" or "night" or "dim" => Dark,`
+- `HeliumTodo.Application\Configuration\ColorSchemes.cs:52` — `"浅色" or "日间" or "day" => Light,`
+- `HeliumTodo.Application\Configuration\ColorSchemes.cs:59` — `Normalize(value) == Dark ? "暗色" : "亮色";`
+
+### `HeliumTodo.Application\Configuration\RenderBackendSettings.cs`（2 处）
+
+- `HeliumTodo.Application\Configuration\RenderBackendSettings.cs:94` — `Auto => "Avalonia 自带渲染器",`
+- `HeliumTodo.Application\Configuration\RenderBackendSettings.cs:97` — `_ => "软件渲染",`
+
+### `HeliumTodo.Application\Ipc\IIpcChannel.cs`（1 处）
+
+- `HeliumTodo.Application\Ipc\IIpcChannel.cs:61` — `=> Task.FromResult(IpcResponse.Failure("没有可用的进程间通道。"));`
+
 ### `HeliumTodo.Application\Plugins\IHeliumPlugin.cs`（2 处）
 
 - `HeliumTodo.Application\Plugins\IHeliumPlugin.cs:20` — `[Obsolete("0.5.0-alpha 起暂时禁用，见 DEVELOPMENT_SPEC.md §9")]`
 - `HeliumTodo.Application\Plugins\IHeliumPlugin.cs:82` — `[Obsolete("0.5.0-alpha 起暂时禁用，见 DEVELOPMENT_SPEC.md §9")]`
 
+### `HeliumTodo.Application\Services\StudyRoomService.cs`（23 处）
+
+- `HeliumTodo.Application\Services\StudyRoomService.cs:108` — `Name = string.IsNullOrWhiteSpace(name) ? "我的自习室" : name,`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:109` — `HostName = string.IsNullOrWhiteSpace(hostName) ? "我" : hostName,`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:133` — `AddSystemMessage($"房间「{room.Name}」已创建，房间码 {room.Code}。");`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:151` — `AddSystemMessage("当前是本地模式，没法连到别人的房间。");`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:155` — `AddSystemMessage($"准备加入房间 {roomCode.Trim().ToUpperInvariant()}，请填写房主地址后点「连接」。");`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:173` — `AddSystemMessage("当前是本地模式，没法联机。");`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:181` — `AddSystemMessage("请先填房间码。");`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:187` — `AddSystemMessage("请先填对方的 IP 地址。");`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:197` — `AddSystemMessage("没连上，检查一下地址、房间码，以及对方的防火墙是否放行了这个端口。");`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:205` — `Name = $"{displayName} 的自习室",`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:214` — `DisplayName = string.IsNullOrWhiteSpace(displayName) ? "我" : displayName,`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:220` — `AddSystemMessage($"已连上 {host.Trim()}，房间码 {code}。");`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:231` — `AddSystemMessage("已离开房间。");`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:250` — `AddSystemMessage($"「{(me?.DisplayName ?? "我")}」开始了 {duration.TotalMinutes:0} 分钟的专注：{title}");`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:254` — `me?.DisplayName ?? "我",`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:275` — `AddSystemMessage($"专注结束，本次 {actualDuration.TotalMinutes:0} 分钟。");`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:279` — `me?.DisplayName ?? "我",`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:288` — `public void SendMessage(string content, string senderName = "我")`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:316` — `SenderName = "系统",`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:350` — `DisplayName = string.IsNullOrWhiteSpace(presence.DisplayName) ? "同学" : presence.DisplayName,`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:358` — `AddSystemMessage($"「{(string.IsNullOrWhiteSpace(presence.DisplayName) ? "同学" : presence.DisplayName)}」进来了。");`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:367` — `AddSystemMessage($"「{member.DisplayName}」离开了。");`
+- `HeliumTodo.Application\Services\StudyRoomService.cs:384` — `SenderName = string.IsNullOrWhiteSpace(message.DisplayName) ? "同学" : message.DisplayName,`
+
 ### `HeliumTodo.Desktop\App.axaml.cs`（29 处）
 
-- `HeliumTodo.Desktop\App.axaml.cs:148` — `LogBackground("[插件] 检测到 plugins 目录，本版本不加载");`
-- `HeliumTodo.Desktop\App.axaml.cs:172` — `LogBackground("[单实例] 已经有一份在跑，已请它把窗口显示出来，本进程退出");`
-- `HeliumTodo.Desktop\App.axaml.cs:209` — `LogBackground($"[退出] 进程正常结束，退出码 {e.ApplicationExitCode}");`
-- `HeliumTodo.Desktop\App.axaml.cs:235` — `LogBackground("[提醒] 后台扫描已启动（每 30 秒一次）");`
-- `HeliumTodo.Desktop\App.axaml.cs:250` — `LogBackground($"[环境] 会话={System.Diagnostics.Process.GetCurrentProcess().SessionId}"`
-- `HeliumTodo.Desktop\App.axaml.cs:251` — `+ $" 管理员={IsElevated()}"`
-- `HeliumTodo.Desktop\App.axaml.cs:252` — `+ $" 资源管理器={DescribeExplorer()}"`
-- `HeliumTodo.Desktop\App.axaml.cs:253` — `+ $" 渲染后端={Domain.Configuration.RenderBackendSettings.DisplayName(HeliumTodo.Desktop.Services.RenderBackendChoice.ActiveKey)}"`
-- `HeliumTodo.Desktop\App.axaml.cs:268` — `LogBackground("[托盘] 启动失败：没有托盘图标，但关闭仍会留在后台"`
-- `HeliumTodo.Desktop\App.axaml.cs:269` — `+ "（再双击一次程序即可唤回窗口）");`
-- `HeliumTodo.Desktop\App.axaml.cs:275` — `? "[托盘] 自检模式：假装托盘已就绪（没有真的图标）"`
-- `HeliumTodo.Desktop\App.axaml.cs:276` — `: "[托盘] 已启动，关闭按钮改为藏窗口");`
-- `HeliumTodo.Desktop\App.axaml.cs:299` — `? "[窗口] 关闭按钮被拦截，已隐藏到托盘（进程继续运行）"`
-- `HeliumTodo.Desktop\App.axaml.cs:300` — `: "[窗口] 关闭按钮被拦截，已隐藏（没有托盘图标，再双击程序可唤回）");`
-- `HeliumTodo.Desktop\App.axaml.cs:345` — `return "没有运行";`
-- `HeliumTodo.Desktop\App.axaml.cs:349` — `return $"PID {string.Join(',', processes.Select(p => p.Id))} 会话 {string.Join(',', sessions)}";`
-- `HeliumTodo.Desktop\App.axaml.cs:353` — `return "查不到";`
-- `HeliumTodo.Desktop\App.axaml.cs:417` — `? "[备份] 这次没做成"`
-- `HeliumTodo.Desktop\App.axaml.cs:418` — `: $"[备份] 已生成 {path}");`
-- `HeliumTodo.Desktop\App.axaml.cs:652` — `? $"[启动] 首次运行，已写入示例数据：{databasePath}"`
-- `HeliumTodo.Desktop\App.axaml.cs:653` — `: $"[启动] 数据库就绪：{databasePath}");`
-- `HeliumTodo.Desktop\App.axaml.cs:661` — `Console.Error.WriteLine($"[启动] 数据库初始化失败：{ex.Message}（库路径：{configService.ResolveDatabasePath()}）");`
-- `HeliumTodo.Desktop\App.axaml.cs:695` — `LogBackground("[重启] 检测到调试器，放弃自动重启："`
-- `HeliumTodo.Desktop\App.axaml.cs:696` — `+ "请用调试器的「重新启动」(Ctrl+Shift+F5)，"`
-- `HeliumTodo.Desktop\App.axaml.cs:697` — `+ "否则新进程不受调试器管理，还会占住 exe 让下次编译失败");`
-- `HeliumTodo.Desktop\App.axaml.cs:704` — `LogBackground("[重启] 拿不到当前可执行文件路径，放弃自动重启");`
-- `HeliumTodo.Desktop\App.axaml.cs:717` — `LogBackground($"[重启] 释放单实例锁失败（不影响继续重启）：{ex.Message}");`
-- `HeliumTodo.Desktop\App.axaml.cs:731` — `LogBackground($"[重启] 已启动新进程：{exePath}");`
-- `HeliumTodo.Desktop\App.axaml.cs:735` — `LogBackground($"[重启] 启动新进程失败：{ex.Message}");`
+- `HeliumTodo.Desktop\App.axaml.cs:149` — `LogBackground("[插件] 检测到 plugins 目录，本版本不加载");`
+- `HeliumTodo.Desktop\App.axaml.cs:173` — `LogBackground("[单实例] 已经有一份在跑，已请它把窗口显示出来，本进程退出");`
+- `HeliumTodo.Desktop\App.axaml.cs:210` — `LogBackground($"[退出] 进程正常结束，退出码 {e.ApplicationExitCode}");`
+- `HeliumTodo.Desktop\App.axaml.cs:236` — `LogBackground("[提醒] 后台扫描已启动（每 30 秒一次）");`
+- `HeliumTodo.Desktop\App.axaml.cs:251` — `LogBackground($"[环境] 会话={System.Diagnostics.Process.GetCurrentProcess().SessionId}"`
+- `HeliumTodo.Desktop\App.axaml.cs:252` — `+ $" 管理员={IsElevated()}"`
+- `HeliumTodo.Desktop\App.axaml.cs:253` — `+ $" 资源管理器={DescribeExplorer()}"`
+- `HeliumTodo.Desktop\App.axaml.cs:254` — `+ $" 渲染后端={Application.Configuration.RenderBackendSettings.DisplayName(HeliumTodo.Desktop.Services.RenderBackendChoice.ActiveKey)}"`
+- `HeliumTodo.Desktop\App.axaml.cs:269` — `LogBackground("[托盘] 启动失败：没有托盘图标，但关闭仍会留在后台"`
+- `HeliumTodo.Desktop\App.axaml.cs:270` — `+ "（再双击一次程序即可唤回窗口）");`
+- `HeliumTodo.Desktop\App.axaml.cs:276` — `? "[托盘] 自检模式：假装托盘已就绪（没有真的图标）"`
+- `HeliumTodo.Desktop\App.axaml.cs:277` — `: "[托盘] 已启动，关闭按钮改为藏窗口");`
+- `HeliumTodo.Desktop\App.axaml.cs:300` — `? "[窗口] 关闭按钮被拦截，已隐藏到托盘（进程继续运行）"`
+- `HeliumTodo.Desktop\App.axaml.cs:301` — `: "[窗口] 关闭按钮被拦截，已隐藏（没有托盘图标，再双击程序可唤回）");`
+- `HeliumTodo.Desktop\App.axaml.cs:346` — `return "没有运行";`
+- `HeliumTodo.Desktop\App.axaml.cs:350` — `return $"PID {string.Join(',', processes.Select(p => p.Id))} 会话 {string.Join(',', sessions)}";`
+- `HeliumTodo.Desktop\App.axaml.cs:354` — `return "查不到";`
+- `HeliumTodo.Desktop\App.axaml.cs:418` — `? "[备份] 这次没做成"`
+- `HeliumTodo.Desktop\App.axaml.cs:419` — `: $"[备份] 已生成 {path}");`
+- `HeliumTodo.Desktop\App.axaml.cs:653` — `? $"[启动] 首次运行，已写入示例数据：{databasePath}"`
+- `HeliumTodo.Desktop\App.axaml.cs:654` — `: $"[启动] 数据库就绪：{databasePath}");`
+- `HeliumTodo.Desktop\App.axaml.cs:662` — `Console.Error.WriteLine($"[启动] 数据库初始化失败：{ex.Message}（库路径：{configService.ResolveDatabasePath()}）");`
+- `HeliumTodo.Desktop\App.axaml.cs:696` — `LogBackground("[重启] 检测到调试器，放弃自动重启："`
+- `HeliumTodo.Desktop\App.axaml.cs:697` — `+ "请用调试器的「重新启动」(Ctrl+Shift+F5)，"`
+- `HeliumTodo.Desktop\App.axaml.cs:698` — `+ "否则新进程不受调试器管理，还会占住 exe 让下次编译失败");`
+- `HeliumTodo.Desktop\App.axaml.cs:705` — `LogBackground("[重启] 拿不到当前可执行文件路径，放弃自动重启");`
+- `HeliumTodo.Desktop\App.axaml.cs:718` — `LogBackground($"[重启] 释放单实例锁失败（不影响继续重启）：{ex.Message}");`
+- `HeliumTodo.Desktop\App.axaml.cs:732` — `LogBackground($"[重启] 已启动新进程：{exePath}");`
+- `HeliumTodo.Desktop\App.axaml.cs:736` — `LogBackground($"[重启] 启动新进程失败：{ex.Message}");`
 
 ### `HeliumTodo.Desktop\Converters\CommonConverters.cs`（13 处）
 
@@ -572,8 +624,8 @@
 
 ### `HeliumTodo.Desktop\Services\ReminderService.cs`（2 处）
 
-- `HeliumTodo.Desktop\Services\ReminderService.cs:115` — `Trace?.Invoke($"[提醒] 弹出「{item.Title}」：{item.Message}");`
-- `HeliumTodo.Desktop\Services\ReminderService.cs:121` — `Trace?.Invoke($"[提醒] 本轮扫到 {due.Count} 条");`
+- `HeliumTodo.Desktop\Services\ReminderService.cs:117` — `Trace?.Invoke($"[提醒] 弹出「{item.Title}」：{item.Message}");`
+- `HeliumTodo.Desktop\Services\ReminderService.cs:123` — `Trace?.Invoke($"[提醒] 本轮扫到 {due.Count} 条");`
 
 ### `HeliumTodo.Desktop\Services\TrayService.cs`（12 处）
 
@@ -681,32 +733,6 @@
 - `HeliumTodo.Domain\Backup\BackupPackageWriter.cs:187` — `DirectoryNotFoundException => $"目录「{directory}」不存在，也建不出来。",`
 - `HeliumTodo.Domain\Backup\BackupPackageWriter.cs:188` — `_ => $"写不进「{directory}」：{ex.Message}",`
 
-### `HeliumTodo.Domain\Configuration\AccentSources.cs`（3 处）
-
-- `HeliumTodo.Domain\Configuration\AccentSources.cs:57` — `Wallpaper => "跟随壁纸",`
-- `HeliumTodo.Domain\Configuration\AccentSources.cs:58` — `Custom => "自定义颜色",`
-- `HeliumTodo.Domain\Configuration\AccentSources.cs:59` — `_ => "跟随主题",`
-
-### `HeliumTodo.Domain\Configuration\AppConfig.cs`（2 处）
-
-- `HeliumTodo.Domain\Configuration\AppConfig.cs:290` — `FallbackReason = $"{reason}；备用目录也不可用：{secondReason}";`
-- `HeliumTodo.Domain\Configuration\AppConfig.cs:320` — `reason = $"{directory} 不可写（{ex.GetType().Name}: {ex.Message}）";`
-
-### `HeliumTodo.Domain\Configuration\ColorSchemes.cs`（3 处）
-
-- `HeliumTodo.Domain\Configuration\ColorSchemes.cs:51` — `"深色" or "夜间" or "night" or "dim" => Dark,`
-- `HeliumTodo.Domain\Configuration\ColorSchemes.cs:52` — `"浅色" or "日间" or "day" => Light,`
-- `HeliumTodo.Domain\Configuration\ColorSchemes.cs:59` — `Normalize(value) == Dark ? "暗色" : "亮色";`
-
-### `HeliumTodo.Domain\Configuration\RenderBackendSettings.cs`（2 处）
-
-- `HeliumTodo.Domain\Configuration\RenderBackendSettings.cs:94` — `Auto => "Avalonia 自带渲染器",`
-- `HeliumTodo.Domain\Configuration\RenderBackendSettings.cs:97` — `_ => "软件渲染",`
-
-### `HeliumTodo.Domain\Ipc\IIpcChannel.cs`（1 处）
-
-- `HeliumTodo.Domain\Ipc\IIpcChannel.cs:61` — `=> Task.FromResult(IpcResponse.Failure("没有可用的进程间通道。"));`
-
 ### `HeliumTodo.Domain\Models\FocusSession.cs`（2 处）
 
 - `HeliumTodo.Domain\Models\FocusSession.cs:95` — `error = "专注时长必须大于 0。";`
@@ -736,13 +762,6 @@
 
 - `HeliumTodo.Domain\Models\TodoItem.cs:103` — `error = "待办标题不能为空。";`
 - `HeliumTodo.Domain\Models\TodoItem.cs:109` — `error = "预计时长必须大于 0。";`
-
-### `HeliumTodo.Domain\Notifications\ReminderPlanner.cs`（4 处）
-
-- `HeliumTodo.Domain\Notifications\ReminderPlanner.cs:121` — `var prefix = lead <= 0 ? "现在开始" : $"{ReminderPresets.Describe(lead)}开始";`
-- `HeliumTodo.Domain\Notifications\ReminderPlanner.cs:129` — `var label = isDue ? "截止" : "计划开始";`
-- `HeliumTodo.Domain\Notifications\ReminderPlanner.cs:130` — `var leadText = lead <= 0 ? "就在现在" : ReminderPresets.Describe(lead);`
-- `HeliumTodo.Domain\Notifications\ReminderPlanner.cs:131` — `return $"{label}时间 {anchor:HH:mm} · {leadText}";`
 
 ### `HeliumTodo.Domain\Services\Conflict.cs`（3 处）
 
@@ -783,31 +802,12 @@
 - `HeliumTodo.Domain\Services\RecurrenceExpander.cs:99` — `_ => "日",`
 - `HeliumTodo.Domain\Services\RecurrenceExpander.cs:104` — `return "每周" + string.Join("、", ordered);`
 
-### `HeliumTodo.Domain\Services\StudyRoomService.cs`（23 处）
+### `HeliumTodo.Domain\Services\ReminderPlanner.cs`（4 处）
 
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:108` — `Name = string.IsNullOrWhiteSpace(name) ? "我的自习室" : name,`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:109` — `HostName = string.IsNullOrWhiteSpace(hostName) ? "我" : hostName,`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:133` — `AddSystemMessage($"房间「{room.Name}」已创建，房间码 {room.Code}。");`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:151` — `AddSystemMessage("当前是本地模式，没法连到别人的房间。");`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:155` — `AddSystemMessage($"准备加入房间 {roomCode.Trim().ToUpperInvariant()}，请填写房主地址后点「连接」。");`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:173` — `AddSystemMessage("当前是本地模式，没法联机。");`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:181` — `AddSystemMessage("请先填房间码。");`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:187` — `AddSystemMessage("请先填对方的 IP 地址。");`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:197` — `AddSystemMessage("没连上，检查一下地址、房间码，以及对方的防火墙是否放行了这个端口。");`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:205` — `Name = $"{displayName} 的自习室",`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:214` — `DisplayName = string.IsNullOrWhiteSpace(displayName) ? "我" : displayName,`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:220` — `AddSystemMessage($"已连上 {host.Trim()}，房间码 {code}。");`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:231` — `AddSystemMessage("已离开房间。");`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:250` — `AddSystemMessage($"「{(me?.DisplayName ?? "我")}」开始了 {duration.TotalMinutes:0} 分钟的专注：{title}");`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:254` — `me?.DisplayName ?? "我",`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:275` — `AddSystemMessage($"专注结束，本次 {actualDuration.TotalMinutes:0} 分钟。");`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:279` — `me?.DisplayName ?? "我",`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:288` — `public void SendMessage(string content, string senderName = "我")`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:316` — `SenderName = "系统",`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:350` — `DisplayName = string.IsNullOrWhiteSpace(presence.DisplayName) ? "同学" : presence.DisplayName,`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:358` — `AddSystemMessage($"「{(string.IsNullOrWhiteSpace(presence.DisplayName) ? "同学" : presence.DisplayName)}」进来了。");`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:367` — `AddSystemMessage($"「{member.DisplayName}」离开了。");`
-- `HeliumTodo.Domain\Services\StudyRoomService.cs:384` — `SenderName = string.IsNullOrWhiteSpace(message.DisplayName) ? "同学" : message.DisplayName,`
+- `HeliumTodo.Domain\Services\ReminderPlanner.cs:121` — `var prefix = lead <= 0 ? "现在开始" : $"{ReminderPresets.Describe(lead)}开始";`
+- `HeliumTodo.Domain\Services\ReminderPlanner.cs:129` — `var label = isDue ? "截止" : "计划开始";`
+- `HeliumTodo.Domain\Services\ReminderPlanner.cs:130` — `var leadText = lead <= 0 ? "就在现在" : ReminderPresets.Describe(lead);`
+- `HeliumTodo.Domain\Services\ReminderPlanner.cs:131` — `return $"{label}时间 {anchor:HH:mm} · {leadText}";`
 
 ### `HeliumTodo.Domain\Theming\BuiltInThemes.cs`（9 处）
 
