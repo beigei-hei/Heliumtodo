@@ -8,7 +8,7 @@
 
 ## 现在是什么状态
 
-当前是 **0.5.0-alpha 的 P4 控件替换完成**快照：
+当前是 **0.5.0-alpha 的 P5 Behaviors 接管完成**快照：
 
 - 七个项目已按目标分层改名：`HeliumTodo.Domain` / `Application` / `Infrastructure` /
   `Desktop` / `Tests` / `SelfTest` / `Verification`。
@@ -19,7 +19,7 @@
 - 备份升到 **v2**（`manifest.json` + 每表一份 JSONL，带 SHA256），支持 Replace / Merge；
   0.4 的 SQLite 备份只识别、不自动转换。
 
-界面已全部切到 Material.Avalonia 3.21 / Avalonia 12.1.5：`FluentAvaloniaUI` 已从依赖里删除，设置页折叠分组和两条提示条改为自绘控件（`Desktop/Controls/SettingsExpander.cs`），强调色支持任意 `#RRGGBB`。
+界面已全部切到 Material.Avalonia 3.21 / Avalonia 12.1.5：`FluentAvaloniaUI` 已从依赖里删除，设置页折叠分组和两条提示条改为自绘控件（`Desktop/Controls/SettingsExpander.cs`），强调色支持任意 `#RRGGBB`。外壳交互（拖拽 / 双击最大化 / 窗口按钮 / 8 个抓手 / 回车发送 / 滚动同步）改由 `Xaml.Behaviors.Avalonia` 12.1.5 的 `Behavior<T>` 接管，code-behind 只剩装配。
 
 ## 准备数据库
 

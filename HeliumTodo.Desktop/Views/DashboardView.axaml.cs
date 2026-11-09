@@ -1,9 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Helium Todo contributors
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using Avalonia.Xaml.Interactivity;
+using HeliumTodo.Desktop.Behaviors;
 using HeliumTodo.Desktop.ViewModels;
 
 namespace HeliumTodo.Desktop.Views;
@@ -33,6 +36,15 @@ public partial class DashboardView : UserControl
         // 时间轴宽度变了 → 通知 ViewModel 重排
         TimelineHost.WidthChanged += OnTimelineWidthChanged;
 
+        // 时间轴滚动由 XAML 上的 ScrollSyncBehavior 转发；目前只留扩展点。
+        var scrollSync = Interaction.GetBehaviors(TimelineScroll)
+            .OfType<ScrollSyncBehavior>()
+            .FirstOrDefault();
+        if (scrollSync is not null)
+        {
+            scrollSync.Scrolled += OnTimelineScrolled;
+        }
+
         DataContextChanged += (_, _) =>
         {
             _hasAutoScrolled = false;
@@ -53,9 +65,9 @@ public partial class DashboardView : UserControl
     /// <summary>
     /// 时间轴滚动了。
     /// 目前不需要额外处理（刻度是画在时间轴里面的，会跟着一起滚），
-    /// 保留这个处理器是为了以后想在滚动时做点什么（比如显示「正在查看 20:00」）时有个现成的接入点。
+    /// 保留这个方法是为了以后想在滚动时做点什么（比如显示「正在查看 20:00」）时有个现成的接入点。
     /// </summary>
-    private void OnTimelineScrollChanged(object? sender, ScrollChangedEventArgs e)
+    private void OnTimelineScrolled(object? sender, Vector offset)
     {
         // 故意留空
     }

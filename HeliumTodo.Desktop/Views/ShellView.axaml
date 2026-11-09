@@ -6,6 +6,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:HeliumTodo.Desktop.ViewModels"
+             xmlns:b="using:HeliumTodo.Desktop.Behaviors"
+             xmlns:i="using:Avalonia.Xaml.Interactivity"
              x:Class="HeliumTodo.Desktop.Views.ShellView"
              x:DataType="vm:ShellViewModel"
              Background="Transparent">
@@ -88,9 +90,12 @@
     <Border Grid.Row="0"
             x:Name="TitleBar"
             Height="{DynamicResource TitleBarHeight}"
-            Background="Transparent"
-            PointerPressed="OnTitleBarPointerPressed"
-            DoubleTapped="OnTitleBarDoubleTapped">
+            Background="Transparent">
+
+      <i:Interaction.Behaviors>
+        <b:DragWindowBehavior />
+        <b:ToggleMaximizeBehavior />
+      </i:Interaction.Behaviors>
 
       <Grid ColumnDefinitions="Auto,*,Auto" Margin="14,0,8,0">
 
@@ -119,13 +124,22 @@
         <!-- 窗口按钮：自己画，才能和壁纸配色统一 -->
         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2"
                     VerticalAlignment="Center">
-          <Button Classes="windowButton" Click="OnMinimizeClick" ToolTip.Tip="最小化">
+          <Button Classes="windowButton" ToolTip.Tip="最小化">
+            <i:Interaction.Behaviors>
+              <b:WindowStateBehavior Action="Minimize" />
+            </i:Interaction.Behaviors>
             <TextBlock Text="&#xE921;" FontFamily="{DynamicResource IconFont}" FontSize="10" />
           </Button>
-          <Button Classes="windowButton" Click="OnMaximizeClick" ToolTip.Tip="最大化 / 还原">
+          <Button Classes="windowButton" ToolTip.Tip="最大化 / 还原">
+            <i:Interaction.Behaviors>
+              <b:WindowStateBehavior Action="Maximize" />
+            </i:Interaction.Behaviors>
             <TextBlock Text="&#xE922;" FontFamily="{DynamicResource IconFont}" FontSize="10" />
           </Button>
-          <Button Classes="windowButton close" Click="OnCloseClick" ToolTip.Tip="关闭">
+          <Button Classes="windowButton close" ToolTip.Tip="关闭">
+            <i:Interaction.Behaviors>
+              <b:WindowStateBehavior Action="Close" />
+            </i:Interaction.Behaviors>
             <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource IconFont}" FontSize="10" />
           </Button>
         </StackPanel>
@@ -169,8 +183,10 @@
           <!-- 展开 / 收起按钮：钉在轨道顶部，永远是第一个能点到的东西 -->
           <Button DockPanel.Dock="Top"
                   Classes="railToggle"
-                  Click="OnToggleRailClick"
                   ToolTip.Tip="展开 / 收起功能名">
+            <i:Interaction.Behaviors>
+              <b:ToggleRailBehavior />
+            </i:Interaction.Behaviors>
             <TextBlock Text="{Binding RailToggleGlyph}"
                        FontFamily="{DynamicResource IconFont}"
                        FontSize="11" />

@@ -28,6 +28,8 @@
     <PackageReference Include="Material.Avalonia" />
     <PackageReference Include="Material.Avalonia.Dialogs" />
     <PackageReference Include="Material.Icons.Avalonia" />
+    <!-- XAML behaviors（0.5.0 P5）：Interaction.Behaviors 的官方实现。 -->
+    <PackageReference Include="Xaml.Behaviors.Avalonia" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <!-- 自己解码壁纸的每一帧（APNG / GIF），需要直接调 Skia 的 API -->
     <PackageReference Include="SkiaSharp" />

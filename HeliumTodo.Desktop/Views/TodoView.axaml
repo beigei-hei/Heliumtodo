@@ -129,12 +129,9 @@
                 -->
                 <TextBox Text="{Binding NewCategory}" MinWidth="96"
                          PlaceholderText="分类" ToolTip.Tip="可以自己填，也可以点右面的常用分类" />
-                <Button Content="学习" FontSize="10" Padding="6,2" Tag="学习"
-                        Click="OnCategoryPresetClick" />
-                <Button Content="生活" FontSize="10" Padding="6,2" Tag="生活"
-                        Click="OnCategoryPresetClick" />
-                <Button Content="社团" FontSize="10" Padding="6,2" Tag="社团"
-                        Click="OnCategoryPresetClick" />
+                <Button Content="学习" FontSize="10" Padding="6,2" Tag="学习" Command="{Binding UseCategoryPresetCommand}" CommandParameter="学习" />
+                <Button Content="生活" FontSize="10" Padding="6,2" Tag="生活" Command="{Binding UseCategoryPresetCommand}" CommandParameter="生活" />
+                <Button Content="社团" FontSize="10" Padding="6,2" Tag="社团" Command="{Binding UseCategoryPresetCommand}" CommandParameter="社团" />
               </StackPanel>
 
               <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,18,6">

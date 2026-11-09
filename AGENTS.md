@@ -1,6 +1,6 @@
 # AGENTS.md · 给 AI 的硬规则
 
-> 这是一个 **C# 14 / .NET 10 + Avalonia 12 + Material.Avalonia 3.21 + PostgreSQL 17** 的本地优先桌面应用（0.5.0-alpha P4；FluentAvalonia 已移除）。
+> 这是一个 **C# 14 / .NET 10 + Avalonia 12 + Material.Avalonia 3.21 + PostgreSQL 17** 的本地优先桌面应用（0.5.0-alpha P5；FluentAvalonia 已移除，外壳交互走 Behaviors）。
 > 改代码之前先读 [`DEVELOPMENT_PLAYBOOK.md`](DEVELOPMENT_PLAYBOOK.md)（流程）与 [`ARCHITECTURE.md`](ARCHITECTURE.md)（约定）。
 > 本文件只列**不许破**的规则，不解释为什么——解释在 playbook 里。
 
@@ -8,7 +8,7 @@
 
 1. **先给验收标准**：把用户的话拆成 3–6 条可验证的行为，再说怎么改。
 2. **先想怎么证明**：能写单测就写单测；界面改动必须准备无头渲染 + 像素统计的验证方式（Agent 不能看图，"看着挺好"不算证据）。
-3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（196/196，含真库用例）、`--shell`、十七项 `--check`、指纹基线，全绿才交付。
+3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（196/196，含真库用例）、`--shell`、十八项 `--check`、指纹基线，全绿才交付。
 4. **收尾同步文档**：`PROGRESS.md`（这一轮）、`ARCHITECTURE.md`（新约定）、`UI_TEXT_MAP.md`（改了界面文案时）、指纹基线（`-Update` 后复查）。
 
 ## 分层铁律
@@ -26,6 +26,9 @@
   和卡片同格、排在卡片**后面**（叠在功能区上方），底板跟随明暗，3 秒自动收起（`NoticePolicy`）。
   注意 Avalonia 12 里写 `ZIndex="10"`，写 `Panel.ZIndex` 会报 `AVLN3000`。
 - 设置页折叠分组是自绘 `SettingsExpander` / `SettingsExpanderItem`（`Desktop/Controls/SettingsExpander.cs`，模板在 `Styles/SettingsControls.axaml`）：模板里**任何一层都不许给背景**（0.4 的 FA 模板写死 `#B3FFFFFF`，就是"控件下面垫一层"的根因）；`--rail-check` 会数着 10 组 27 行验证。
+- 外壳交互（标题栏拖拽 / 双击最大化 / 窗口按钮 / 8 个抓手 / 回车发送 / 滚动同步）只许用
+  `Desktop/Behaviors/` 下的 `Behavior<T>`，别再往 code-behind 里加 `PointerPressed` / `KeyDown`；
+  新增行为必须同时加 `--behavior-check` 断言（挂载数量 + 解绑后不触发）。
 - 卡片内容必须向内缩：`Border.card` 用 `Padding="8"`，里面再套一层同半径（`RadiusCard`）且 `ClipToBounds="True"` 的容器才放滚动区，否则悬停色块会压在圆角上。
 - 图标轨宽度只能取自 `RailMetrics`（收起 56 / 展开 188 / 条目 44 / 176），别在 XAML 里写数字。
 - 改 XAML 时小心 `FINAL` 属性（`ComboBox.currentValue` 之类）与名字冲突（`Name="WindowEdge"` 会遮住 `WindowEdge` 枚举）。
@@ -92,6 +95,7 @@ dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll
 dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --shell
 dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --db-check
 dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --theme-check
+dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --behavior-check
 dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --layout-check
 dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --perf-check
 git status --short          # 交付前这里必须是空的

@@ -4,6 +4,8 @@
 -->
 
 <UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:b="using:HeliumTodo.Desktop.Behaviors"
+             xmlns:i="using:Avalonia.Xaml.Interactivity"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:HeliumTodo.Desktop.ViewModels"
              xmlns:ctrl="using:HeliumTodo.Desktop.Controls"
@@ -151,8 +153,10 @@
             -->
             <ScrollViewer Name="TimelineScroll" Height="470"
                           VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled"
-                          ScrollChanged="OnTimelineScrollChanged">
+                          HorizontalScrollBarVisibility="Disabled">
+              <i:Interaction.Behaviors>
+                <b:ScrollSyncBehavior />
+              </i:Interaction.Behaviors>
               <!-- 右侧：网格背景（含左侧刻度）+ 错位排布的方块 -->
               <!-- 高度 = 24 × HourHeight + 上下留白（见 DashboardViewModel.TimelineHeight） -->
               <ctrl:WidthObserverPanel Name="TimelineHost" Height="{Binding TimelineHeight}">

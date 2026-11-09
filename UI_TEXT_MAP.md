@@ -15,30 +15,30 @@
 
 ### `HeliumTodo.Desktop\Views\DashboardView.axaml`（24 处）
 
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:63` — `<TextBlock Text="今日工作流" Classes="pageHeader" />`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:71` — `<Button Content="◀" ToolTip.Tip="前一天" Command="{Binding PreviousDayCommand}" />`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:72` — `<Button Content="今天" Command="{Binding GoTodayCommand}" />`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:73` — `<Button Content="▶" ToolTip.Tip="后一天" Command="{Binding NextDayCommand}" />`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:74` — `<Button FontSize="12" Padding="9,4" ToolTip.Tip="重新加载"`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:95` — `<TextBlock Text="24 小时时间轴" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:101` — `<TextBlock Text="日程" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:107` — `<TextBlock Text="待办" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:113` — `<TextBlock Text="专注 / 预订" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:119` — `<TextBlock Text="冲突" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:128` — `<TextBlock Text="今日专注" Classes="caption" />`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:132` — `<TextBlock Text="待办未完成" Classes="caption" />`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:136` — `<TextBlock Text="已安排" Classes="caption" />`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:141` — `<TextBlock Text="冲突" Classes="caption" />`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:227` — `<TextBlock Grid.Column="0" Text="空闲时段" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:228` — `<TextBlock Grid.Column="1" Text="点「安排」把待办放进时间轴"`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:246` — `<Button Grid.Column="2" Content="安排"`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:268` — `<TextBlock Grid.Column="0" Text="冲突提醒" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:276` — `<TextBlock Text="没有任何冲突，今天的安排很清爽 🎉"`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:312` — `<TextBlock Grid.Row="0" Text="今日重点" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:313` — `<TextBlock Grid.Row="1" Text="按优先级排序" Classes="caption" />`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:315` — `<TextBlock Grid.Row="1" Text="还没有待办，去「待办事项」页加一个吧"`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:337` — `Text="{Binding DueAt, StringFormat='截止 {0:MM-dd HH:mm}'}"`
-- `HeliumTodo.Desktop\Views\DashboardView.axaml:340` — `Text="{Binding FocusedDuration, StringFormat='已专注 {0:hh\\:mm}'}" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:65` — `<TextBlock Text="今日工作流" Classes="pageHeader" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:73` — `<Button Content="◀" ToolTip.Tip="前一天" Command="{Binding PreviousDayCommand}" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:74` — `<Button Content="今天" Command="{Binding GoTodayCommand}" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:75` — `<Button Content="▶" ToolTip.Tip="后一天" Command="{Binding NextDayCommand}" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:76` — `<Button FontSize="12" Padding="9,4" ToolTip.Tip="重新加载"`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:97` — `<TextBlock Text="24 小时时间轴" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:103` — `<TextBlock Text="日程" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:109` — `<TextBlock Text="待办" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:115` — `<TextBlock Text="专注 / 预订" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:121` — `<TextBlock Text="冲突" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:130` — `<TextBlock Text="今日专注" Classes="caption" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:134` — `<TextBlock Text="待办未完成" Classes="caption" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:138` — `<TextBlock Text="已安排" Classes="caption" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:143` — `<TextBlock Text="冲突" Classes="caption" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:231` — `<TextBlock Grid.Column="0" Text="空闲时段" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:232` — `<TextBlock Grid.Column="1" Text="点「安排」把待办放进时间轴"`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:250` — `<Button Grid.Column="2" Content="安排"`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:272` — `<TextBlock Grid.Column="0" Text="冲突提醒" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:280` — `<TextBlock Text="没有任何冲突，今天的安排很清爽 🎉"`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:316` — `<TextBlock Grid.Row="0" Text="今日重点" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:317` — `<TextBlock Grid.Row="1" Text="按优先级排序" Classes="caption" />`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:319` — `<TextBlock Grid.Row="1" Text="还没有待办，去「待办事项」页加一个吧"`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:341` — `Text="{Binding DueAt, StringFormat='截止 {0:MM-dd HH:mm}'}"`
+- `HeliumTodo.Desktop\Views\DashboardView.axaml:344` — `Text="{Binding FocusedDuration, StringFormat='已专注 {0:hh\\:mm}'}" />`
 
 ### `HeliumTodo.Desktop\Views\FocusView.axaml`（35 处）
 
@@ -185,44 +185,44 @@
 
 ### `HeliumTodo.Desktop\Views\ShellView.axaml`（4 处）
 
-- `HeliumTodo.Desktop\Views\ShellView.axaml:122` — `<Button Classes="windowButton" Click="OnMinimizeClick" ToolTip.Tip="最小化">`
-- `HeliumTodo.Desktop\Views\ShellView.axaml:125` — `<Button Classes="windowButton" Click="OnMaximizeClick" ToolTip.Tip="最大化 / 还原">`
-- `HeliumTodo.Desktop\Views\ShellView.axaml:128` — `<Button Classes="windowButton close" Click="OnCloseClick" ToolTip.Tip="关闭">`
-- `HeliumTodo.Desktop\Views\ShellView.axaml:173` — `ToolTip.Tip="展开 / 收起功能名">`
+- `HeliumTodo.Desktop\Views\ShellView.axaml:127` — `<Button Classes="windowButton" ToolTip.Tip="最小化">`
+- `HeliumTodo.Desktop\Views\ShellView.axaml:133` — `<Button Classes="windowButton" ToolTip.Tip="最大化 / 还原">`
+- `HeliumTodo.Desktop\Views\ShellView.axaml:139` — `<Button Classes="windowButton close" ToolTip.Tip="关闭">`
+- `HeliumTodo.Desktop\Views\ShellView.axaml:186` — `ToolTip.Tip="展开 / 收起功能名">`
 
 ### `HeliumTodo.Desktop\Views\StudyRoomView.axaml`（31 处）
 
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:26` — `<TextBlock Text="自习室" Classes="pageHeader" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:55` — `<TextBlock Text="局域网联机" Classes="cardHeader" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:64` — `<TextBlock Text="我想当房主" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:67` — `PlaceholderText="输入房间名称以创建房间" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:68` — `<Button Grid.Column="1" Content="创建" Classes="accent"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:74` — `<TextBlock Text="我想当房客" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:77` — `PlaceholderText="输入 6 位房间码"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:79` — `<Button Grid.Column="1" Content="加入" Command="{Binding JoinRoomCommand}" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:86` — `<TextBlock Text="输入联机地址" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:89` — `PlaceholderText="例如 192.168.1.5 或 [fe80::1]:47470"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:91` — `<Button Grid.Column="1" Content="连接" Classes="accent"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:105` — `<TextBlock Text="局域网联机默认关闭。要用联机自习，到「设置 → 自习室」把「局域网联机」打开。"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:129` — `<TextBlock Text="房间码" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:141` — `<Button Content="＋ 示例队友" FontSize="11" Padding="9,4"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:142` — `ToolTip.Tip="联机实现前，用来看看多人自习的样子"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:144` — `<Button Content="离开" FontSize="11" Padding="9,4"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:160` — `<TextBlock Classes="caption" Text="向你的同学分享房间IP"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:165` — `<Run Text="端口" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:191` — `<TextBox Text="{Binding FocusTitle}" PlaceholderText="这次专注做什么？" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:193` — `<TextBlock Text="时长" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:197` — `<TextBlock Text="分钟" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:200` — `<Run Text="我今天在自习室的累计专注：" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:206` — `<Button Content="开始专注" Classes="accent" MinWidth="96"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:210` — `<Button Content="结束专注" MinWidth="96"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:221` — `<TextBlock Text="房间成员" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:242` — `Text="{Binding FocusedToday, StringFormat='今日专注 {0:hh\\:mm}'}" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:244` — `Text="{Binding JoinedAt, StringFormat='{}{0:HH:mm} 加入'}" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:252` — `<TextBlock Text="专注中" Foreground="White" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:268` — `<TextBlock Grid.Row="0" Text="房间消息" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:304` — `PlaceholderText="说点什么…（回车发送）"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:306` — `<Button Grid.Column="1" Content="发送" Command="{Binding SendMessageCommand}" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:28` — `<TextBlock Text="自习室" Classes="pageHeader" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:57` — `<TextBlock Text="局域网联机" Classes="cardHeader" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:66` — `<TextBlock Text="我想当房主" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:69` — `PlaceholderText="输入房间名称以创建房间" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:70` — `<Button Grid.Column="1" Content="创建" Classes="accent"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:76` — `<TextBlock Text="我想当房客" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:79` — `PlaceholderText="输入 6 位房间码"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:81` — `<Button Grid.Column="1" Content="加入" Command="{Binding JoinRoomCommand}" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:88` — `<TextBlock Text="输入联机地址" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:91` — `PlaceholderText="例如 192.168.1.5 或 [fe80::1]:47470"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:93` — `<Button Grid.Column="1" Content="连接" Classes="accent"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:107` — `<TextBlock Text="局域网联机默认关闭。要用联机自习，到「设置 → 自习室」把「局域网联机」打开。"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:131` — `<TextBlock Text="房间码" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:143` — `<Button Content="＋ 示例队友" FontSize="11" Padding="9,4"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:144` — `ToolTip.Tip="联机实现前，用来看看多人自习的样子"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:146` — `<Button Content="离开" FontSize="11" Padding="9,4"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:162` — `<TextBlock Classes="caption" Text="向你的同学分享房间IP"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:167` — `<Run Text="端口" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:193` — `<TextBox Text="{Binding FocusTitle}" PlaceholderText="这次专注做什么？" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:195` — `<TextBlock Text="时长" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:199` — `<TextBlock Text="分钟" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:202` — `<Run Text="我今天在自习室的累计专注：" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:208` — `<Button Content="开始专注" Classes="accent" MinWidth="96"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:212` — `<Button Content="结束专注" MinWidth="96"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:223` — `<TextBlock Text="房间成员" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:244` — `Text="{Binding FocusedToday, StringFormat='今日专注 {0:hh\\:mm}'}" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:246` — `Text="{Binding JoinedAt, StringFormat='{}{0:HH:mm} 加入'}" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:254` — `<TextBlock Text="专注中" Foreground="White" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:270` — `<TextBlock Grid.Row="0" Text="房间消息" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:306` — `PlaceholderText="说点什么…（回车发送）">`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:311` — `<Button Grid.Column="1" Content="发送" Command="{Binding SendMessageCommand}" />`
 
 ### `HeliumTodo.Desktop\Views\TodoView.axaml`（32 处）
 
@@ -238,26 +238,26 @@
 - `HeliumTodo.Desktop\Views\TodoView.axaml:112` — `<TextBlock Text="优先级" Classes="caption" VerticalAlignment="Center" />`
 - `HeliumTodo.Desktop\Views\TodoView.axaml:124` — `<TextBlock Text="分类" Classes="caption" VerticalAlignment="Center" />`
 - `HeliumTodo.Desktop\Views\TodoView.axaml:131` — `PlaceholderText="分类" ToolTip.Tip="可以自己填，也可以点右面的常用分类" />`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:132` — `<Button Content="学习" FontSize="10" Padding="6,2" Tag="学习"`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:134` — `<Button Content="生活" FontSize="10" Padding="6,2" Tag="生活"`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:136` — `<Button Content="社团" FontSize="10" Padding="6,2" Tag="社团"`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:141` — `<TextBlock Text="预计" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:144` — `<TextBlock Text="分钟" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:148` — `<CheckBox Content="截止" IsChecked="{Binding NewHasDueTime}"`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:171` — `<RadioButton Content="未完成" GroupName="filter" FontSize="12"`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:174` — `<RadioButton Content="今天" GroupName="filter" FontSize="12"`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:177` — `<RadioButton Content="已完成" GroupName="filter" FontSize="12"`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:180` — `<RadioButton Content="全部" GroupName="filter" FontSize="12"`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:186` — `PlaceholderText="搜索标题 / 分类 / 备注…" MaxWidth="260" MinHeight="30"`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:189` — `<TextBlock Grid.Column="2" Text="{Binding Items.Count, StringFormat='共 {0} 条'}"`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:216` — `ToolTip.Tip="点一下调整优先级"`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:241` — `<TextBlock Text="已逾期" FontSize="11" FontWeight="SemiBold"`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:253` — `Text="{Binding PlannedStart, StringFormat='已安排 {0:MM-dd HH:mm}'}" />`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:262` — `Text="{Binding FocusedDuration, StringFormat='已专注 {0:hh\\:mm}'}" />`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:276` — `<Button Content="安排时间" FontSize="11" Padding="8,4"`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:280` — `<Button Content="取消安排" FontSize="11" Padding="8,4"`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:285` — `<Button FontSize="12" Padding="8,4" ToolTip.Tip="编辑"`
-- `HeliumTodo.Desktop\Views\TodoView.axaml:290` — `<Button FontSize="12" Padding="8,4" ToolTip.Tip="删除"`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:132` — `<Button Content="学习" FontSize="10" Padding="6,2" Tag="学习" Command="{Binding UseCategoryPresetCommand}" CommandParameter="学习" />`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:133` — `<Button Content="生活" FontSize="10" Padding="6,2" Tag="生活" Command="{Binding UseCategoryPresetCommand}" CommandParameter="生活" />`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:134` — `<Button Content="社团" FontSize="10" Padding="6,2" Tag="社团" Command="{Binding UseCategoryPresetCommand}" CommandParameter="社团" />`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:138` — `<TextBlock Text="预计" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:141` — `<TextBlock Text="分钟" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:145` — `<CheckBox Content="截止" IsChecked="{Binding NewHasDueTime}"`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:168` — `<RadioButton Content="未完成" GroupName="filter" FontSize="12"`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:171` — `<RadioButton Content="今天" GroupName="filter" FontSize="12"`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:174` — `<RadioButton Content="已完成" GroupName="filter" FontSize="12"`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:177` — `<RadioButton Content="全部" GroupName="filter" FontSize="12"`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:183` — `PlaceholderText="搜索标题 / 分类 / 备注…" MaxWidth="260" MinHeight="30"`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:186` — `<TextBlock Grid.Column="2" Text="{Binding Items.Count, StringFormat='共 {0} 条'}"`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:213` — `ToolTip.Tip="点一下调整优先级"`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:238` — `<TextBlock Text="已逾期" FontSize="11" FontWeight="SemiBold"`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:250` — `Text="{Binding PlannedStart, StringFormat='已安排 {0:MM-dd HH:mm}'}" />`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:259` — `Text="{Binding FocusedDuration, StringFormat='已专注 {0:hh\\:mm}'}" />`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:273` — `<Button Content="安排时间" FontSize="11" Padding="8,4"`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:277` — `<Button Content="取消安排" FontSize="11" Padding="8,4"`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:282` — `<Button FontSize="12" Padding="8,4" ToolTip.Tip="编辑"`
+- `HeliumTodo.Desktop\Views\TodoView.axaml:287` — `<Button FontSize="12" Padding="8,4" ToolTip.Tip="删除"`
 
 ## 二、文字样式与字体（.axaml 资源/样式）
 
@@ -482,15 +482,15 @@
 ### `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs`（10 处）
 
 - `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:55` — `[ObservableProperty] private string _emptyHint = "还没有待办，用下面的输入框加一个吧。";`
-- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:90` — `[ObservableProperty] private string _newCategory = "学习";`
-- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:114` — `public string EditorTitle => IsEditing ? "编辑待办" : "新建待办";`
-- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:134` — `EmptyHint = "标题不能为空哦。";`
-- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:222` — `NewCategory = todo.Category ?? "学习";`
-- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:344` — `EmptyHint = $"加载失败：{ex.Message}";`
-- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:405` — `TodoFilter.Completed => "还没有完成任何待办。",`
-- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:406` — `TodoFilter.Today => "今天没有要做的待办，轻松一下也不错。",`
-- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:407` — `TodoFilter.Active => "没有未完成的待办，全清空了！",`
-- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:408` — `_ => "还没有待办，用上面的输入框加一个吧。",`
+- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:99` — `[ObservableProperty] private string _newCategory = "学习";`
+- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:123` — `public string EditorTitle => IsEditing ? "编辑待办" : "新建待办";`
+- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:143` — `EmptyHint = "标题不能为空哦。";`
+- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:231` — `NewCategory = todo.Category ?? "学习";`
+- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:353` — `EmptyHint = $"加载失败：{ex.Message}";`
+- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:414` — `TodoFilter.Completed => "还没有完成任何待办。",`
+- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:415` — `TodoFilter.Today => "今天没有要做的待办，轻松一下也不错。",`
+- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:416` — `TodoFilter.Active => "没有未完成的待办，全清空了！",`
+- `HeliumTodo.Desktop\ViewModels\TodoViewModel.cs:417` — `_ => "还没有待办，用上面的输入框加一个吧。",`
 
 ## 四、Core / Data 层拼出来的文字（运行时）
 

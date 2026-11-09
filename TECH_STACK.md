@@ -1,8 +1,8 @@
 # Helium Todo · 技术栈与运行时画像
 
-> 版本 **0.5.0-alpha（P4）** ｜ 本文对标的是仓库当前代码，不是计划。
+> 版本 **0.5.0-alpha（P5）** ｜ 本文对标的是仓库当前代码，不是计划。
 > 项目已按 `DEVELOPMENT_SPEC.md` 改名为 Domain / Application / Infrastructure / Desktop / Verification；
-> Material.Avalonia 3.21.0 已接管全部界面（P3 主题、P4 控件），FluentAvaloniaUI 已删除；
+> Material.Avalonia 3.21.0 已接管全部界面（P3 主题、P4 控件、P5 行为），FluentAvaloniaUI 已删除；
 > PostgreSQL 17 已在 P2 落地，见规格 §20 偏差说明。
 > 所有数字都是在开发机上实测出来的（命令写在每节末尾，可以自己复现）。
 
@@ -54,7 +54,7 @@ HeliumTodo.slnx
 ├─ HeliumTodo.Desktop         Avalonia 界面（Views / ViewModels / Controls / Services / Windowing）
 ├─ HeliumTodo.Tests           xunit 测试（196 个）
 ├─ HeliumTodo.SelfTest        反射运行器（沙箱里替代 dotnet test）
-└─ HeliumTodo.Verification    无头渲染 + 17 个专项自检 + 后台探针入口
+└─ HeliumTodo.Verification    无头渲染 + 18 个专项自检 + 后台探针入口
 ```
 
 依赖方向（箭头 = 引用）：
@@ -231,7 +231,7 @@ powershell -ExecutionPolicy Bypass -File tools\capture-window.ps1 `
 dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll
 ```
 
-### 专项自检（14 个 `--check`，全部 `exit=0`）
+### 专项自检（18 个 `--check`，全部 `exit=0`）
 
 | 开关 | 项数 | 检查什么 |
 | --- | --- | --- |
@@ -247,8 +247,11 @@ dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll
 | `--notice-check` | 13 | 提示条叠在功能区上方、跟随明暗、3 秒自动收起、点 × 立刻收起 |
 | `--appearance-check` | 14 | 明暗切换、玻璃浓度 alpha、蒙版合并后的颜色与强度（0.45 / 0.72 / 上限 0.95）、壁纸缩放的尺寸与裁切位置 |
 | `--perf-check` | 10 | A–M 十三档逐档测量；交互降质真的更快（实测快 52~66%）；改尺寸比纯重绘贵；P95 < 2×P50 且最慢一帧 < 4×P50 |
-| `--rail-check` | 23 | 设置排在自习室下面、图标轨 56↔188 展开、按钮被动拉伸（自己不挂宽度过渡）、名称靠 Opacity 淡入淡出、设置页 10 个分组标题 + 34 行分组行的背景全透明 |
+| `--rail-check` | 23 | 设置排在自习室下面、图标轨 56↔188 展开、按钮被动拉伸（自己不挂宽度过渡）、名称靠 Opacity 淡入淡出、设置页 10 个分组标题 + 27 行分组行的背景全透明 |
 | `--layout-check` | 6 页 × 6 项 | 六页分区是否同一套（左/右/顶边缘、缝、标题字号） |
+| `--db-check` | 9 | PostgreSQL 17、迁移已应用、11 个列类型、identity、6 个索引、房间码唯一 |
+| `--theme-check` | 9 | MaterialTheme 存在、明暗 BaseTheme、卡片像素、强调色像素、阴影令牌 |
+| `--behavior-check` | 15 | 6 类行为挂载数量、双击最大化、窗口按钮、拖拽入口、解绑、抓手改宽、滚动同步 |
 | `--shell` | 7 页 | 每页无头渲染出 PNG |
 | `--tree N` | — | 打印可视树（查布局用） |
 

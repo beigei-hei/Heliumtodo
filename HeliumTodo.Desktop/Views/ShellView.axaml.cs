@@ -3,9 +3,7 @@
 
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.VisualTree;
 using HeliumTodo.Desktop.ViewModels;
 
 namespace HeliumTodo.Desktop.Views;
@@ -13,11 +11,8 @@ namespace HeliumTodo.Desktop.Views;
 /// <summary>
 /// 应用外壳：自绘标题栏 + 左侧图标轨 + 内容区。
 ///
-/// 这里有三类代码，各自解决一件事：
-///   ① 启动时把第一个页面真的塞进内容区（否则窗口是空的）；
-///   ② 图标轨上的按钮被点 → 交给 ViewModel 切页；
-///   ③ 标题栏拖动 / 双击最大化 / 三个窗口按钮 —— 因为标题栏是我们自己画的，
-///      系统不会替我们做这些。
+/// 标题栏拖动、双击最大化、三个窗口按钮、轨道展开与 8 个改大小抓手
+/// 都已迁到 <c>Behaviors/</c>（P5）；这里只处理"启动时导航一次"和"点轨道条目"。
 /// </summary>
 public partial class ShellView : UserControl
 {
@@ -69,91 +64,5 @@ public partial class ShellView : UserControl
         if (sender is not Button { Tag: NavigationItemViewModel item }) return;
 
         await shell.NavigateAsync(item);
-    }
-
-    /// <summary>
-    /// 点轨道顶部那个按钮：展开 / 收起"图标 + 名称"。
-    ///
-    /// 这里只改状态，宽度与动画交给 XAML 的绑定 + Transition ——
-    /// 在代码里再手写一套逐帧动画，会和 Transition 抢同一个属性，
-    /// 结果是"两个动画互相打断、看起来一顿一顿"。
-    /// </summary>
-    private void OnToggleRailClick(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is not ShellViewModel shell) return;
-
-        // 先报一声再切：轨道一宽，整页重排 + 整窗重画，这段时间要降质（见 MainWindow.BeginRailAnimation）。
-        (TopLevel.GetTopLevel(this) as MainWindow)?.BeginRailAnimation();
-        shell.ToggleRailCommand.Execute(null);
-    }
-
-    // ────────────── 标题栏 ──────────────
-
-    /// <summary>
-    /// 按住标题栏拖窗口。
-    ///
-    /// 只认左键：右键拖窗口是另一个系统的习惯，混进来会让人误触。
-    /// 另外要排除按钮区域 —— 从按钮上按下时不该开始拖，否则点击会被拖拽吃掉。
-    /// </summary>
-    private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (e.Source is Control source && IsInsideButton(source)) return;
-        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
-        if (TopLevel.GetTopLevel(this) is not Window window) return;
-        if (window.WindowState == WindowState.FullScreen) return;
-
-        window.BeginMoveDrag(e);
-    }
-
-    /// <summary>双击标题栏 = 最大化 / 还原。</summary>
-    private void OnTitleBarDoubleTapped(object? sender, TappedEventArgs e)
-    {
-        if (e.Source is Control source && IsInsideButton(source)) return;
-        ToggleMaximize();
-    }
-
-    private void OnMinimizeClick(object? sender, RoutedEventArgs e)
-    {
-        if (TopLevel.GetTopLevel(this) is Window window)
-        {
-            window.WindowState = WindowState.Minimized;
-        }
-    }
-
-    private void OnMaximizeClick(object? sender, RoutedEventArgs e) => ToggleMaximize();
-
-    private void OnCloseClick(object? sender, RoutedEventArgs e)
-    {
-        if (TopLevel.GetTopLevel(this) is Window window)
-        {
-            window.Close();
-        }
-    }
-
-    private void ToggleMaximize()
-    {
-        // 只切状态，过渡动画交给 DWM。
-        // 以前这里走自己写的逐帧改窗口矩形版本，是因为样式位缺 WS_CAPTION，DWM 判定
-        // "这不是正常窗口"就不播过渡；补上之后软件渲染下也是满帧（见 WindowChrome）。
-        if (TopLevel.GetTopLevel(this) is not Window window) return;
-
-        window.WindowState = window.WindowState == WindowState.Maximized
-            ? WindowState.Normal
-            : WindowState.Maximized;
-    }
-
-    /// <summary>往上找一找，这个控件是不是在某个按钮里面。</summary>
-    private static bool IsInsideButton(Control? control)
-    {
-        for (var current = control; current is not null; current = current.Parent as Control)
-        {
-            if (current is Button) return true;
-
-            // Button 的模板内容（TextBlock）Parent 可能不是 Button 而是它模板里的面板，
-            // 所以再来一层 Visual 父级兜底。
-            if (current.GetVisualParent() is Button) return true;
-        }
-
-        return false;
     }
 }

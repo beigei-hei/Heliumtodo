@@ -4582,3 +4582,42 @@ P0 的「保留 FluentAvalonia + SQLite」不再是不可抗力，P2 起按规�
 - `Avalonia.Xaml.Behaviors` 12 的落地（源码构建或适配层），以及 `--behavior-check`；
 - `Material.Avalonia.Dialogs` 接入（当前确认/输入对话框仍是自绘 Window，暂未迁移）；
 - `xmin` 并发令牌（规格 §7 表格写「P4 起」，但会改数据层契约，留到后续单独一轮）。
+
+## 2026-11-09 · 0.5.0-alpha P5：外壳交互交给 Behaviors
+
+### 做了什么
+
+- 引入 **`Xaml.Behaviors.Avalonia` 12.1.5**（wieslawsoltes 发布的元包，含 Interactivity /
+  Interactions / Animations）。老的 `Avalonia.Xaml.Behaviors` 只有 11.3.0.6，在 Avalonia 12 上
+  会 `TypeLoadException: Could not load type … ResourcesChangedEventArgs … value type mismatch`，
+  不能直接用；新包命名空间仍是 `Avalonia.Xaml.Interactivity`，XAML 里不用改前缀写法。
+- 新增 `Desktop/Behaviors/`：`DragWindowBehavior`（标题栏拖拽，`StartDrag` 抽成 protected virtual
+  供无头自检记录）、`ToggleMaximizeBehavior`（双击最大化/还原）、`WindowStateBehavior`
+  （最小化/最大化/关闭三个按钮，`Action` 枚举）、`ToggleRailBehavior`（图标轨展开 + 动效降质）、
+  `ResizeWindowBehavior`（8 个抓手，方向仍由 XAML `Tag` 给）、`EnterKeyCommandBehavior`
+  （自习室回车发送）、`ScrollSyncBehavior`（仪表盘时间轴滚动同步），外加 `BehaviorTargets` 公共判断。
+- XAML 全部改用 `Interaction.Behaviors` 挂载；`ShellView` 的三个窗口按钮、`MainWindow` 的 8 个抓手、
+  `StudyRoomView` 的消息框、`DashboardView` 的 `ScrollViewer`、`TodoView` 的 3 个分类预设都只留绑定/参数。
+- code-behind 收缩到装配：`ShellView` 只剩首屏与轨道条目点击，`MainWindow.OnResizeGripPressed` 改成
+  `HandleGripPressed` 供行为调用，`StudyRoomView` / `TodoView` 只剩构造函数，`DashboardView` 在构造时
+  从行为集合订阅 `Scrolled`。
+- 新增 `--behavior-check`（15 项）：挂载数量、双击最大化、最大化按钮还原、拖拽入口被调用、
+  解绑后不触发（回车 / 抓手 / 滚动）、抓手拖 120 px 窗口 1920→1800、滚动同步事件。
+
+### 踩到的坑
+
+- 无头 `Window.BeginMoveDrag` 既不移动窗口，又会留下指针捕获，后面抓手测试变成 1920→1920；
+  改成记录 `StartDrag` 调用，并在探针里先摘掉 XAML 上那个拖拽行为。
+- 探针里连点两次标题栏会触发双击最大化，第二次点击被删掉；解绑断言改由回车/抓手/滚动承担。
+
+### 门禁
+
+- 构建 **0 警告 0 错误**；`SelfTest` **196/196**（真库）；十八项 `--check` 全部通过
+  （新增 `--behavior-check`，与 `--db-check`、`--theme-check` 并列）；`--shell` 七页全部出图。
+- `--rail-check` 10 组 27 行、`--theme-check` 9 项、`--behavior-check` 15 项均绿。
+
+### 还没做
+
+- `Material.Avalonia.Dialogs` 接入（确认/输入框仍是自绘 Window）；
+- `xmin` 并发令牌（会改数据层契约，单独一轮）；
+- 规格 P6/P7 的收尾项（发布脚本、安装包、最终验收）。

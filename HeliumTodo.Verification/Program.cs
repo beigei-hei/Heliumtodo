@@ -7,6 +7,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Media.Imaging;
@@ -16,7 +17,9 @@ using HeliumTodo.Desktop.Services;
 using HeliumTodo.Desktop.Windowing;
 using HeliumTodo.Desktop.ViewModels;
 using HeliumTodo.Desktop.Views;
+using HeliumTodo.Desktop.Behaviors;
 using HeliumTodo.Desktop.Controls;
+using Avalonia.Xaml.Interactivity;
 using HeliumTodo.Application.Configuration;
 using HeliumTodo.Domain.Windowing;
 using HeliumTodo.Domain.Services;
@@ -69,7 +72,7 @@ public static class Program
         if (args.Contains("--backup-check") || args.Contains("--refresh-check")
             || args.Contains("--room-check") || args.Contains("--shell-check")
             || args.Contains("--reminder-check") || args.Contains("--window-check")
-            || args.Contains("--db-check"))
+            || args.Contains("--db-check") || args.Contains("--behavior-check"))
         {
             // 沙盒放在程序自己的目录下：这台机器的 %TEMP% 对 .NET 进程是拒绝写入的
             // （python 能建、.NET 建不了，报 UnauthorizedAccessException），
@@ -230,6 +233,12 @@ public static class Program
             return RunWindowCheck(services);
         }
 
+        // 行为自检（P5）：XAML 上挂的 behaviors 真的挂上了，拖动/双击/回车/抓手都有效，
+        // 解绑之后不再响应。
+        if (args.Any(a => a.Equals("--behavior-check", StringComparison.OrdinalIgnoreCase)))
+        {
+            return RunBehaviorCheck(services);
+        }
         // 性能自检：量一下「改一次窗口尺寸 → 布局 + 软件渲染」要多少毫秒。
         // 用户报过「启动、最大化、拖边改大小都卡」，没有数字就只能猜，所以先量。
         if (args.Any(a => a.Equals("--perf-check", StringComparison.OrdinalIgnoreCase)))
@@ -1676,6 +1685,208 @@ public static class Program
     /// 所以这里在**真实的 MainWindow** 里用真实鼠标事件点每一个图标，
     /// 断言：① CurrentPage 换成了那一页 ② 选中态转移 ③ 外壳几何符合设计值。
     /// </summary>
+    /// <summary>
+    /// Behavior 自检（0.5.0 P5）。
+    ///
+    /// 为什么值得测：
+    ///   ① 行为挂在 XAML 上时，写错 xmlns / 少写 attached property 不会报编译错，
+    ///      只会"点了没反应"——只能靠渲染后逐个点名；
+    ///   ② 拖动 / 双击 / 回车 / 抓手这四条是用户每天都会碰的路径，必须各跑一次；
+    ///   ③ OnDetaching 不解绑就是内存泄漏，所以解绑后要再打一次同样的输入，确认真的没反应。
+    /// </summary>
+    private static int RunBehaviorCheck(IServiceProvider services)
+    {
+        var shell = services.GetRequiredService<ShellViewModel>();
+        var failures = 0;
+
+        void Check(string name, bool ok, string detail)
+        {
+            Console.WriteLine($"   [{(ok ? "通过" : "失败")}] {name} — {detail}");
+            if (!ok) failures++;
+        }
+
+        var window = new MainWindow
+        {
+            DataContext = shell,
+            Width = 1000,
+            Height = 760,
+            WindowDecorations = WindowDecorations.None,
+        };
+        window.Show();
+        PumpDispatcher(TimeSpan.FromMilliseconds(350));
+
+        var titleBar = window.GetVisualDescendants().OfType<Border>()
+            .FirstOrDefault(b => b.Name == "TitleBar");
+        var titleBehaviors = titleBar is null ? new BehaviorCollection() : Interaction.GetBehaviors(titleBar);
+        Check("标题栏挂上拖拽与双击最大化",
+            titleBehaviors.OfType<DragWindowBehavior>().Count() == 1
+            && titleBehaviors.OfType<ToggleMaximizeBehavior>().Count() == 1,
+            titleBar is null ? "找不到 TitleBar" : $"共 {titleBehaviors.Count} 个行为");
+
+        var windowButtons = window.GetVisualDescendants().OfType<Button>()
+            .Where(b => b.Classes.Contains("windowButton"))
+            .ToList();
+        Check("三个窗口按钮各挂一个 WindowStateBehavior",
+            windowButtons.Count == 3
+            && windowButtons.All(b => Interaction.GetBehaviors(b).OfType<WindowStateBehavior>().Count() == 1),
+            $"按钮 {windowButtons.Count} 个");
+
+        var grips = window.GetVisualDescendants().OfType<Border>()
+            .Where(b => b.Name is not null && b.Name.StartsWith("Grip", StringComparison.Ordinal))
+            .ToList();
+        Check("8 个改大小抓手都挂上 ResizeWindowBehavior",
+            grips.Count == 8
+            && grips.All(g => Interaction.GetBehaviors(g).OfType<ResizeWindowBehavior>().Count() == 1),
+            $"抓手 {grips.Count} 个");
+
+        var railToggle = window.GetVisualDescendants().OfType<Button>()
+            .FirstOrDefault(b => b.Classes.Contains("railToggle"));
+        Check("图标轨展开按钮挂上 ToggleRailBehavior",
+            railToggle is not null
+            && Interaction.GetBehaviors(railToggle).OfType<ToggleRailBehavior>().Count() == 1,
+            railToggle is null ? "找不到 railToggle" : "已挂载");
+
+        // ── 双击标题栏 = 最大化 / 还原 ──
+        var titlePoint = titleBar?.TranslatePoint(new Point(40, 20), window);
+        if (titlePoint is { } p)
+        {
+            window.MouseDown(p, MouseButton.Left);
+            window.MouseUp(p, MouseButton.Left);
+            window.MouseDown(p, MouseButton.Left);
+            window.MouseUp(p, MouseButton.Left);
+            PumpDispatcher(TimeSpan.FromMilliseconds(300));
+        }
+
+        Check("双击标题栏最大化", window.WindowState == WindowState.Maximized,
+            $"WindowState={window.WindowState}");
+
+        // ── 窗口按钮（最大化按钮再点一次还原）──
+        var maximize = windowButtons.FirstOrDefault(b => Interaction.GetBehaviors(b)
+            .OfType<WindowStateBehavior>().Any(x => x.Action == WindowAction.Maximize));
+        maximize?.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        PumpDispatcher(TimeSpan.FromMilliseconds(250));
+        var restored = window.WindowState == WindowState.Normal;
+        Check("最大化按钮点一次还原", restored, $"WindowState={window.WindowState}");
+
+        // ── 拖动标题栏：无头平台没有真的窗口移动，验证"确实调用了 BeginMoveDrag 这条路径" ──
+        if (titleBar?.TranslatePoint(new Point(40, 20), window) is { } dragPoint)
+        {
+            var recorder = new RecordingDragBehavior();
+            var titleBehaviorsNow = Interaction.GetBehaviors(titleBar);
+            var xamlDrag = titleBehaviorsNow.OfType<DragWindowBehavior>().FirstOrDefault();
+            if (xamlDrag is not null)
+            {
+                // 先把 XAML 上那个摘掉：它内部会真的调 BeginMoveDrag，
+                // 无头平台虽然没有窗口移动，但会留下指针捕获，影响后面的抓手测试。
+                titleBehaviorsNow.Remove(xamlDrag);
+            }
+
+            titleBehaviorsNow.Add(recorder);
+
+            window.MouseMove(dragPoint);
+            window.MouseDown(dragPoint, MouseButton.Left);
+            window.MouseUp(dragPoint, MouseButton.Left);
+            PumpDispatcher(TimeSpan.FromMilliseconds(150));
+
+            Check("按住标题栏触发系统拖拽", recorder.Calls == 1,
+                $"调用 {recorder.Calls} 次（无头平台不移动窗口，这里钉住 BeginMoveDrag 路径）");
+
+            titleBehaviorsNow.Remove(recorder);
+            Check("拖拽行为可以从标题栏摘掉", titleBehaviorsNow.OfType<RecordingDragBehavior>().Count() == 0,
+                "已解绑（其余解绑断言在回车与抓手上）");
+        }
+        // ── 图标轨展开 ──
+        var railBefore = shell.IsRailExpanded;
+        railToggle?.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        PumpDispatcher(TimeSpan.FromMilliseconds(300));
+        var railAfter = shell.IsRailExpanded;
+        Check("点轨道按钮切换展开状态", railAfter != railBefore, $"{railBefore} → {railAfter}");
+        railToggle?.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        PumpDispatcher(TimeSpan.FromMilliseconds(300));
+
+        // ── 回车执行命令 ──
+        var box = new TextBox();
+        var invoked = 0;
+        var enter = new EnterKeyCommandBehavior
+        {
+            Command = new CommunityToolkit.Mvvm.Input.RelayCommand(() => invoked++),
+        };
+        Interaction.SetBehaviors(box, new BehaviorCollection { enter });
+
+        box.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.Enter });
+        Check("回车执行命令", invoked == 1, $"执行 {invoked} 次");
+
+        Interaction.SetBehaviors(box, null);
+        box.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.Enter });
+        Check("解绑后回车不再执行", invoked == 1, $"执行 {invoked} 次");
+
+        // ── 抓手改大小 + 解绑 ──
+        var rightGrip = grips.FirstOrDefault(g => g.Name == "GripRight");
+        var widthBefore = window.Width;
+        if (rightGrip is not null
+            && rightGrip.TranslatePoint(new Point(rightGrip.Bounds.Width / 2, 200), window) is { } gripPoint)
+        {
+            window.MouseMove(gripPoint);
+            window.MouseDown(gripPoint, MouseButton.Left);
+            window.MouseMove(gripPoint - new Point(120, 0));
+            window.MouseUp(gripPoint - new Point(120, 0), MouseButton.Left);
+            PumpDispatcher(TimeSpan.FromMilliseconds(200));
+        }
+
+        var widthAfter = window.Width;
+        Check("抓手往里拖 120，窗口变窄", rightGrip is not null && widthAfter < widthBefore - 100,
+            $"{widthBefore:0} → {widthAfter:0}");
+
+        if (rightGrip is not null)
+        {
+            Interaction.SetBehaviors(rightGrip, null);
+            var widthDetached = window.Width;
+            if (rightGrip.TranslatePoint(new Point(rightGrip.Bounds.Width / 2, 200), window) is { } gripPoint2)
+            {
+                window.MouseMove(gripPoint2);
+                window.MouseDown(gripPoint2, MouseButton.Left);
+                window.MouseMove(gripPoint2 - new Point(120, 0));
+                window.MouseUp(gripPoint2 - new Point(120, 0), MouseButton.Left);
+                PumpDispatcher(TimeSpan.FromMilliseconds(200));
+            }
+
+            Check("解绑后抓手不再改大小",
+                Math.Abs(window.Width - widthDetached) < 1,
+                $"{widthDetached:0} → {window.Width:0}");
+        }
+
+        // ── 滚动联动 + 解绑 ──
+        var scroller = new ScrollViewer
+        {
+            Height = 120,
+            Content = new Border { Height = 800 },
+        };
+        var scrollSync = new ScrollSyncBehavior();
+        var scrollEvents = 0;
+        scrollSync.Scrolled += (_, _) => scrollEvents++;
+        Interaction.SetBehaviors(scroller, new BehaviorCollection { scrollSync });
+
+        var scrollWindow = new Window { Content = scroller, Width = 240, Height = 180 };
+        scrollWindow.Show();
+        PumpDispatcher(TimeSpan.FromMilliseconds(200));
+        scroller.Offset = new Vector(0, 80);
+        PumpDispatcher(TimeSpan.FromMilliseconds(200));
+        Check("滚动触发 ScrollSyncBehavior", scrollEvents > 0, $"事件 {scrollEvents} 次");
+
+        Interaction.SetBehaviors(scroller, null);
+        var afterDetach = scrollEvents;
+        scroller.Offset = new Vector(0, 160);
+        PumpDispatcher(TimeSpan.FromMilliseconds(200));
+        Check("解绑后滚动不再触发", scrollEvents == afterDetach, $"事件 {scrollEvents} 次");
+
+        scrollWindow.Close();
+        window.Close();
+
+        Console.WriteLine(failures == 0
+            ? "   ✓ 行为挂载与解绑正常"
+            : $"   ✗ {failures} 项检查失败");
+        return failures;
+    }
     private static int RunShellCheck(IServiceProvider services)
     {
         var shell = services.GetRequiredService<ShellViewModel>();
@@ -2126,6 +2337,13 @@ public static class Program
         return failures;
     }
 
+    /// <summary>无头自检用的探针：只记录"有没有走到拖拽这一步"，不真的移动窗口。</summary>
+    private sealed class RecordingDragBehavior : DragWindowBehavior
+    {
+        public int Calls { get; private set; }
+
+        protected override void StartDrag(Window window, PointerPressedEventArgs e) => Calls++;
+    }
     /// <summary>取某一套主题下提示条底板的颜色。</summary>
     private static Color NoticeSurface(ThemeVariant variant)
     {

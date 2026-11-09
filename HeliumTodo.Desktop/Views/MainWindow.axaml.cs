@@ -402,7 +402,7 @@ public partial class MainWindow : Window
         config.Save();
     }
 
-    /// <summary>XAML 里 8 个抓手的 PointerPressed 都指向这里，实际逻辑在 WindowResizeGrips。</summary>
-    private void OnResizeGripPressed(object? sender, PointerPressedEventArgs e)
+    /// <summary>8 个抓手上的 ResizeWindowBehavior 把按下事件转到这里，实际逻辑在 WindowResizeGrips。</summary>
+    internal void HandleGripPressed(object? sender, PointerPressedEventArgs e)
         => _grips.OnGripPressed(sender, e);
 }

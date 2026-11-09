@@ -67,6 +67,15 @@ public sealed partial class TodoViewModel : ViewModelBase
     partial void OnSearchTextChanged(string value) => ApplyFilter();
     partial void OnFilterChanged(TodoFilter value) => ApplyFilter();
 
+    /// <summary>点常用分类按钮 → 直接填进"新分类"输入框。</summary>
+    [RelayCommand]
+    private void UseCategoryPreset(string? category)
+    {
+        if (!string.IsNullOrWhiteSpace(category))
+        {
+            NewCategory = category;
+        }
+    }
     [RelayCommand] private void SetFilter(string? filterName)
     {
         if (Enum.TryParse<TodoFilter>(filterName, out var parsed))

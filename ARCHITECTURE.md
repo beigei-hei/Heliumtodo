@@ -2023,3 +2023,13 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
   `FAInfoBar`。这样提示条高度、圆角、明暗跟随全由我们的令牌决定。
 - 新增界面检查仍遵守"无头渲染 + 像素/结构断言"：`--rail-check` 读控件树，`--shell`
   逐页出图，`--theme-check` 读渲染像素。
+
+### 20.9 行为层（P5 起）
+
+- 外壳交互从 code-behind 事件搬到 Xaml.Behaviors.Avalonia 12.1.5：标题栏拖拽 / 双击最大化、
+  三个窗口按钮、8 个改大小抓手、自习室回车发送、仪表盘时间轴滚动同步，全部用
+  Behavior<T> 挂在 XAML 的 Interaction.Behaviors 上。老包 Avalonia.Xaml.Behaviors
+  11.3.0.6 在 Avalonia 12 上会 TypeLoadException，必须用新包 id。
+- **能记录就不要真的做**：无头的 Window.BeginMoveDrag 既不移动窗口又会留下指针捕获，
+  DragWindowBehavior.StartDrag 抽成 protected virtual，--behavior-check 用子类记录
+  

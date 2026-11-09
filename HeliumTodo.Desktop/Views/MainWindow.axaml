@@ -7,6 +7,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:HeliumTodo.Desktop.ViewModels"
         xmlns:views="using:HeliumTodo.Desktop.Views"
+        xmlns:b="using:HeliumTodo.Desktop.Behaviors"
+        xmlns:i="using:Avalonia.Xaml.Interactivity"
         x:Class="HeliumTodo.Desktop.Views.MainWindow"
         x:DataType="vm:ShellViewModel"
         Title="Helium Todo"
@@ -98,33 +100,65 @@
     <Grid Name="ResizeGrips">
       <Border Name="GripTop" Height="6" VerticalAlignment="Top"
               Background="Transparent" Cursor="TopSide"
-              Tag="North" PointerPressed="OnResizeGripPressed" />
+              Tag="North">
+        <i:Interaction.Behaviors>
+          <b:ResizeWindowBehavior />
+        </i:Interaction.Behaviors>
+      </Border>
       <Border Name="GripBottom" Height="6" VerticalAlignment="Bottom"
               Background="Transparent" Cursor="BottomSide"
-              Tag="South" PointerPressed="OnResizeGripPressed" />
+              Tag="South">
+        <i:Interaction.Behaviors>
+          <b:ResizeWindowBehavior />
+        </i:Interaction.Behaviors>
+      </Border>
       <Border Name="GripLeft" Width="6" HorizontalAlignment="Left"
               Background="Transparent" Cursor="LeftSide"
-              Tag="West" PointerPressed="OnResizeGripPressed" />
+              Tag="West">
+        <i:Interaction.Behaviors>
+          <b:ResizeWindowBehavior />
+        </i:Interaction.Behaviors>
+      </Border>
       <Border Name="GripRight" Width="6" HorizontalAlignment="Right"
               Background="Transparent" Cursor="RightSide"
-              Tag="East" PointerPressed="OnResizeGripPressed" />
+              Tag="East">
+        <i:Interaction.Behaviors>
+          <b:ResizeWindowBehavior />
+        </i:Interaction.Behaviors>
+      </Border>
 
       <Border Name="GripTopLeft" Width="10" Height="10"
               HorizontalAlignment="Left" VerticalAlignment="Top"
               Background="Transparent" Cursor="TopLeftCorner"
-              Tag="NorthWest" PointerPressed="OnResizeGripPressed" />
+              Tag="NorthWest">
+        <i:Interaction.Behaviors>
+          <b:ResizeWindowBehavior />
+        </i:Interaction.Behaviors>
+      </Border>
       <Border Name="GripTopRight" Width="10" Height="10"
               HorizontalAlignment="Right" VerticalAlignment="Top"
               Background="Transparent" Cursor="TopRightCorner"
-              Tag="NorthEast" PointerPressed="OnResizeGripPressed" />
+              Tag="NorthEast">
+        <i:Interaction.Behaviors>
+          <b:ResizeWindowBehavior />
+        </i:Interaction.Behaviors>
+      </Border>
       <Border Name="GripBottomLeft" Width="10" Height="10"
               HorizontalAlignment="Left" VerticalAlignment="Bottom"
               Background="Transparent" Cursor="BottomLeftCorner"
-              Tag="SouthWest" PointerPressed="OnResizeGripPressed" />
+              Tag="SouthWest">
+        <i:Interaction.Behaviors>
+          <b:ResizeWindowBehavior />
+        </i:Interaction.Behaviors>
+      </Border>
       <Border Name="GripBottomRight" Width="10" Height="10"
               HorizontalAlignment="Right" VerticalAlignment="Bottom"
               Background="Transparent" Cursor="BottomRightCorner"
-              Tag="SouthEast" PointerPressed="OnResizeGripPressed" />
+              Tag="SouthEast">
+        <i:Interaction.Behaviors>
+          <b:ResizeWindowBehavior />
+        </i:Interaction.Behaviors>
+      </Border>
     </Grid>
   </Grid>
 
