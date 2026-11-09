@@ -8,7 +8,7 @@
 
 ## 现在是什么状态
 
-当前是 **0.5.0-alpha 的 P2 数据层**快照：
+当前是 **0.5.0-alpha 的 P3 主题骨架**快照：
 
 - 七个项目已按目标分层改名：`HeliumTodo.Domain` / `Application` / `Infrastructure` /
   `Desktop` / `Tests` / `SelfTest` / `Verification`。
@@ -19,7 +19,7 @@
 - 备份升到 **v2**（`manifest.json` + 每表一份 JSONL，带 SHA256），支持 Replace / Merge；
   0.4 的 SQLite 备份只识别、不自动转换。
 
-界面主题仍是 FluentAvalonia 3.1，Material.Avalonia 与 Avalonia 12.1.5 的切换在 P3/P4。
+界面已挂上 Material.Avalonia 3.21 / Avalonia 12.1.5：标准控件走 Material，强调色支持任意 `#RRGGBB`；尚未替换的 FluentAvalonia 控件在 P4 一并换掉，届时删除 FA 依赖。
 
 ## 准备数据库
 

@@ -18,14 +18,16 @@ MIT 是模板文本（`<year>` / `<copyright holders>` 为占位符）；各组�
 | 组件 | 版本 | 许可证 | 版权行 |
 | --- | --- | --- | --- |
 | Avalonia、Avalonia.Desktop、Avalonia.Themes.Fluent、Avalonia.HarfBuzz、Avalonia.Headless、Avalonia.Controls.DataGrid、Avalonia.Controls.ColorPicker | 12.1.2 | MIT | Copyright 2013-2026 © The AvaloniaUI Project |
-| FluentAvaloniaUI | 3.1.0 | MIT | Copyright (c) FluentAvalonia contributors（0.3.x–0.4.x 的界面库；0.5.0 起不再引用，仅保留本行以说明历史版本） |
-| Avalonia.Fonts.Inter（Inter 字体） | 12.1.2 | 包本身 MIT；内嵌字体为 OFL-1.1 | Copyright 2013-2026 © The AvaloniaUI Project；Inter 字体版权归 The Inter Project Authors |
+| FluentAvaloniaUI | 3.1.0 | MIT | Copyright (c) FluentAvalonia contributors（过渡期仍为未替换的 FA 控件提供样式，P4 完成后删除） |
+| Avalonia.Fonts.Inter（Inter 字体） | 12.1.5 | 包本身 MIT；内嵌字体为 OFL-1.1 | Copyright 2013-2026 © The AvaloniaUI Project；Inter 字体版权归 The Inter Project Authors |
 | SkiaSharp（含原生 libSkiaSharp） | 3.119.4 | MIT | © Microsoft Corporation. All rights reserved. |
 | HarfBuzzSharp（含原生 libHarfBuzzSharp） | 8.3.1.3 | MIT | © Microsoft Corporation. All rights reserved. |
 | CommunityToolkit.Mvvm | 8.4.0 | MIT | (c) .NET Foundation and Contributors. All rights reserved. |
 | Microsoft.EntityFrameworkCore、Microsoft.EntityFrameworkCore.Relational、Microsoft.EntityFrameworkCore.Design | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
 | Npgsql、Npgsql.EntityFrameworkCore.PostgreSQL | 10.0.3 | PostgreSQL License | Copyright (c) 2002-2026, Npgsql |
 | Microsoft.Extensions.DependencyInjection、DependencyInjection.Abstractions、Logging、Logging.Debug | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| Material.Avalonia、Material.Avalonia.Dialogs | 3.21.0 | MIT | Copyright (c) Material.Avalonia contributors |
+| Material.Icons.Avalonia | 3.0.2 | MIT（图标本身 Apache-2.0） | Copyright (c) Material.Icons.Avalonia contributors；分发图标时需保留 NOTICE |
 | .NET 运行时（自包含发布时） | 10.0.x | MIT | © .NET Foundation and Contributors |
 
 ## 仅用于测试、不随产品分发
@@ -38,14 +40,12 @@ MIT 是模板文本（`<year>` / `<copyright holders>` 为占位符）；各组�
 
 ## 0.5.0 计划引入、当前快照尚未引用
 
-以下组件写在 `DEVELOPMENT_SPEC.md` 的目标技术栈里，但当前快照（0.5.0-alpha P2）
-**还没有**形成依赖。等 P3/P4 真正加入引用时，必须把它们并入上表，
+以下组件写在 `DEVELOPMENT_SPEC.md` 的目标技术栈里，但当前快照（0.5.0-alpha P3）
+**还没有**形成依赖。等 P4 真正加入引用时，必须把它们并入上表，
 并确认 `LICENSES/` 中对应原文已就位：
 
 | 组件 | 计划许可证 | 备注 |
 | --- | --- | --- |
-| Material.Avalonia / Material.Avalonia.Dialogs | MIT | P3 主题骨架 |
-| Material.Icons.Avalonia | MIT（图标本身 Apache-2.0） | 分发图标时需保留 NOTICE |
 | Avalonia.Xaml.Behaviors（自建 12.1.5 构建） | MIT | P4 控件替换 |
 
 ## 字体

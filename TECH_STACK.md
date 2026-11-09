@@ -1,8 +1,9 @@
 # Helium Todo · 技术栈与运行时画像
 
-> 版本 **0.5.0-alpha（P0）** ｜ 本文对标的是仓库当前代码，不是计划。
+> 版本 **0.5.0-alpha（P3）** ｜ 本文对标的是仓库当前代码，不是计划。
 > 项目已按 `DEVELOPMENT_SPEC.md` 改名为 Domain / Application / Infrastructure / Desktop / Verification；
-> Material.Avalonia 主题包尚未切换（P3/P4）；PostgreSQL 17 已在 P2 落地，见规格 §20 偏差说明。
+> Material.Avalonia 3.21.0 主题骨架已落地（P3），FluentAvaloniaUI 仍保留给尚未替换的 FA 控件（P4 删除）；
+> PostgreSQL 17 已在 P2 落地，见规格 §20 偏差说明。
 > 所有数字都是在开发机上实测出来的（命令写在每节末尾，可以自己复现）。
 
 ---
@@ -13,9 +14,9 @@
 
 | 项 | 取值 | 说明 |
 | --- | --- | --- |
-| 目标框架 | `net10.0`（六个项目一致） | `global.json` 把 SDK 锁在 `10.0.401` |
-| UI 框架 | **Avalonia 12.1.2** | 跨平台 XAML；本机只用 Windows 后端 |
-| 控件库 | **FluentAvaloniaUI 3.1.0** | Fluent 2 风格；FA 3 给 224/252 个类型加了 `FA` 前缀 |
+| 目标框架 | `net10.0`（全部项目一致） | `global.json` 把 SDK 锁在 `10.0.401` |
+| UI 框架 | **Avalonia 12.1.5** | 跨平台 XAML；本机只用 Windows 后端 |
+| 控件库 | **Material.Avalonia 3.21.0** + `Material.Avalonia.Dialogs` 3.21.0 / `Material.Icons.Avalonia` 3.0.2 | P3 起标准控件走 Material；FluentAvaloniaUI 3.1.0 只服务尚未替换的 FA 控件（P4 删除） |
 | 绘图 | **SkiaSharp 3.119.4** | 必须与 Avalonia 的传递依赖同版，否则会加载两个 `libSkiaSharp` 直接崩 |
 | MVVM | **CommunityToolkit.Mvvm 8.4.0** | `[ObservableProperty]` / `[RelayCommand]` 源生成器 |
 | 数据访问 | **EF Core 10.0.14** + `Npgsql.EntityFrameworkCore.PostgreSQL 10.0.3` | 主存储是 **PostgreSQL 17**（P2 起）；连接串见 `StorageSettings` / `HELIUM_DB` |
@@ -53,7 +54,7 @@ HeliumTodo.slnx
 ├─ HeliumTodo.Desktop         Avalonia 界面（Views / ViewModels / Controls / Services / Windowing）
 ├─ HeliumTodo.Tests           xunit 测试（196 个）
 ├─ HeliumTodo.SelfTest        反射运行器（沙箱里替代 dotnet test）
-└─ HeliumTodo.Verification    无头渲染 + 15 个专项自检 + 后台探针入口
+└─ HeliumTodo.Verification    无头渲染 + 17 个专项自检 + 后台探针入口
 ```
 
 依赖方向（箭头 = 引用）：
@@ -82,7 +83,7 @@ Verification ──► Desktop / Application / Domain
 | `Desktop` | 58 | 15 385 | 6 个页面 + 外壳、9 个 ViewModel、自绘控件、壁纸服务、托盘、提醒、窗口封装 |
 | `Tests` | 21 | 3 620 | 190 个测试 |
 | `SelfTest` | 1 | 160 | 反射跑 `[Fact]`，支持 `async Task` |
-| `Verification` | 1 | 3 584 | 7 页渲染截图 + 15 个 `--check` |
+| `Verification` | 1 | 3 584 | 7 页渲染截图 + 17 个 `--check` |
 
 ---
 

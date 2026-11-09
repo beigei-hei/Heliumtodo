@@ -2000,3 +2000,22 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
   房间按唯一 `Code` 归一。v1（SQLite）只识别、不自动转换。
 - 真库测试靠 `HELIUM_TEST_POSTGRES`（指向管理库）；没设置就跳过，不要改成"假绿"。
   `--db-check` 直接查 `information_schema` 与 `pg_indexes`，核对列类型与索引。
+
+### 20.7 主题层（P3 起）
+
+- **两套主题并存是过渡态**：`App.axaml` 先 `FluentAvaloniaTheme`、后 `MaterialTheme`；
+  后加者优先，所以标准控件用 Material，尚未替换的 FA 控件仍用 FA。P4 换完控件后
+  删掉 FA 主题和 `FluentAvaloniaUI` 包，这段顺序说明也要一起删。
+- **明暗切换必须同时改两处**：`Application.RequestedThemeVariant`（应用级变体）和
+  `MaterialTheme.BaseTheme`（Material 自己的 `MaterialLight` / `MaterialDark` 资源集）。
+  只改前者会出现"窗口深色、输入框还是浅色"。
+- **强调色写 `Application.Resources`，键名跟 Material 一致**：
+  `MaterialPrimaryLight/Mid/Dark`、`MaterialPrimaryLight/Mid/DarkBrush`、
+  `MaterialPrimary*ForegroundBrush`，Secondary 同理。`MaterialTheme.PrimaryColor`
+  只收枚举色板；`PaletteHelper` 在 3.21.0 已 Obsolete 且接不到挂进 Styles 的主题实例
+  （实测写不进去）。应用级资源优先于样式内默认值，这是保住任意 `#RRGGBB` 的唯一通道。
+- **不要等 MaterialTheme 的 100ms 定时器来断言颜色**：它走 `DispatcherTimer`，
+  无头自检里不触发；`--theme-check` 断言"明暗属性已变 + 资源颜色正确 + 像素正确"，
+  而不是等 `CurrentTheme` 自己刷新。
+- 卡片底色、阴影、圆角仍只有一个来源：`DesignTokens.axaml`（且不放进 `ThemeDictionaries`）。
+  `--theme-check` 会渲染像素核对亮色 `#FFFFFF` / 暗色 `#1C1C1C`，并确认 `CardShadow` 非空。

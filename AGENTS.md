@@ -1,6 +1,6 @@
 # AGENTS.md · 给 AI 的硬规则
 
-> 这是一个 **C# 14 / .NET 10 + Avalonia 12 + FluentAvalonia 3.1 + PostgreSQL 17** 的本地优先桌面应用（0.5.0-alpha P2）。
+> 这是一个 **C# 14 / .NET 10 + Avalonia 12 + Material.Avalonia 3.21 + PostgreSQL 17** 的本地优先桌面应用（0.5.0-alpha P3；FluentAvalonia 3.1 仅剩过渡控件）。
 > 改代码之前先读 [`DEVELOPMENT_PLAYBOOK.md`](DEVELOPMENT_PLAYBOOK.md)（流程）与 [`ARCHITECTURE.md`](ARCHITECTURE.md)（约定）。
 > 本文件只列**不许破**的规则，不解释为什么——解释在 playbook 里。
 
@@ -8,7 +8,7 @@
 
 1. **先给验收标准**：把用户的话拆成 3–6 条可验证的行为，再说怎么改。
 2. **先想怎么证明**：能写单测就写单测；界面改动必须准备无头渲染 + 像素统计的验证方式（Agent 不能看图，"看着挺好"不算证据）。
-3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（196/196，含真库用例）、`--shell`、十六项 `--check`、指纹基线，全绿才交付。
+3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（196/196，含真库用例）、`--shell`、十七项 `--check`、指纹基线，全绿才交付。
 4. **收尾同步文档**：`PROGRESS.md`（这一轮）、`ARCHITECTURE.md`（新约定）、`UI_TEXT_MAP.md`（改了界面文案时）、指纹基线（`-Update` 后复查）。
 
 ## 分层铁律
@@ -91,6 +91,7 @@ dotnet build HeliumTodo.slnx -c Debug
 dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll
 dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --shell
 dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --db-check
+dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --theme-check
 dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --layout-check
 dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --perf-check
 git status --short          # 交付前这里必须是空的

@@ -205,6 +205,13 @@ public static class Program
             return RunLayoutCheck(services);
         }
 
+        // 主题自检：MaterialTheme 真的挂在样式表里、明暗与强调色真的进了像素
+        // （P3 的验收条件；只看资源字典会被主题字典的优先级骗过去）。
+        if (args.Any(a => a.Equals("--theme-check", StringComparison.OrdinalIgnoreCase)))
+        {
+            return RunThemeCheck(services);
+        }
+
         // 外观自检：确认「功能区不透明度」「明暗模式」「暗色灰蒙版」三件事真的生效
         // （用户报的主题色/玻璃浓度改了没反应，根因是资源被主题字典盖住）。
         if (args.Any(a => a.Equals("--appearance-check", StringComparison.OrdinalIgnoreCase)))
@@ -3408,6 +3415,155 @@ public static class Program
 
         return (At(width / 40), At(width / 2), At(width - width / 40));
     }
+
+    /// <summary>
+    /// 主题自检（0.5.0 P3）：MaterialTheme 已应用、明暗/强调色/卡片令牌进了像素。
+    ///
+    /// 【为什么要像素断言而不是查资源字典】
+    ///   0.3.x 踩过「代码写得对、画面没变」—— CardSurfaceBrush 被写进
+    ///   ThemeDictionaries，里面的同名 key 优先级更高，代码赋值静默失效。
+    ///   所以这里真的开一个无头窗口，把 Border 渲染出来，再去读中间那个像素。
+    /// </summary>
+    private static int RunThemeCheck(IServiceProvider services)
+    {
+        var failures = 0;
+
+        void Check(string name, bool ok, string detail)
+        {
+            Console.WriteLine($"   [{(ok ? "通过" : "失败")}] {name} — {detail}");
+            if (!ok) failures++;
+        }
+
+        var app = Avalonia.Application.Current!;
+
+        var material = app.Styles
+            .OfType<Material.Styles.Themes.MaterialTheme>()
+            .FirstOrDefault();
+        Check("App.axaml 里挂着 MaterialTheme", material is not null,
+            material is null ? "没找到（P3 必须把它加进 Application.Styles）" : "找到了");
+
+        var themeService = services.GetRequiredService<ThemeService>();
+        var registry = services.GetRequiredService<ThemeRegistry>();
+        var light = registry.Find("fluent-light-blue")!;
+        var dark = registry.Find("fluent-dark-blue")!;
+        const string magenta = "#FF00FF";
+
+        // ── 一、亮色 + 品红强调色 ──
+        themeService.Apply(light, magenta);
+        // MaterialTheme 内部用 100ms 合并一次主题更新，这里等它落地
+        PumpDispatcher(TimeSpan.FromMilliseconds(500));
+
+        Check("MaterialTheme 的实际明暗 = 亮色",
+            material?.ActualBaseTheme == Material.Styles.Themes.Base.BaseThemeMode.Light,
+            $"ActualBaseTheme={material?.ActualBaseTheme}");
+        Check("应用整体变体 = 亮色", app.ActualThemeVariant == ThemeVariant.Light,
+            $"ActualThemeVariant={app.ActualThemeVariant}");
+
+        var accentBrush = app.Resources.TryGetResource("MaterialPrimaryMidBrush", null, out var accentValue)
+            ? accentValue as ISolidColorBrush
+            : null;
+        Check("Material 主色画笔存在", accentBrush is not null,
+            accentBrush is null ? "MaterialPrimaryMidBrush 没解析出来" : $"颜色 {accentBrush.Color}");
+
+        if (accentBrush is not null)
+        {
+            var pixel = RenderSolid(accentBrush.Color);
+            Check("强调色真的进了像素（品红）",
+                pixel.R > 180 && pixel.B > 180 && pixel.G < 90,
+                $"渲染像素=({pixel.R},{pixel.G},{pixel.B})");
+        }
+
+        // ── 二、亮色卡片：不透明时应当是白 ──
+        HeliumTodo.Desktop.App.ApplyCardOpacity(100, isDark: false);
+        var lightCard = CardSurface();
+        var lightPixel = RenderSolid(lightCard);
+        Check("亮色卡片像素是白", lightPixel.R > 240 && lightPixel.G > 240 && lightPixel.B > 240,
+            $"渲染像素=({lightPixel.R},{lightPixel.G},{lightPixel.B})");
+
+        // ── 三、暗色：MaterialTheme、应用变体、卡片底色一起变 ──
+        themeService.Apply(dark, magenta);
+        PumpDispatcher(TimeSpan.FromMilliseconds(600));
+        HeliumTodo.Desktop.App.ApplyCardOpacity(100, isDark: true);
+
+        Check("MaterialTheme 的实际明暗 = 暗色",
+            material?.ActualBaseTheme == Material.Styles.Themes.Base.BaseThemeMode.Dark,
+            $"ActualBaseTheme={material?.ActualBaseTheme}");
+        Check("应用整体变体 = 暗色", app.ActualThemeVariant == ThemeVariant.Dark,
+            $"ActualThemeVariant={app.ActualThemeVariant}");
+
+        var darkPixel = RenderSolid(CardSurface());
+        Check("暗色卡片像素是深灰（#1C1C1C）",
+            Math.Abs(darkPixel.R - 0x1C) <= 3 && Math.Abs(darkPixel.G - 0x1C) <= 3 && Math.Abs(darkPixel.B - 0x1C) <= 3,
+            $"渲染像素=({darkPixel.R},{darkPixel.G},{darkPixel.B})");
+
+        // ── 四、卡片阴影没被主题字典吞掉 ──
+        var hasShadow = app.Resources.TryGetResource("CardShadow", null, out var shadowValue)
+            && shadowValue is BoxShadows shadows && shadows.Count > 0;
+        Check("CardShadow 在主题字典之外且非空", hasShadow,
+            hasShadow ? "有阴影" : "取不到 CardShadow（可能被写进了 ThemeDictionaries）");
+
+        // 收尾：恢复默认外观，后面的截图和别的自检不受影响
+        themeService.Apply(light, accentOverrideHex: null);
+        HeliumTodo.Desktop.App.ApplyCardOpacity(100, isDark: false);
+        PumpDispatcher(TimeSpan.FromMilliseconds(400));
+
+        Console.WriteLine();
+        Console.WriteLine(failures == 0
+            ? $"主题自检全部通过 ✔（共 9 项）"
+            : $"主题自检有 {failures} 项失败 ✗");
+        Console.WriteLine("══════════════════════════════════════════════════════");
+
+        return failures == 0 ? 0 : 1;
+    }
+
+
+    /// <summary>
+    /// 把一种颜色铺满一个无头窗口，读回中间像素。
+    /// 用来证明"资源里的颜色真的画到了屏幕上"，而不是只躺在字典里。
+    /// </summary>
+    private static Color RenderSolid(Color color)
+    {
+        var window = new Window
+        {
+            Width = 160,
+            Height = 100,
+            WindowDecorations = WindowDecorations.None,
+            Content = new Border
+            {
+                Background = new SolidColorBrush(color),
+            },
+        };
+
+        window.Show();
+        PumpDispatcher(TimeSpan.FromMilliseconds(200));
+
+        var frame = window.CaptureRenderedFrame();
+        if (frame is null)
+        {
+            window.Close();
+            return Colors.Transparent;
+        }
+
+        var size = frame.PixelSize;
+        var stride = size.Width * 4;
+        var buffer = new byte[stride];
+        var pointer = System.Runtime.InteropServices.Marshal.AllocHGlobal(stride);
+        try
+        {
+            // 只拷中间那一行，够用了
+            frame.CopyPixels(new PixelRect(0, size.Height / 2, size.Width, 1), pointer, stride, stride);
+            System.Runtime.InteropServices.Marshal.Copy(pointer, buffer, 0, stride);
+        }
+        finally
+        {
+            System.Runtime.InteropServices.Marshal.FreeHGlobal(pointer);
+        }
+
+        var offset = (size.Width / 2) * 4;
+        window.Close();
+        return Color.FromArgb(buffer[offset + 3], buffer[offset + 2], buffer[offset + 1], buffer[offset]);
+    }
+
 
     private static int RunAppearanceCheck(IServiceProvider services)
     {

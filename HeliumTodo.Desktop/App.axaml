@@ -6,6 +6,7 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:sty="using:FluentAvalonia.Styling"
+             xmlns:mat="clr-namespace:Material.Styles.Themes;assembly=Material.Styles"
              xmlns:conv="using:HeliumTodo.Desktop.Converters"
              xmlns:local="using:HeliumTodo.Desktop"
              x:Class="HeliumTodo.Desktop.App"
@@ -40,7 +41,15 @@
     -->
     <sty:FluentAvaloniaTheme PreferSystemTheme="False" />
 
-    <!-- ② 我们补充的控件样式（时间轴块、卡片、优先级标签等） -->
+    <!--
+      ② Material 3 设计系统（0.5.0 P3 起）。
+         它必须排在 FluentAvaloniaTheme 之后：同一控件两套样式都有时，
+         后声明的生效。这样标准控件（Button/TextBox/ComboBox…）切到 Material，
+         还没替换的 FA 控件继续由上面的 FluentAvaloniaTheme 供样式（P4 删除）。
+    -->
+    <mat:MaterialTheme BaseTheme="Light" />
+
+    <!-- ③ 我们补充的控件样式（时间轴块、卡片、优先级标签等） -->
     <StyleInclude Source="avares://HeliumTodo.Desktop/Styles/Controls.axaml" />
   </Application.Styles>
 

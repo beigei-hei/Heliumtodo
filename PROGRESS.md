@@ -4493,3 +4493,47 @@ P0 的「保留 FluentAvalonia + SQLite」不再是不可抗力，P2 起按规�
 - `Schedules(PlannedStart)` 在模型里叫 `Start`，索引名 `IX_Schedules_Start`。
 
 ---
+
+## 2026-11-09 · 0.5.0-alpha P3：Material 主题骨架
+
+### 做了什么
+
+- `Directory.Packages.props`：Avalonia 全家（Desktop / Themes.Fluent / Fonts.Inter / HarfBuzz /
+  Headless / Controls.ColorPicker）升到 **12.1.5**；新增 `Material.Avalonia` 3.21.0、
+  `Material.Avalonia.Dialogs` 3.21.0、`Material.Icons.Avalonia` 3.0.2。
+  `Avalonia.Controls.DataGrid` 仍锁 12.1.2（上游没有 12.1.5），等 P4 删掉 FluentAvalonia 一起移除。
+- `App.axaml` 在 `FluentAvaloniaTheme` 之后挂 `<mat:MaterialTheme BaseTheme="Light" />`：
+  Avalonia 样式后加者优先，所以标准控件先拿到 Material，FA 控件仍由 FA 主题样式管着。
+- `ThemeService`：
+  - 明暗切换同时设置 MaterialTheme 的 `BaseTheme`（只改 `RequestedThemeVariant` 会让
+    Material 控件停在原色板，出现"窗口深色、输入框浅色"）；
+  - 强调色按 Material 的键名算出浅/中/深三档，写到 `Application.Resources`
+    （`MaterialPrimary*` / `MaterialSecondary*` 的 Color 与 Brush，共 18 个键）；
+  - FA 的 `CustomAccentColor` 继续作为过渡通道，P4 删除。
+- 新增 `--theme-check`（无头渲染 + 像素断言）：MaterialTheme 存在、明暗切换后
+  `ActualBaseTheme` 与应用变体一致、强调色进像素、卡片亮/暗像素（#FFFFFF / #1C1C1C）、
+  `CardShadow` 不在 ThemeDictionaries 里。
+
+### 为什么强调色不走 PaletteHelper（踩坑记录）
+
+- `MaterialTheme.PrimaryColor` 只收 19 个枚举色板，接不住用户在设置页手调的 `#RRGGBB`。
+- 规格建议的 `PaletteHelper.GetTheme()/SetTheme()` 在 3.21.0 已标 `[Obsolete]`，且实测：
+  它找不到挂在 `Application.Styles` 里的 `MaterialTheme` 内部 `ITheme`，`GetTheme()` 返回默认主题，
+  `SetTheme()` 也写不进 Material 的资源字典（`MaterialPrimaryMidBrush` 始终 `#00000000`）。
+- 结论：按 Material 的公开键名写 `Application.Resources`。资源查找里应用级字典优先于
+  样式内默认值，Material 控件的 `DynamicResource` 会先命中这里；这是当前版本唯一能保住任意 RGB 的通道。
+- 另一个坑：无头渲染下 `DispatcherTimer` 不触发，MaterialTheme 的 100ms 合并更新不会发生，
+  所以 `CurrentTheme` 断言要写成"明暗属性已变"，颜色断言看资源，不能等定时器。
+
+### 门禁
+
+- 构建 **0 警告 0 错误**；`SelfTest` **196/196**（真库）；
+  `--folder/backup/room/refresh/shell/timeline/notice/restart-prompt/rail/layout/appearance/
+  reminder/window/perf/anim/db-check/theme-check` **17/17** 通过。
+
+### 还没做（P4 起）
+
+- 147 处 `FluentAvalonia` 控件（FACard / FANavigationView / FASettingsExpander / FAInfoBar 等）
+  换成 Material 控件或自绘；换完才能删 `FluentAvaloniaUI` 包与 `FluentAvaloniaTheme`。
+- `Avalonia.Controls.DataGrid` 12.1.2 的钉子同步移除。
+- 对话框从 `FluentAvalonia.UI.Controls.ContentDialog` 迁到 `Material.Avalonia.Dialogs`。

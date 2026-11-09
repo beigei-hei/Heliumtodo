@@ -25,6 +25,14 @@
     -->
     <PackageReference Include="Avalonia.HarfBuzz" />
     <PackageReference Include="FluentAvaloniaUI" />
+    <!--
+      0.5.0 的设计系统切换（P3）：Material 主题先接管标准控件，
+      FluentAvaloniaUI 只继续给尚未替换的 FA 控件供样式。
+      P4 把 147 处 FA 控件换完后，FluentAvaloniaUI 才能整体删除。
+    -->
+    <PackageReference Include="Material.Avalonia" />
+    <PackageReference Include="Material.Avalonia.Dialogs" />
+    <PackageReference Include="Material.Icons.Avalonia" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <!-- 自己解码壁纸的每一帧（APNG / GIF），需要直接调 Skia 的 API -->
     <PackageReference Include="SkiaSharp" />
