@@ -2,7 +2,7 @@
 
   <!--
     HeliumTodo.Desktop —— Avalonia 桌面界面
-    FluentAvaloniaUI + Fluent 2 设计系统。
+    Material 3 设计系统（0.5.0 起）。
   -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -17,19 +17,14 @@
   <ItemGroup>
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Desktop" />
-    <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="Avalonia.Fonts.Inter" />
     <!--
       Avalonia 12 把文字排版（HarfBuzz 整形）拆成了独立包。
       Avalonia 11 时代它埋在 Skia 里，所以老代码里看不到这个引用。
     -->
     <PackageReference Include="Avalonia.HarfBuzz" />
-    <PackageReference Include="FluentAvaloniaUI" />
-    <!--
-      0.5.0 的设计系统切换（P3）：Material 主题先接管标准控件，
-      FluentAvaloniaUI 只继续给尚未替换的 FA 控件供样式。
-      P4 把 147 处 FA 控件换完后，FluentAvaloniaUI 才能整体删除。
-    -->
+    <!-- 0.5.0 起唯一设计系统：Material 3（P4 已删掉 FluentAvaloniaUI）。 -->
+
     <PackageReference Include="Material.Avalonia" />
     <PackageReference Include="Material.Avalonia.Dialogs" />
     <PackageReference Include="Material.Icons.Avalonia" />

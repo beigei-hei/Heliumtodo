@@ -12,7 +12,6 @@ using Avalonia.Styling;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using FluentAvalonia.UI.Controls;
 using HeliumTodo.Desktop.Services;
 using HeliumTodo.Desktop.Windowing;
 using HeliumTodo.Desktop.ViewModels;
@@ -418,7 +417,7 @@ public static class Program
     /// 为什么需要单独渲染外壳：
     /// 上面那六个页面是用 ContentControl 单独接住 ViewModel 渲染的，
     /// **完全绕过了 MainWindow / ShellView**。也就是说，
-    /// 导航栏那个 FANavigationView（FluentAvalonia 3 改名后的控件）
+    /// 导航栏（图标轨）区域
     /// 到底长得对不对、选中项高亮还在不在，六个页面截图是看不出来的。
     ///
     /// 用真实的 MainWindow 渲染一遍，才算真的验证了外壳。
@@ -2147,7 +2146,7 @@ public static class Program
     ///      这种事在截图里很显眼，但没人会天天截图。
     ///   ② "设置"的位置被用户特意点出来过（要挪到联机下面），
     ///      挪回去属于明显的回归。
-    ///   ③ 用户说设置页"控件下面像垫了一层"，根因是 FASettingsExpander
+    ///   ③ 用户说设置页"控件下面像垫了一层"，根因是设置页折叠分组（原 FASettingsExpander）
     ///      自己画了一块底。它默认不是透明的，所以必须逐个数着断言。
     /// </summary>
     private static int RunRailCheck(IServiceProvider services)
@@ -2267,7 +2266,7 @@ public static class Program
         PumpDispatcherUntil(settingsPage.OnNavigatedToAsync(), TimeSpan.FromSeconds(20));
         PumpDispatcher(TimeSpan.FromMilliseconds(600));
 
-        var expanders = window.GetVisualDescendants().OfType<FASettingsExpander>().ToList();
+        var expanders = window.GetVisualDescendants().OfType<SettingsExpander>().ToList();
         Check("设置页有 10 个分组", expanders.Count == 10, $"实际 {expanders.Count} 个");
 
         var painted = expanders
@@ -2280,7 +2279,7 @@ public static class Program
 
         // 真正"垫了一层"的是分组里的每一行（FASettingsExpanderItem），
         // 它的控件主题把 Background 写死成 #B3FFFFFF，只改外层是看不出来的。
-        var itemRows = window.GetVisualDescendants().OfType<FASettingsExpanderItem>().ToList();
+        var itemRows = window.GetVisualDescendants().OfType<SettingsExpanderItem>().ToList();
         var paintedRows = itemRows
             .Where(r => r.Background is ISolidColorBrush b && b.Color.A > 0)
             .ToList();
@@ -2289,6 +2288,24 @@ public static class Program
             paintedRows.Count == 0
                 ? $"{itemRows.Count} 行全是透明"
                 : $"{paintedRows.Count}/{itemRows.Count} 行还在画底（例如 {paintedRows[0].Background}）");
+
+        // P4 自绘分组：数据结构（Items 集合）必须完整，不能只渲染出屏幕里那几行。
+        var rowTotal = expanders.Sum(e => e.Items?.Count ?? 0);
+        Check("设置页十组共 27 行都在数据里", rowTotal == 27, $"实际 {rowTotal} 行");
+        var combos = window.GetVisualDescendants().OfType<ComboBox>().Count();
+        Check("行内 Footer 控件真的挂出来了", combos >= 2, $"可见 ComboBox {combos} 个");
+
+        // 折叠必须真的收起内容，不能只是换个箭头。
+        var firstExpander = expanders[0];
+        var firstItems = firstExpander.GetVisualDescendants().OfType<ItemsControl>().FirstOrDefault();
+        firstExpander.IsExpanded = false;
+        PumpDispatcher(TimeSpan.FromMilliseconds(120));
+        Check("点标题能收起该组内容", firstItems is { IsVisible: false },
+            firstItems is null ? "找不到 ItemsControl" : $"IsVisible={firstItems.IsVisible}");
+        firstExpander.IsExpanded = true;
+        PumpDispatcher(TimeSpan.FromMilliseconds(120));
+        Check("再点标题能展开该组内容", firstItems is { IsVisible: true },
+            firstItems is null ? "找不到 ItemsControl" : $"IsVisible={firstItems.IsVisible}");
 
         // 内外圆角一致 + 内容向内缩（0.3.4）：
         // 外层卡 RadiusCard=18、Padding=8；里面那层容器必须同半径，否则四个角会"缺一块"。
@@ -2678,7 +2695,11 @@ public static class Program
             vm.IsNoticeVisible = true;
             PumpDispatcher(TimeSpan.FromMilliseconds(350));
 
-            var infoBar = window.GetVisualDescendants().OfType<FAInfoBar>().FirstOrDefault();
+            // 提示条现在是自绘 Border（P4 换掉 FAInfoBar），按文案找到它的 TextBlock，
+            // 再往上取最近的 Border 当作提示条本体来量位置。
+            var noticeText = window.GetVisualDescendants().OfType<TextBlock>()
+                .FirstOrDefault(t => t.Text == "（自检）这是一条提示");
+            var infoBar = noticeText?.GetVisualAncestors().OfType<Border>().FirstOrDefault();
             var position = infoBar?.TranslatePoint(new Point(0, 0), window);
 
             if (position is { } infoPoint && infoPoint.Y >= 0 && infoPoint.Y < window.Height - 40)

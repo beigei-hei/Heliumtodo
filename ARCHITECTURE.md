@@ -14,11 +14,11 @@
 
 | 项目 | 值 |
 | --- | --- |
-| 版本 | `0.3.5-alpha` |
-| 目标框架 | `net10.0`（被 FluentAvaloniaUI 3 逼上去的） |
-| UI 框架 | Avalonia **12.1.2** + FluentAvaloniaUI **3.1.0**（Fluent 2 风格） |
+| 版本 | `0.5.0-alpha` |
+| 目标框架 | `net10.0`（.NET 10 / C# 14） |
+| UI 框架 | Avalonia **12.1.5** + Material.Avalonia **3.21.0**（Material 3；设置页分组与提示条自绘） |
 | MVVM | CommunityToolkit.Mvvm 8.4.0（源生成器） |
-| 数据 | EF Core 8.0.11 + SQLite |
+| 数据 | EF Core 10.0.14 + Npgsql 10.0.3 / PostgreSQL 17（只用 Migration） |
 | 图像 | SkiaSharp 3.119.4（Avalonia 传递依赖，必须版本一致） |
 | 联机 | 原生 `System.Net.Sockets`，TCP + UDP 广播，无中心服务器 |
 | 渲染 | 默认 **Auto**（Avalonia 自带，走 ANGLE→D3D11）；设置页「底层设置」或 `HELIUM_RENDER` 可切软件渲染 / OpenGL / Vulkan（见 §18.2） |
@@ -721,7 +721,7 @@ public static DayTimeline Build(
      纯黑白图 → IsFallback = true，退回默认蓝
         │
         ▼
-  ThemeService.ApplyAccentColor(hex) → FluentAvaloniaTheme.CustomAccentColor
+  ThemeService.ApplyAccentColor(hex) → MaterialPrimary*/MaterialSecondary* 资源键 + SystemAccentColor
 ```
 
 **强调色的三种来源**（`AccentSources`）：
@@ -1129,7 +1129,7 @@ EnsureColumns()  自己查 PRAGMA table_info，缺哪列就 ALTER TABLE 补哪�
   IHeliumTheme.AccentColorHex
         │
         ▼
-  FluentAvaloniaTheme.CustomAccentColor   ← 官方入口，FA 自己派生出 Light1..3 / Dark1..3
+  MaterialPrimary{Light,Mid,Dark}(Brush|ForegroundBrush)   ← 0.5.0 起按 Material 键名直写应用资源
         │
         ▼
   Application.Resources["SystemAccentColor"] 等 7 个键
@@ -1138,8 +1138,9 @@ EnsureColumns()  自己查 PRAGMA table_info，缺哪列就 ALTER TABLE 补哪�
   DesignTokens.axaml 里 DynamicResource 引用 → 所有强调色一起变
 ```
 
-> 早期版本直接写 `Application.Resources["SystemAccentColor"]`，被 FA 的主题字典覆盖，
-> 导致「换主题但颜色不变」。改成写 `FluentAvaloniaTheme.CustomAccentColor` 才对。
+> 0.5.0 起 MaterialTheme 是唯一主题。`MaterialTheme.PrimaryColor` 只收枚举色板，
+> `PaletteHelper` 又写不进挂进 Styles 的实例，所以按 Material 的公开键名直接写
+> `Application.Resources`（应用级资源优先于样式默认值），同时写 `SystemAccentColor` 兜底。
 
 ---
 
@@ -1243,7 +1244,7 @@ powershell tools\check-file-integrity.ps1                                # 116 �
 | `FASettingsExpanderItem` 的控件要放 `Footer` | 同时设 `Content` 又塞子元素 = `Content` 赋值两次（VS 报 23 个 MC30xx） |
 | XAML 里 `Content` 重复赋值只有 VS 分析器报，`dotnet build` 不报 | 所以不能只看构建通过 |
 | 改大段 XAML 前先 `Copy-Item` 备份 | 文本切片式批量改写的失败率高 |
-| 强调色要走 `FluentAvaloniaTheme.CustomAccentColor` | 直接写 `Application.Resources` 会被 FA 主题字典覆盖 |
+| 强调色按 Material 键名写 `Application.Resources` | `MaterialTheme.PrimaryColor` 只收枚举色板；`PaletteHelper` 写不进挂进 Styles 的实例 |
 | SkiaSharp 版本必须与 Avalonia 传递依赖完全一致 | 否则两个 `libSkiaSharp.dll`，随机崩溃 |
 
 ---
@@ -1658,7 +1659,7 @@ Get-Process -Name HeliumTodo.Desktop | Stop-Process -Force
 | 谁来管 | 配置项 | 落到哪儿 |
 | --- | --- | --- |
 | 明暗 | `AppConfig.ColorScheme`（light / dark） | `fluent-light-blue` / `fluent-dark-blue` 主题 + 卡片底色 |
-| 颜色 | `AppConfig.AccentSource` + `CustomAccentHex` | `FluentAvaloniaTheme.CustomAccentColor` |
+| 颜色 | `AppConfig.AccentSource` + `CustomAccentHex` | `ThemeService` → `MaterialPrimary*/MaterialSecondary*` 资源键 |
 | 玻璃浓度 | `AppConfig.CardOpacity`（0–100，有壁纸自动 82） | `CardSurfaceBrush` 的 alpha |
 | 暗色灰蒙版 | `AppConfig.DarkWallpaperScrim`（10–20） | `DarkWallpaperScrimOpacity` 资源 |
 
@@ -1789,30 +1790,16 @@ Application.Current.Resources["CardSurfaceBrush"] = new SolidColorBrush(...);
 用户要求它出现在联机下面，而 `FooterItems` 是贴底渲染的，位置对不上。
 
 **③ 设置页的分组控件和分组里的每一行都必须透明。**
-这里有**两层**底色，第一次修只改对了外层：`FASettingsExpander` 与
-`FASettingsExpanderItem` 的控件主题各自把 `Background` 写死成 `#B3FFFFFF`，
-所以外层 `Background="Transparent"` 之后，十个分组里的 34 行仍在各刷一层白 ——
-叠在卡片上就是用户说的"控件下面垫了一层"（截图里能看到分组之间有一条更白的横带）。
+0.4 时有**两层**底色：`FASettingsExpander` 与 `FASettingsExpanderItem` 的控件主题
+各自把 `Background` 写死成 `#B3FFFFFF`，所以外层设了 `Transparent` 之后，
+十个分组里的每一行仍在各刷一层白 —— 叠在卡片上就是"控件下面垫了一层"。
 
-约定写成全局样式（`HeliumTodo.Desktop/Styles/Controls.axaml`，样式优先级高于控件主题的 setter）：
+P4 换成自绘 `SettingsExpander` / `SettingsExpanderItem` 后，模板
+（`HeliumTodo.Desktop/Styles/SettingsControls.axaml`）里**没有任何一层给背景**，
+这个问题从源头消失，`fa|` 覆盖样式和 `xmlns:fa` 一并删除。
 
-```xml
-<Style Selector="fa|FASettingsExpanderItem">
-  <Setter Property="Background" Value="Transparent" />
-</Style>
-<Style Selector="fa|FASettingsExpanderItem /template/ Border#Root">
-  <Setter Property="Background" Value="Transparent" />
-</Style>
-<Style Selector="fa|FASettingsExpander ToggleButton">
-  <Setter Property="Background" Value="Transparent" />
-</Style>
-<Style Selector="fa|FASettingsExpander ToggleButton /template/ Border#Root">
-  <Setter Property="Background" Value="Transparent" />
-</Style>
-```
-
-`fa` 前缀要在 `Styles` 根上声明 `xmlns:fa="using:FluentAvalonia.UI.Controls"`，
-选择器里写 `fa|类型名`（写 `FluentAvalonia.UI.Controls|` 会报 `AVLN2201`）。
+`--rail-check` 会数 10 个分组、27 行，并逐行断言 `Background` 透明或 null；
+以后改模板时别给根 `Border`/`StackPanel` 加底色，否则这条检查会红。
 
 **④ 内外圆角同半径，内容向内缩 8px。**
 
@@ -2003,9 +1990,9 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
 
 ### 20.7 主题层（P3 起）
 
-- **两套主题并存是过渡态**：`App.axaml` 先 `FluentAvaloniaTheme`、后 `MaterialTheme`；
-  后加者优先，所以标准控件用 Material，尚未替换的 FA 控件仍用 FA。P4 换完控件后
-  删掉 FA 主题和 `FluentAvaloniaUI` 包，这段顺序说明也要一起删。
+- **P3 时期两套主题并存，P4 起只剩 Material**：P3 时 `App.axaml` 先 `FluentAvaloniaTheme`、
+  后 `MaterialTheme`，后加者优先；P4 把设置页折叠分组和两条提示条换成自绘控件后，
+  FA 主题、`FluentAvaloniaUI` 包、`DataGrid` 钉版一并删除。现在 `MaterialTheme` 是唯一设计系统。
 - **明暗切换必须同时改两处**：`Application.RequestedThemeVariant`（应用级变体）和
   `MaterialTheme.BaseTheme`（Material 自己的 `MaterialLight` / `MaterialDark` 资源集）。
   只改前者会出现"窗口深色、输入框还是浅色"。
@@ -2019,3 +2006,20 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
   而不是等 `CurrentTheme` 自己刷新。
 - 卡片底色、阴影、圆角仍只有一个来源：`DesignTokens.axaml`（且不放进 `ThemeDictionaries`）。
   `--theme-check` 会渲染像素核对亮色 `#FFFFFF` / 暗色 `#1C1C1C`，并确认 `CardShadow` 非空。
+
+### 20.8 自绘设置控件与提示条（P4 起）
+
+- **设置页折叠分组不再引第三方控件**：`HeliumTodo.Desktop/Controls/SettingsExpander.cs`
+  提供 `SettingsExpander`（`Header` / `Description` / `IsExpanded` / `Items`）和
+  `SettingsExpanderItem`（`Content` / `Description` / `Footer`），模板在
+  `Styles/SettingsControls.axaml`。模板里**任何一层都不给背景**——0.4 的
+  `FASettingsExpanderItem` 在控件主题里写死 `#B3FFFFFF`，是"设置行下面垫了一层"的根因，
+  换成自己的模板后不需要再用 `fa|` 样式去压。
+- **`Items` 是普通 `AvaloniaList`，不是虚拟化集合**：设置页 10 组 27 行全部实例化，
+  `--rail-check` 直接数数据行（27）并逐行断言背景透明；折叠只切 `ItemsControl.IsVisible`，
+  不重建控件。
+- **提示条统一自绘 `Border`**：壳层的严重冲突条与专注页提示条都用 `NoticeSurfaceBrush` /
+  `NoticeBorderBrush` / `NoticeForegroundBrush`（图标另用 `NoticeIconBrush`），不再有
+  `FAInfoBar`。这样提示条高度、圆角、明暗跟随全由我们的令牌决定。
+- 新增界面检查仍遵守"无头渲染 + 像素/结构断言"：`--rail-check` 读控件树，`--shell`
+  逐页出图，`--theme-check` 读渲染像素。

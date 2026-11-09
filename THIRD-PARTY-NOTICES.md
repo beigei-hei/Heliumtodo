@@ -18,7 +18,6 @@ MIT 是模板文本（`<year>` / `<copyright holders>` 为占位符）；各组�
 | 组件 | 版本 | 许可证 | 版权行 |
 | --- | --- | --- | --- |
 | Avalonia、Avalonia.Desktop、Avalonia.Themes.Fluent、Avalonia.HarfBuzz、Avalonia.Headless、Avalonia.Controls.DataGrid、Avalonia.Controls.ColorPicker | 12.1.2 | MIT | Copyright 2013-2026 © The AvaloniaUI Project |
-| FluentAvaloniaUI | 3.1.0 | MIT | Copyright (c) FluentAvalonia contributors（过渡期仍为未替换的 FA 控件提供样式，P4 完成后删除） |
 | Avalonia.Fonts.Inter（Inter 字体） | 12.1.5 | 包本身 MIT；内嵌字体为 OFL-1.1 | Copyright 2013-2026 © The AvaloniaUI Project；Inter 字体版权归 The Inter Project Authors |
 | SkiaSharp（含原生 libSkiaSharp） | 3.119.4 | MIT | © Microsoft Corporation. All rights reserved. |
 | HarfBuzzSharp（含原生 libHarfBuzzSharp） | 8.3.1.3 | MIT | © Microsoft Corporation. All rights reserved. |
@@ -40,13 +39,13 @@ MIT 是模板文本（`<year>` / `<copyright holders>` 为占位符）；各组�
 
 ## 0.5.0 计划引入、当前快照尚未引用
 
-以下组件写在 `DEVELOPMENT_SPEC.md` 的目标技术栈里，但当前快照（0.5.0-alpha P3）
-**还没有**形成依赖。等 P4 真正加入引用时，必须把它们并入上表，
+以下组件写在 `DEVELOPMENT_SPEC.md` 的目标技术栈里，但当前快照（0.5.0-alpha P4）
+**还没有**形成依赖。等 P5 真正加入引用时，必须把它们并入上表，
 并确认 `LICENSES/` 中对应原文已就位：
 
 | 组件 | 计划许可证 | 备注 |
 | --- | --- | --- |
-| Avalonia.Xaml.Behaviors（自建 12.1.5 构建） | MIT | P4 控件替换 |
+| Avalonia.Xaml.Behaviors（自建 12.1.5 构建） | MIT | P5 外壳交互 |
 
 ## 字体
 

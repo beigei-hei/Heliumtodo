@@ -7,7 +7,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:HeliumTodo.Desktop.ViewModels"
              xmlns:ctrl="using:HeliumTodo.Desktop.Controls"
-             xmlns:fa="using:FluentAvalonia.UI.Controls"
              xmlns:core="using:HeliumTodo.Domain.Models"
              x:Class="HeliumTodo.Desktop.Views.FocusView"
              x:DataType="vm:FocusViewModel">
@@ -56,10 +55,25 @@
       完全不参与布局，所以下面那张 8px 的下边距也跟着一起消失。
     -->
     <Panel Grid.Row="1" Margin="0,0,0,8" IsVisible="{Binding IsNoticeVisible}">
-      <fa:FAInfoBar IsOpen="{Binding IsNoticeVisible}"
-                    Severity="Informational"
-                    Message="{Binding NoticeText}"
-                    IsClosable="True" />
+      <!-- P4 起改用自绘提示条，和仪表盘/设置页保持一套底板 -->
+      <Border Padding="14,10"
+              CornerRadius="8"
+              Background="{DynamicResource NoticeSurfaceBrush}"
+              BorderBrush="{DynamicResource NoticeBorderBrush}"
+              BorderThickness="1">
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+          <TextBlock Text="&#xE73E;"
+                     FontFamily="{DynamicResource IconFont}"
+                     FontSize="14"
+                     Foreground="{DynamicResource NoticeIconBrush}"
+                     VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1"
+                     Text="{Binding NoticeText}"
+                     Foreground="{DynamicResource NoticeForegroundBrush}"
+                     TextWrapping="Wrap"
+                     VerticalAlignment="Center" />
+        </Grid>
+      </Border>
     </Panel>
 
     <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="12">

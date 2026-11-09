@@ -27,14 +27,12 @@
   <ItemGroup>
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Headless" />
-    <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="Avalonia.Fonts.Inter" />
     <!--
       Avalonia 12 把文字排版（HarfBuzz 整形）拆成了独立包。
       Avalonia 11 时代它埋在 Skia 里，所以老代码里看不到这个引用。
     -->
     <PackageReference Include="Avalonia.HarfBuzz" />
-    <PackageReference Include="FluentAvaloniaUI" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Logging" />

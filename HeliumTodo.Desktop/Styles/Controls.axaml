@@ -5,7 +5,7 @@
 
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:fa="using:FluentAvalonia.UI.Controls">
+        >
 
   <!--
     ══════════════════════════════════════════════════════════════════════════
@@ -414,26 +414,9 @@
 
   <!--
     设置页的分组行不许自己画底。
-    FASettingsExpanderItem 的控件主题给 Background 写死了一块 #B3FFFFFF，
-    只给外层 FASettingsExpander 设 Transparent 是不够的 —— 十个分组里的
-    每一行都会各自刷一层白，叠在卡片上就是用户说的"控件下面垫了一层"。
-    这里用样式盖掉（样式优先级高于控件主题的 setter）。
+    0.4 时原因是 FASettingsExpanderItem 的控件主题写死了 #B3FFFFFF，
+    每一行会各自刷一层白；P4 换成自绘 SettingsExpander 后模板本身就不带底色，
+    这里不再需要 fa| 覆盖样式。
   -->
-  <Style Selector="fa|FASettingsExpanderItem">
-    <Setter Property="Background" Value="Transparent" />
-  </Style>
-
-  <Style Selector="fa|FASettingsExpanderItem /template/ Border#Root">
-    <Setter Property="Background" Value="Transparent" />
-  </Style>
-
-  <!-- 分组标题那一行（点击展开的地方）同理 -->
-  <Style Selector="fa|FASettingsExpander ToggleButton">
-    <Setter Property="Background" Value="Transparent" />
-  </Style>
-
-  <Style Selector="fa|FASettingsExpander ToggleButton /template/ Border#Root">
-    <Setter Property="Background" Value="Transparent" />
-  </Style>
 
 </Styles>

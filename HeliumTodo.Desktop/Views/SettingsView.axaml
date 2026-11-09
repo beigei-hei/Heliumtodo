@@ -6,7 +6,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:HeliumTodo.Desktop.ViewModels"
-             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:ctrl="clr-namespace:HeliumTodo.Desktop.Controls"
              xmlns:ctl="using:HeliumTodo.Desktop.Controls"
              x:Class="HeliumTodo.Desktop.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
@@ -54,18 +54,18 @@
     <Border CornerRadius="{DynamicResource RadiusCard}" ClipToBounds="True" Background="Transparent">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
     <!--
-      改版后不再有 28px 的页面大标题：设置项本身是 FASettingsExpander，
+      改版后不再有 28px 的页面大标题：设置项本身是自绘的 SettingsExpander，
       每个分组标题（外观 / 专注 / 自习室 …）就是它的"卡片头"，再来个大标题只是重复。
       左右边距跟其他页统一成 12，视觉上六页才是一条线。
     -->
     <StackPanel Margin="0" Spacing="0" HorizontalAlignment="Stretch">
 
       <!-- ══════════ 外观 ══════════ -->
-      <!-- 圆角外壳：FASettingsExpander 模板本身是直角，靠外层 Border 裁圆 -->
+      <!-- 圆角外壳：分组模板本身是直角，靠外层 Border 裁圆 -->
       <Border CornerRadius="0" ClipToBounds="True">
-        <fa:FASettingsExpander Background="Transparent" Header="外观" Description="明暗、强调色（含自定义调色板）、功能区玻璃浓度"
+        <ctrl:SettingsExpander Background="Transparent" Header="外观" Description="明暗、强调色（含自定义调色板）、功能区玻璃浓度"
                              IsExpanded="True">
-          <fa:FASettingsExpander.Items>
+          <ctrl:SettingsExpander.Items>
             <!--
               ── 明暗 ──
               0.3.3 之前这里是"主题"下拉框，里面是九套"明暗 + 固定强调色"的组合。
@@ -73,9 +73,9 @@
               理由见 AppConfig.ColorScheme 的注释 —— 两套东西都想管颜色，
               用户调一个、另一个不听话，是之前"主题色不统一"的根源。
             -->
-            <fa:FASettingsExpanderItem Content="明暗模式"
+            <ctrl:SettingsExpanderItem Content="明暗模式"
                                        Description="暗色模式下壁纸会自动压一层灰蒙版">
-              <fa:FASettingsExpanderItem.Footer>
+              <ctrl:SettingsExpanderItem.Footer>
                 <ComboBox ItemsSource="{Binding ColorSchemes}"
                           SelectedItem="{Binding SelectedColorScheme}"
                           MinWidth="200"
@@ -86,8 +86,8 @@
                     </DataTemplate>
                   </ComboBox.ItemTemplate>
                 </ComboBox>
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
 
             <!--
               ── 强调色（合并后） ──
@@ -95,7 +95,7 @@
               用户得在三个地方之间来回看。现在合成一项：
                 最上面选"用哪套颜色"，选了自定义，调色盘才在下面展开。
             -->
-            <fa:FASettingsExpanderItem>
+            <ctrl:SettingsExpanderItem>
               <StackPanel Spacing="12" Width="470" HorizontalAlignment="Left">
 
                 <TextBlock Text="强调色" Classes="section" />
@@ -206,7 +206,7 @@
 
                 </StackPanel>
               </StackPanel>
-            </fa:FASettingsExpanderItem>
+            </ctrl:SettingsExpanderItem>
 
             <!--
               ── 功能区（卡片）的玻璃浓度 ──
@@ -214,9 +214,9 @@
               半透明只会让它发灰）；一打开壁纸会自动降到 82%，
               想再透一点或者想完全不透，拖这个滑块。
             -->
-            <fa:FASettingsExpanderItem Content="功能区不透明度"
+            <ctrl:SettingsExpanderItem Content="功能区不透明度"
                                        Description="100% 完全不透明；有壁纸时会自动降到 82%">
-              <fa:FASettingsExpanderItem.Footer>
+              <ctrl:SettingsExpanderItem.Footer>
                 <StackPanel Orientation="Horizontal" Spacing="10">
                   <Slider Value="{Binding CardOpacity}"
                           Minimum="0" Maximum="100"
@@ -224,41 +224,41 @@
                   <TextBlock Text="{Binding CardOpacity, StringFormat='{}{0}%'}"
                              VerticalAlignment="Center" Width="46" />
                 </StackPanel>
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
-          </fa:FASettingsExpander.Items>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
+          </ctrl:SettingsExpander.Items>
 
-        </fa:FASettingsExpander>
+        </ctrl:SettingsExpander>
       </Border>
 
       <!-- ══════════ 背景壁纸 ══════════ -->
-      <!-- 圆角外壳：FASettingsExpander 模板本身是直角，靠外层 Border 裁圆 -->
+      <!-- 圆角外壳：分组模板本身是直角，靠外层 Border 裁圆 -->
       <Border CornerRadius="0" ClipToBounds="True">
-        <fa:FASettingsExpander Background="Transparent" Header="背景壁纸"
+        <ctrl:SettingsExpander Background="Transparent" Header="背景壁纸"
                                IsExpanded="False">
-          <fa:FASettingsExpander.Items>
+          <ctrl:SettingsExpander.Items>
 
-            <fa:FASettingsExpanderItem Content="启用背景壁纸">
-              <fa:FASettingsExpanderItem.Footer>
+            <ctrl:SettingsExpanderItem Content="启用背景壁纸">
+              <ctrl:SettingsExpanderItem.Footer>
                 <ToggleSwitch IsChecked="{Binding WallpaperEnabled}" OnContent="开" OffContent="关" />
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
 
-            <fa:FASettingsExpanderItem Content="壁纸图片"
+            <ctrl:SettingsExpanderItem Content="壁纸图片"
                              Description="{Binding WallpaperStatusText}">
-              <fa:FASettingsExpanderItem.Footer>
+              <ctrl:SettingsExpanderItem.Footer>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <TextBox Text="{Binding WallpaperPath}" Width="300"
                            />
                   <Button Content="浏览…" Click="OnBrowseWallpaper" />
                   <Button Content="清除" Command="{Binding ClearWallpaperCommand}" />
                 </StackPanel>
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
 
-            <fa:FASettingsExpanderItem Content="蒙版浓度"
+            <ctrl:SettingsExpanderItem Content="蒙版浓度"
                                        Description="把壁纸压淡一点，字就看得清。颜色跟着明暗：亮色用白提亮，暗色用黑压暗，暗色下会自动加强。">
-              <fa:FASettingsExpanderItem.Footer>
+              <ctrl:SettingsExpanderItem.Footer>
                 <StackPanel Orientation="Horizontal" Spacing="10">
                   <Slider Value="{Binding WallpaperScrimOpacity}"
                           Minimum="0" Maximum="100"
@@ -266,11 +266,11 @@
                   <TextBlock Text="{Binding WallpaperScrimOpacity, StringFormat='{}{0}%'}"
                              VerticalAlignment="Center" Width="46" />
                 </StackPanel>
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
 
-            <fa:FASettingsExpanderItem Content="模糊强度">
-              <fa:FASettingsExpanderItem.Footer>
+            <ctrl:SettingsExpanderItem Content="模糊强度">
+              <ctrl:SettingsExpanderItem.Footer>
                 <StackPanel Orientation="Horizontal" Spacing="10">
                   <Slider Value="{Binding WallpaperBlurRadius}"
                           Minimum="0" Maximum="60"
@@ -278,174 +278,174 @@
                   <TextBlock Text="{Binding WallpaperBlurRadius, StringFormat='{}{0} px'}"
                              VerticalAlignment="Center" Width="46" />
                 </StackPanel>
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
 
-          </fa:FASettingsExpander.Items>
-        </fa:FASettingsExpander>
+          </ctrl:SettingsExpander.Items>
+        </ctrl:SettingsExpander>
       </Border>
 
       <!-- ══════════ 专注 ══════════ -->
-      <!-- 圆角外壳：FASettingsExpander 模板本身是直角，靠外层 Border 裁圆 -->
+      <!-- 圆角外壳：分组模板本身是直角，靠外层 Border 裁圆 -->
       <Border CornerRadius="0" ClipToBounds="True">
-        <fa:FASettingsExpander Background="Transparent" Header="专注" Description="番茄钟时长与休息规则"
+        <ctrl:SettingsExpander Background="Transparent" Header="专注" Description="番茄钟时长与休息规则"
                              IsExpanded="True">
-          <fa:FASettingsExpander.Items>
-            <fa:FASettingsExpanderItem Content="默认专注时长（分钟）">
-              <fa:FASettingsExpanderItem.Footer>
+          <ctrl:SettingsExpander.Items>
+            <ctrl:SettingsExpanderItem Content="默认专注时长（分钟）">
+              <ctrl:SettingsExpanderItem.Footer>
                 <NumericUpDown Value="{Binding Config.DefaultFocusMinutes}"
                                Minimum="1" Maximum="480" Increment="5"
                                FormatString="0" MinWidth="130" />
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
 
-            <fa:FASettingsExpanderItem Content="短休息（分钟）">
-              <fa:FASettingsExpanderItem.Footer>
+            <ctrl:SettingsExpanderItem Content="短休息（分钟）">
+              <ctrl:SettingsExpanderItem.Footer>
                 <NumericUpDown Value="{Binding Config.BreakMinutes}"
                                Minimum="1" Maximum="60" Increment="1"
                                FormatString="0" MinWidth="130" />
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
 
-            <fa:FASettingsExpanderItem Content="长休息（分钟）">
-              <fa:FASettingsExpanderItem.Footer>
+            <ctrl:SettingsExpanderItem Content="长休息（分钟）">
+              <ctrl:SettingsExpanderItem.Footer>
                 <NumericUpDown Value="{Binding Config.LongBreakMinutes}"
                                Minimum="1" Maximum="120" Increment="5"
                                FormatString="0" MinWidth="130" />
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
 
-            <fa:FASettingsExpanderItem Content="专注结束后自动进入休息">
-              <fa:FASettingsExpanderItem.Footer>
+            <ctrl:SettingsExpanderItem Content="专注结束后自动进入休息">
+              <ctrl:SettingsExpanderItem.Footer>
                 <ToggleSwitch IsChecked="{Binding Config.FocusCompletionAlert}" OnContent="开" OffContent="关" />
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
-          </fa:FASettingsExpander.Items>
-        </fa:FASettingsExpander>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
+          </ctrl:SettingsExpander.Items>
+        </ctrl:SettingsExpander>
       </Border>
 
       <!-- ══════════ 自控模块 ══════════ -->
-      <!-- 圆角外壳：FASettingsExpander 模板本身是直角，靠外层 Border 裁圆 -->
+      <!-- 圆角外壳：分组模板本身是直角，靠外层 Border 裁圆 -->
       <Border CornerRadius="0" ClipToBounds="True">
-        <fa:FASettingsExpander Background="Transparent" Header="自控模块" 
+        <ctrl:SettingsExpander Background="Transparent" Header="自控模块" 
                              IsExpanded="True">
 
-          <fa:FASettingsExpander.Items>
-            <fa:FASettingsExpanderItem Content="启用专注守护">
-              <fa:FASettingsExpanderItem.Footer>
+          <ctrl:SettingsExpander.Items>
+            <ctrl:SettingsExpanderItem Content="启用专注守护">
+              <ctrl:SettingsExpanderItem.Footer>
                 <ToggleSwitch IsChecked="{Binding Config.EnableFocusGuard}" OnContent="开" OffContent="关" />
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
 
-            <fa:FASettingsExpanderItem Content="容忍次数">
-              <fa:FASettingsExpanderItem.Footer>
+            <ctrl:SettingsExpanderItem Content="容忍次数">
+              <ctrl:SettingsExpanderItem.Footer>
                 <NumericUpDown Value="{Binding Config.FocusGuardTolerance}"
                                Minimum="0" Maximum="20" Increment="1"
                                FormatString="0" MinWidth="130" />
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
-          </fa:FASettingsExpander.Items>
-        </fa:FASettingsExpander>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
+          </ctrl:SettingsExpander.Items>
+        </ctrl:SettingsExpander>
       </Border>
 
       <!-- ══════════ 每日工作流 ══════════ -->
-      <!-- 圆角外壳：FASettingsExpander 模板本身是直角，靠外层 Border 裁圆 -->
+      <!-- 圆角外壳：分组模板本身是直角，靠外层 Border 裁圆 -->
       <Border CornerRadius="0" ClipToBounds="True">
-        <fa:FASettingsExpander Background="Transparent" Header="每日工作流" Description="24 小时时间轴的显示方式"
+        <ctrl:SettingsExpander Background="Transparent" Header="每日工作流" Description="24 小时时间轴的显示方式"
                              IsExpanded="True">
-          <fa:FASettingsExpander.Items>
-            <fa:FASettingsExpanderItem Content="超载阈值（小时）"
+          <ctrl:SettingsExpander.Items>
+            <ctrl:SettingsExpanderItem Content="超载阈值（小时）"
                                        Description="一天安排超过这么多小时，就在时间轴右边提示“今天有点满”。">
-              <fa:FASettingsExpanderItem.Footer>
+              <ctrl:SettingsExpanderItem.Footer>
                 <NumericUpDown Value="{Binding Config.OverloadHours}"
                                Minimum="1" Maximum="24" Increment="1"
                                FormatString="0" MinWidth="130" />
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
 
-            <fa:FASettingsExpanderItem Content="时间轴上显示已完成"
+            <ctrl:SettingsExpanderItem Content="时间轴上显示已完成"
                                        Description="关掉之后，已完成的日程和待办不再画在 24 小时时间轴上，画面更干净。">
-              <fa:FASettingsExpanderItem.Footer>
+              <ctrl:SettingsExpanderItem.Footer>
                 <ToggleSwitch IsChecked="{Binding Config.ShowCompletedOnTimeline}" OnContent="开" OffContent="关" />
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
-          </fa:FASettingsExpander.Items>
-        </fa:FASettingsExpander>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
+          </ctrl:SettingsExpander.Items>
+        </ctrl:SettingsExpander>
       </Border>
 
       <!-- ══════════ 自习室 ══════════ -->
-      <!-- 圆角外壳：FASettingsExpander 模板本身是直角，靠外层 Border 裁圆 -->
+      <!-- 圆角外壳：分组模板本身是直角，靠外层 Border 裁圆 -->
       <Border CornerRadius="0" ClipToBounds="True">
-        <fa:FASettingsExpander Background="Transparent" Header="自习室" Description="昵称与默认专注时长"
+        <ctrl:SettingsExpander Background="Transparent" Header="自习室" Description="昵称与默认专注时长"
                              IsExpanded="True">
-          <fa:FASettingsExpander.Items>
-            <fa:FASettingsExpanderItem Content="昵称">
-              <fa:FASettingsExpanderItem.Footer>
+          <ctrl:SettingsExpander.Items>
+            <ctrl:SettingsExpanderItem Content="昵称">
+              <ctrl:SettingsExpanderItem.Footer>
                 <TextBox Text="{Binding Config.DisplayName}" MinWidth="180" />
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
 
-            <fa:FASettingsExpanderItem Content="自习室默认专注时长（分钟）">
-              <fa:FASettingsExpanderItem.Footer>
+            <ctrl:SettingsExpanderItem Content="自习室默认专注时长（分钟）">
+              <ctrl:SettingsExpanderItem.Footer>
                 <NumericUpDown Value="{Binding Config.StudyRoomFocusMinutes}"
                                Minimum="5" Maximum="480" Increment="5"
                                FormatString="0" MinWidth="130" />
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
 
-            <fa:FASettingsExpanderItem Content="局域网联机">
-              <fa:FASettingsExpanderItem.Footer>
+            <ctrl:SettingsExpanderItem Content="局域网联机">
+              <ctrl:SettingsExpanderItem.Footer>
                 <ToggleSwitch IsChecked="{Binding EnableNetworkStudyRoom}"
                               OnContent="已开启" OffContent="已关闭" />
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
-          </fa:FASettingsExpander.Items>
-        </fa:FASettingsExpander>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
+          </ctrl:SettingsExpander.Items>
+        </ctrl:SettingsExpander>
       </Border>
 
       <!-- ══════════ 数据与文件 ══════════ -->
-      <!-- 圆角外壳：FASettingsExpander 模板本身是直角，靠外层 Border 裁圆 -->
+      <!-- 圆角外壳：分组模板本身是直角，靠外层 Border 裁圆 -->
       <Border CornerRadius="0" ClipToBounds="True">
-        <fa:FASettingsExpander Background="Transparent" Header="数据与文件" Description="配置文件、数据库、备份"
+        <ctrl:SettingsExpander Background="Transparent" Header="数据与文件" Description="配置文件、数据库、备份"
                              IsExpanded="True">
-          <fa:FASettingsExpander.Items>
-            <fa:FASettingsExpanderItem Content="配置文件"
+          <ctrl:SettingsExpander.Items>
+            <ctrl:SettingsExpanderItem Content="配置文件"
                              Description="{Binding ConfigFilePath}">
-              <fa:FASettingsExpanderItem.Footer>
+              <ctrl:SettingsExpanderItem.Footer>
                 <Button Content="打开文件夹" Command="{Binding OpenConfigFolderCommand}" />
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
 
          
 
-            <fa:FASettingsExpanderItem Content="启动时自动备份">
-              <fa:FASettingsExpanderItem.Footer>
+            <ctrl:SettingsExpanderItem Content="启动时自动备份">
+              <ctrl:SettingsExpanderItem.Footer>
                 <ToggleSwitch IsChecked="{Binding Config.AutoBackup}" OnContent="开" OffContent="关" />
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
 
-            <fa:FASettingsExpanderItem Content="导出 / 导入">
-              <fa:FASettingsExpanderItem.Footer>
+            <ctrl:SettingsExpanderItem Content="导出 / 导入">
+              <ctrl:SettingsExpanderItem.Footer>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <Button Content="导出…" Click="OnExportBackup"
                           IsEnabled="{Binding !IsBackupBusy}" />
                   <Button Content="导入…" Click="OnImportBackup"
                           IsEnabled="{Binding !IsBackupBusy}" />
                 </StackPanel>
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
 
-            <fa:FASettingsExpanderItem Content="备份文件夹"
+            <ctrl:SettingsExpanderItem Content="备份文件夹"
                              Description="{Binding BackupDirectory}">
-              <fa:FASettingsExpanderItem.Footer>
+              <ctrl:SettingsExpanderItem.Footer>
                 <Button Content="打开文件夹" Command="{Binding OpenBackupFolderCommand}" />
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
 
-            <fa:FASettingsExpanderItem Content="最近一次备份操作"
+            <ctrl:SettingsExpanderItem Content="最近一次备份操作"
                              Description="{Binding BackupStatusText}" />
-          </fa:FASettingsExpander.Items>
-        </fa:FASettingsExpander>
+          </ctrl:SettingsExpander.Items>
+        </ctrl:SettingsExpander>
       </Border>
 
       <!-- ══════════ 底层设置 ══════════ -->
@@ -455,16 +455,16 @@
         正常情况软件渲染最省内存，调错了最多是更费资源；
         但把它当成"性能调节"随手改，反而容易撞上看不清界面的问题。
       -->
-      <!-- 圆角外壳：FASettingsExpander 模板本身是直角，靠外层 Border 裁圆 -->
+      <!-- 圆角外壳：分组模板本身是直角，靠外层 Border 裁圆 -->
       <Border CornerRadius="0" ClipToBounds="True">
-        <fa:FASettingsExpander Background="Transparent" Header="底层设置"
+        <ctrl:SettingsExpander Background="Transparent" Header="底层设置"
                                Description="如非遇到渲染问题，请勿调整！"
                                IsExpanded="False">
-          <fa:FASettingsExpander.Items>
+          <ctrl:SettingsExpander.Items>
 
-            <fa:FASettingsExpanderItem Content="渲染后端"
+            <ctrl:SettingsExpanderItem Content="渲染后端"
                                        Description="{Binding RenderBackendStatusText}">
-              <fa:FASettingsExpanderItem.Footer>
+              <ctrl:SettingsExpanderItem.Footer>
                 <StackPanel Spacing="6" HorizontalAlignment="Right">
                   <ComboBox ItemsSource="{Binding RenderBackends}"
                             SelectedItem="{Binding SelectedRenderBackend}"
@@ -480,45 +480,45 @@
                              Classes="caption"
                              HorizontalAlignment="Right" />
                 </StackPanel>
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
 
-          </fa:FASettingsExpander.Items>
-        </fa:FASettingsExpander>
+          </ctrl:SettingsExpander.Items>
+        </ctrl:SettingsExpander>
       </Border>
 
       <!-- ══════════ 插件 ══════════ -->
-      <!-- 圆角外壳：FASettingsExpander 模板本身是直角，靠外层 Border 裁圆 -->
+      <!-- 圆角外壳：分组模板本身是直角，靠外层 Border 裁圆 -->
       <Border CornerRadius="0" ClipToBounds="True">
-        <fa:FASettingsExpander Background="Transparent" Header="插件"
+        <ctrl:SettingsExpander Background="Transparent" Header="插件"
                              IsExpanded="True">
-          <fa:FASettingsExpander.Items>
+          <ctrl:SettingsExpander.Items>
 
-            <fa:FASettingsExpanderItem Content="状态"
+            <ctrl:SettingsExpanderItem Content="状态"
                              Description="插件接口在本版本中暂时关闭。我们正在重新设计插件规范（可暴露的接口类型、权限与版本兼容策略），完成后再开放。已有的插件目录不会被读取，也不会执行。" />
 
-          </fa:FASettingsExpander.Items>
-        </fa:FASettingsExpander>
+          </ctrl:SettingsExpander.Items>
+        </ctrl:SettingsExpander>
       </Border>
 
       <!-- ══════════ 关于 + 操作 ══════════ -->
-      <!-- 圆角外壳：FASettingsExpander 模板本身是直角，靠外层 Border 裁圆 -->
+      <!-- 圆角外壳：分组模板本身是直角，靠外层 Border 裁圆 -->
       <Border CornerRadius="0" ClipToBounds="True">
-        <fa:FASettingsExpander Background="Transparent" Header="关于" Description="Helium Todo 日程！ 专注！ 自动化！"
+        <ctrl:SettingsExpander Background="Transparent" Header="关于" Description="Helium Todo 日程！ 专注！ 自动化！"
                              IsExpanded="True">
-          <fa:FASettingsExpander.Items>
-            <fa:FASettingsExpanderItem Content="版本">
-              <fa:FASettingsExpanderItem.Footer>
+          <ctrl:SettingsExpander.Items>
+            <ctrl:SettingsExpanderItem Content="版本">
+              <ctrl:SettingsExpanderItem.Footer>
                 <TextBlock Text="{Binding AppVersion}" VerticalAlignment="Center" />
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
-            <fa:FASettingsExpanderItem Content="恢复默认设置">
-              <fa:FASettingsExpanderItem.Footer>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
+            <ctrl:SettingsExpanderItem Content="恢复默认设置">
+              <ctrl:SettingsExpanderItem.Footer>
                 <Button Content="恢复默认" Command="{Binding ResetToDefaultCommand}" />
-              </fa:FASettingsExpanderItem.Footer>
-            </fa:FASettingsExpanderItem>
-          </fa:FASettingsExpander.Items>
-        </fa:FASettingsExpander>
+              </ctrl:SettingsExpanderItem.Footer>
+            </ctrl:SettingsExpanderItem>
+          </ctrl:SettingsExpander.Items>
+        </ctrl:SettingsExpander>
       </Border>
 
       <!-- 保存按钮 -->

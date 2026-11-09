@@ -4537,3 +4537,48 @@ P0 的「保留 FluentAvalonia + SQLite」不再是不可抗力，P2 起按规�
   换成 Material 控件或自绘；换完才能删 `FluentAvaloniaUI` 包与 `FluentAvaloniaTheme`。
 - `Avalonia.Controls.DataGrid` 12.1.2 的钉子同步移除。
 - 对话框从 `FluentAvalonia.UI.Controls.ContentDialog` 迁到 `Material.Avalonia.Dialogs`。
+## 2026-11-09 · 0.5.0-alpha P4：删掉 FluentAvaloniaUI
+
+### 做了什么
+
+- 设置页最后 71 个 FA 标签换成自绘控件：
+  - 新增 `HeliumTodo.Desktop/Controls/SettingsExpander.cs`：`SettingsExpander`
+    （`Header` / `Description` / `IsExpanded` / `Items`）与 `SettingsExpanderItem`
+    （`Content` / `Description` / `Footer`），API 与 FA 的对应控件保持同形；
+  - 新增 `Styles/SettingsControls.axaml`：分组标题是 `ToggleButton`，内容用
+    `ItemsControl` + `IsVisible` 折叠；模板里没有一层带背景，彻底去掉 FA 模板写死的
+    `#B3FFFFFF` 行底色（原来要四条 `fa|` 样式去压，现在一并删除）。
+- 两条提示条改为自绘 `Border`（`NoticeSurfaceBrush` / `NoticeBorderBrush` /
+  `NoticeForegroundBrush`）：壳层严重冲突条、专注页提示条；不再依赖 `FAInfoBar` 的
+  高度/圆角/关闭按钮模板。
+- 删除 `App.axaml` 里的 `FluentAvaloniaTheme`（`MaterialTheme` 成为唯一主题）、
+  删除 `Directory.Packages.props` 的 `FluentAvaloniaUI` 3.1.0 与
+  `Avalonia.Controls.DataGrid` 12.1.2 钉版、删除 Desktop 项目对两者的引用，
+  以及 `ThemeService` 里 `FindFluentAvaloniaTheme()` / `CustomAccentColor` 过渡通道
+  （强调色现在只走 Material 资源键 + `SystemAccentColor` 兜底）。
+- `--rail-check` 跟着换成 `OfType<SettingsExpander()` / `SettingsExpanderItem()`，
+  并新增三项结构断言：十组 27 行都在 `Items` 数据里、行内 Footer 控件确实挂出来、
+  标题点击能收起/再展开内容。`--notice-check` 里找提示条的方式从 `FAInfoBar`
+  改为「按文案找 TextBlock，再取最近的 Border」。
+
+### 为什么要换
+
+- 规格 P4 的目标是让 Material 成为唯一设计系统；FA 只剩设置页折叠分组和两条提示条，
+  继续留着会让两套控件主题互相污染（尤其行底色和提示条高度）。
+- FA 的 `FASettingsExpanderItem` 模板自带 `#B3FFFFFF`，这是 0.3.x 起反复出现的
+  「控件下面像垫了一层」的根因；自绘模板从源头不给背景，比覆盖样式更稳。
+
+### 门禁
+
+- 构建 **0 警告 0 错误**；`SelfTest` **196/196**（真库，30.4s）；
+  `--folder/backup/room/refresh/shell/timeline/notice/restart-prompt/rail/layout/appearance/
+  reminder/window/perf/anim/db-check/theme-check` **17/17** 通过；
+  `--shell` 七页全部出图。
+- `--rail-check`：10 组、27 行全透明，折叠/展开断言通过；`--theme-check` 9 项仍全绿
+  （只剩 `MaterialTheme`，FA 通道删除后颜色没回退）。
+
+### 还没做（P5 起）
+
+- `Avalonia.Xaml.Behaviors` 12 的落地（源码构建或适配层），以及 `--behavior-check`；
+- `Material.Avalonia.Dialogs` 接入（当前确认/输入对话框仍是自绘 Window，暂未迁移）；
+- `xmin` 并发令牌（规格 §7 表格写「P4 起」，但会改数据层契约，留到后续单独一轮）。

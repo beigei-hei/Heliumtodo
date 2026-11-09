@@ -6,7 +6,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:HeliumTodo.Desktop.ViewModels"
-             xmlns:fa="using:FluentAvalonia.UI.Controls"
              xmlns:ctrl="using:HeliumTodo.Desktop.Controls"
              xmlns:core="using:HeliumTodo.Domain.Models"
              x:Class="HeliumTodo.Desktop.Views.StudyRoomView"

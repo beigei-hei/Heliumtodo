@@ -1,0 +1,85 @@
+<!--
+  SPDX-FileCopyrightText: 2025 Helium Todo contributors
+  SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctrl="clr-namespace:HeliumTodo.Desktop.Controls">
+
+  <!--
+    ══════════════════════════════════════════════════════════════
+      设置页折叠分组（替代 FluentAvalonia 的 FASettingsExpander）
+    ══════════════════════════════════════════════════════════════
+    两件东西必须同时成立：
+      · 分组标题行和每一行都不许自己画底（FA 的模板在行里写死了 #B3FFFFFF，
+        之前要用四条 fa| 样式压；现在模板我们自己写，干脆不给底色）；
+      · 行的排列顺序是「标题 → 说明 → 控件」，和 FA 的视觉一致，
+        这样 SettingsView 里十个分组、三十四行不用改文案和布局。
+  -->
+
+  <Styles.Resources>
+  <ControlTheme x:Key="{x:Type ctrl:SettingsExpander}" TargetType="ctrl:SettingsExpander">
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="Transparent">
+          <StackPanel>
+            <ToggleButton Name="PART_Header"
+                          IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}"
+                          HorizontalAlignment="Stretch"
+                          HorizontalContentAlignment="Left"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          Padding="0,10">
+              <StackPanel Spacing="2">
+                <ContentPresenter Content="{TemplateBinding Header}"
+                                  TextElement.FontSize="{DynamicResource FontSubtitle}"
+                                  TextElement.FontWeight="SemiBold" />
+                <TextBlock Text="{TemplateBinding Description}"
+                           FontSize="{DynamicResource FontSmall}"
+                           Opacity="0.6"
+                           TextWrapping="Wrap"
+                           IsVisible="{TemplateBinding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+            </ToggleButton>
+
+            <ItemsControl ItemsSource="{TemplateBinding Items}"
+                          Margin="0,2,0,10"
+                          IsVisible="{TemplateBinding IsExpanded}">
+              <ItemsControl.Styles>
+                <Style Selector="ContentPresenter">
+                  <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                </Style>
+              </ItemsControl.Styles>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type ctrl:SettingsExpanderItem}" TargetType="ctrl:SettingsExpanderItem">
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <StackPanel Margin="0,6" Spacing="4">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            TextElement.FontSize="{DynamicResource FontBody}"
+                            TextElement.FontWeight="Medium" />
+          <TextBlock Text="{TemplateBinding Description}"
+                     FontSize="{DynamicResource FontSmall}"
+                     Opacity="0.6"
+                     TextWrapping="Wrap"
+                     IsVisible="{TemplateBinding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <ContentPresenter Content="{TemplateBinding Footer}"
+                            Margin="0,4,0,0"
+                            IsVisible="{TemplateBinding Footer, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        </StackPanel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+  </Styles.Resources>
+
+</Styles>

@@ -1,5 +1,10 @@
 # Helium Todo · 项目全景
 
+> ⚠️ **历史快照（v0.3.5-alpha）**。0.5.0 的分层与技术栈以
+> [`DEVELOPMENT_SPEC.md`](DEVELOPMENT_SPEC.md) 和 [`ARCHITECTURE.md`](ARCHITECTURE.md) 为准：
+> 项目已改名 `Domain` / `Application` / `Infrastructure` / `Desktop`，主存储是 PostgreSQL 17，
+> 界面是 Material.Avalonia 3.21（FluentAvaloniaUI 已移除）。下文保留当时的记录，不再逐行更新。
+
 > 这份文档回答三个问题：**项目里有哪些文件**、**依赖了哪些库**、**程序是怎么搭起来的**。
 >
 > 生成日期：2026-10-15（2026-10-24 更新到 Avalonia 12）　·　版本：**v0.3.5-alpha**　·　目标框架：**net10.0**

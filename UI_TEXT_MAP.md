@@ -42,41 +42,41 @@
 
 ### `HeliumTodo.Desktop\Views\FocusView.axaml`（35 处）
 
-- `HeliumTodo.Desktop\Views\FocusView.axaml:42` — `<TextBlock Text="专注" Classes="pageHeader" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:43` — `<TextBlock Text="今天" Classes="pageCaption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:49` — `<TextBlock Text="次" Classes="pageCaption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:74` — `<TextBlock Text="本次专注" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:78` — `<TextBlock Grid.Row="0" Grid.Column="0" Text="做什么"`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:81` — `PlaceholderText="不填就用关联待办的标题" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:83` — `<TextBlock Grid.Row="1" Grid.Column="0" Text="关联待办"`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:89` — `PlaceholderText="（可不选）">`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:104` — `<TextBlock Text="时长" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:108` — `<TextBlock Text="分钟" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:125` — `<TextBlock Grid.Column="0" Text="预订专注时长" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:126` — `<Button Grid.Column="1" Content="＋ 预订一段" FontSize="12" Padding="10,4"`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:131` — `Text="预订好的时段会出现在「今日工作流」的时间轴上；如果那段时间已经安排了日程，时间轴会直接标出冲突。" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:135` — `<TextBox Text="{Binding ReserveTitle}" PlaceholderText="要专注什么？（可不填）" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:142` — `<TextBlock Text="分钟" Classes="caption" VerticalAlignment="Center" Margin="0,0,8,6" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:143` — `<Button Content="保存预订" Command="{Binding SaveReservationCommand}"`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:164` — `<Button Grid.Column="1" Content="开始" FontSize="11" Padding="9,4"`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:167` — `<Button Grid.Column="2" Content="取消" FontSize="11" Padding="9,4"`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:181` — `<TextBlock Text="今日统计" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:185` — `<TextBlock Text="专注总时长" Classes="caption" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:189` — `<TextBlock Text="完成次数" Classes="caption" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:193` — `<TextBlock Text="平均每次" Classes="caption" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:197` — `<TextBlock Text="被打扰" Classes="caption" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:202` — `<Run Text="累计专注：" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:211` — `<TextBlock Text="今天的专注记录" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:213` — `<TextBlock Text="今天还没有完成任何专注。" Classes="caption"`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:234` — `Text="{Binding InterruptionCount, StringFormat='打扰 {0} 次'}" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:299` — `<Run Text="被打扰 " />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:301` — `<Run Text=" 次" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:318` — `<TextBlock Text="开始专注" IsVisible="{Binding IsIdle}" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:319` — `<TextBlock Text="暂停" IsVisible="{Binding IsRunning}" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:320` — `<TextBlock Text="继续" IsVisible="{Binding IsPaused}" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:321` — `<TextBlock Text="跳过休息" IsVisible="{Binding IsBreak}" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:326` — `<Button Grid.Column="0" Content="完成" Command="{Binding FinishNowCommand}"`
-- `HeliumTodo.Desktop\Views\FocusView.axaml:329` — `<Button Grid.Column="1" Content="放弃" Command="{Binding AbandonCommand}"`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:41` — `<TextBlock Text="专注" Classes="pageHeader" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:42` — `<TextBlock Text="今天" Classes="pageCaption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:48` — `<TextBlock Text="次" Classes="pageCaption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:88` — `<TextBlock Text="本次专注" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:92` — `<TextBlock Grid.Row="0" Grid.Column="0" Text="做什么"`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:95` — `PlaceholderText="不填就用关联待办的标题" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:97` — `<TextBlock Grid.Row="1" Grid.Column="0" Text="关联待办"`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:103` — `PlaceholderText="（可不选）">`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:118` — `<TextBlock Text="时长" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:122` — `<TextBlock Text="分钟" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:139` — `<TextBlock Grid.Column="0" Text="预订专注时长" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:140` — `<Button Grid.Column="1" Content="＋ 预订一段" FontSize="12" Padding="10,4"`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:145` — `Text="预订好的时段会出现在「今日工作流」的时间轴上；如果那段时间已经安排了日程，时间轴会直接标出冲突。" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:149` — `<TextBox Text="{Binding ReserveTitle}" PlaceholderText="要专注什么？（可不填）" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:156` — `<TextBlock Text="分钟" Classes="caption" VerticalAlignment="Center" Margin="0,0,8,6" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:157` — `<Button Content="保存预订" Command="{Binding SaveReservationCommand}"`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:178` — `<Button Grid.Column="1" Content="开始" FontSize="11" Padding="9,4"`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:181` — `<Button Grid.Column="2" Content="取消" FontSize="11" Padding="9,4"`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:195` — `<TextBlock Text="今日统计" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:199` — `<TextBlock Text="专注总时长" Classes="caption" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:203` — `<TextBlock Text="完成次数" Classes="caption" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:207` — `<TextBlock Text="平均每次" Classes="caption" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:211` — `<TextBlock Text="被打扰" Classes="caption" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:216` — `<Run Text="累计专注：" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:225` — `<TextBlock Text="今天的专注记录" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:227` — `<TextBlock Text="今天还没有完成任何专注。" Classes="caption"`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:248` — `Text="{Binding InterruptionCount, StringFormat='打扰 {0} 次'}" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:313` — `<Run Text="被打扰 " />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:315` — `<Run Text=" 次" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:332` — `<TextBlock Text="开始专注" IsVisible="{Binding IsIdle}" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:333` — `<TextBlock Text="暂停" IsVisible="{Binding IsRunning}" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:334` — `<TextBlock Text="继续" IsVisible="{Binding IsPaused}" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:335` — `<TextBlock Text="跳过休息" IsVisible="{Binding IsBreak}" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:340` — `<Button Grid.Column="0" Content="完成" Command="{Binding FinishNowCommand}"`
+- `HeliumTodo.Desktop\Views\FocusView.axaml:343` — `<Button Grid.Column="1" Content="放弃" Command="{Binding AbandonCommand}"`
 
 ### `HeliumTodo.Desktop\Views\ScheduleView.axaml`（27 处）
 
@@ -111,64 +111,64 @@
 ### `HeliumTodo.Desktop\Views\SettingsView.axaml`（72 处）
 
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:27` — `<TextBlock Text="设置" Classes="pageHeader" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:66` — `<fa:FASettingsExpander Background="Transparent" Header="外观" Description="明暗、强调色（含自定义调色板）、功能区玻璃浓度"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:76` — `<fa:FASettingsExpanderItem Content="明暗模式"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:66` — `<ctrl:SettingsExpander Background="Transparent" Header="外观" Description="明暗、强调色（含自定义调色板）、功能区玻璃浓度"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:76` — `<ctrl:SettingsExpanderItem Content="明暗模式"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:77` — `Description="暗色模式下壁纸会自动压一层灰蒙版">`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:101` — `<TextBlock Text="强调色" Classes="section" />`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:145` — `<TextBlock Text="横轴 = 饱和度　纵轴 = 明度" Classes="caption" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:217` — `<fa:FASettingsExpanderItem Content="功能区不透明度"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:217` — `<ctrl:SettingsExpanderItem Content="功能区不透明度"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:218` — `Description="100% 完全不透明；有壁纸时会自动降到 82%">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:237` — `<fa:FASettingsExpander Background="Transparent" Header="背景壁纸"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:241` — `<fa:FASettingsExpanderItem Content="启用背景壁纸">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:237` — `<ctrl:SettingsExpander Background="Transparent" Header="背景壁纸"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:241` — `<ctrl:SettingsExpanderItem Content="启用背景壁纸">`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:243` — `<ToggleSwitch IsChecked="{Binding WallpaperEnabled}" OnContent="开" OffContent="关" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:247` — `<fa:FASettingsExpanderItem Content="壁纸图片"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:247` — `<ctrl:SettingsExpanderItem Content="壁纸图片"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:253` — `<Button Content="浏览…" Click="OnBrowseWallpaper" />`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:254` — `<Button Content="清除" Command="{Binding ClearWallpaperCommand}" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:259` — `<fa:FASettingsExpanderItem Content="蒙版浓度"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:259` — `<ctrl:SettingsExpanderItem Content="蒙版浓度"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:260` — `Description="把壁纸压淡一点，字就看得清。颜色跟着明暗：亮色用白提亮，暗色用黑压暗，暗色下会自动加强。">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:272` — `<fa:FASettingsExpanderItem Content="模糊强度">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:291` — `<fa:FASettingsExpander Background="Transparent" Header="专注" Description="番茄钟时长与休息规则"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:294` — `<fa:FASettingsExpanderItem Content="默认专注时长（分钟）">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:302` — `<fa:FASettingsExpanderItem Content="短休息（分钟）">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:310` — `<fa:FASettingsExpanderItem Content="长休息（分钟）">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:318` — `<fa:FASettingsExpanderItem Content="专注结束后自动进入休息">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:272` — `<ctrl:SettingsExpanderItem Content="模糊强度">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:291` — `<ctrl:SettingsExpander Background="Transparent" Header="专注" Description="番茄钟时长与休息规则"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:294` — `<ctrl:SettingsExpanderItem Content="默认专注时长（分钟）">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:302` — `<ctrl:SettingsExpanderItem Content="短休息（分钟）">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:310` — `<ctrl:SettingsExpanderItem Content="长休息（分钟）">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:318` — `<ctrl:SettingsExpanderItem Content="专注结束后自动进入休息">`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:320` — `<ToggleSwitch IsChecked="{Binding Config.FocusCompletionAlert}" OnContent="开" OffContent="关" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:330` — `<fa:FASettingsExpander Background="Transparent" Header="自控模块"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:334` — `<fa:FASettingsExpanderItem Content="启用专注守护">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:330` — `<ctrl:SettingsExpander Background="Transparent" Header="自控模块"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:334` — `<ctrl:SettingsExpanderItem Content="启用专注守护">`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:336` — `<ToggleSwitch IsChecked="{Binding Config.EnableFocusGuard}" OnContent="开" OffContent="关" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:340` — `<fa:FASettingsExpanderItem Content="容忍次数">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:354` — `<fa:FASettingsExpander Background="Transparent" Header="每日工作流" Description="24 小时时间轴的显示方式"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:357` — `<fa:FASettingsExpanderItem Content="超载阈值（小时）"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:340` — `<ctrl:SettingsExpanderItem Content="容忍次数">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:354` — `<ctrl:SettingsExpander Background="Transparent" Header="每日工作流" Description="24 小时时间轴的显示方式"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:357` — `<ctrl:SettingsExpanderItem Content="超载阈值（小时）"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:358` — `Description="一天安排超过这么多小时，就在时间轴右边提示“今天有点满”。">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:366` — `<fa:FASettingsExpanderItem Content="时间轴上显示已完成"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:366` — `<ctrl:SettingsExpanderItem Content="时间轴上显示已完成"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:367` — `Description="关掉之后，已完成的日程和待办不再画在 24 小时时间轴上，画面更干净。">`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:369` — `<ToggleSwitch IsChecked="{Binding Config.ShowCompletedOnTimeline}" OnContent="开" OffContent="关" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:379` — `<fa:FASettingsExpander Background="Transparent" Header="自习室" Description="昵称与默认专注时长"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:382` — `<fa:FASettingsExpanderItem Content="昵称">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:388` — `<fa:FASettingsExpanderItem Content="自习室默认专注时长（分钟）">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:396` — `<fa:FASettingsExpanderItem Content="局域网联机">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:379` — `<ctrl:SettingsExpander Background="Transparent" Header="自习室" Description="昵称与默认专注时长"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:382` — `<ctrl:SettingsExpanderItem Content="昵称">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:388` — `<ctrl:SettingsExpanderItem Content="自习室默认专注时长（分钟）">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:396` — `<ctrl:SettingsExpanderItem Content="局域网联机">`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:399` — `OnContent="已开启" OffContent="已关闭" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:409` — `<fa:FASettingsExpander Background="Transparent" Header="数据与文件" Description="配置文件、数据库、备份"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:412` — `<fa:FASettingsExpanderItem Content="配置文件"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:409` — `<ctrl:SettingsExpander Background="Transparent" Header="数据与文件" Description="配置文件、数据库、备份"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:412` — `<ctrl:SettingsExpanderItem Content="配置文件"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:415` — `<Button Content="打开文件夹" Command="{Binding OpenConfigFolderCommand}" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:421` — `<fa:FASettingsExpanderItem Content="启动时自动备份">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:421` — `<ctrl:SettingsExpanderItem Content="启动时自动备份">`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:423` — `<ToggleSwitch IsChecked="{Binding Config.AutoBackup}" OnContent="开" OffContent="关" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:427` — `<fa:FASettingsExpanderItem Content="导出 / 导入">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:427` — `<ctrl:SettingsExpanderItem Content="导出 / 导入">`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:430` — `<Button Content="导出…" Click="OnExportBackup"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:432` — `<Button Content="导入…" Click="OnImportBackup"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:438` — `<fa:FASettingsExpanderItem Content="备份文件夹"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:438` — `<ctrl:SettingsExpanderItem Content="备份文件夹"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:441` — `<Button Content="打开文件夹" Command="{Binding OpenBackupFolderCommand}" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:445` — `<fa:FASettingsExpanderItem Content="最近一次备份操作"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:460` — `<fa:FASettingsExpander Background="Transparent" Header="底层设置"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:445` — `<ctrl:SettingsExpanderItem Content="最近一次备份操作"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:460` — `<ctrl:SettingsExpander Background="Transparent" Header="底层设置"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:461` — `Description="如非遇到渲染问题，请勿调整！"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:465` — `<fa:FASettingsExpanderItem Content="渲染后端"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:465` — `<ctrl:SettingsExpanderItem Content="渲染后端"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:479` — `<TextBlock Text="改完需要重启程序才生效。"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:493` — `<fa:FASettingsExpander Background="Transparent" Header="插件"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:497` — `<fa:FASettingsExpanderItem Content="状态"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:493` — `<ctrl:SettingsExpander Background="Transparent" Header="插件"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:497` — `<ctrl:SettingsExpanderItem Content="状态"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:498` — `Description="插件接口在本版本中暂时关闭。我们正在重新设计插件规范（可暴露的接口类型、权限与版本兼容策略），完成后再开放。已有的插件目录不会被读取，也不会执行。" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:507` — `<fa:FASettingsExpander Background="Transparent" Header="关于" Description="Helium Todo 日程！ 专注！ 自动化！"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:510` — `<fa:FASettingsExpanderItem Content="版本">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:515` — `<fa:FASettingsExpanderItem Content="恢复默认设置">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:507` — `<ctrl:SettingsExpander Background="Transparent" Header="关于" Description="Helium Todo 日程！ 专注！ 自动化！"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:510` — `<ctrl:SettingsExpanderItem Content="版本">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:515` — `<ctrl:SettingsExpanderItem Content="恢复默认设置">`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:517` — `<Button Content="恢复默认" Command="{Binding ResetToDefaultCommand}" />`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:526` — `<Button Content="保存设置" Classes="accent" MinWidth="120"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:529` — `<TextBlock Text="修改主题会立刻生效，其它设置点「保存设置」后写入文件。"`
@@ -185,44 +185,44 @@
 
 ### `HeliumTodo.Desktop\Views\ShellView.axaml`（4 处）
 
-- `HeliumTodo.Desktop\Views\ShellView.axaml:123` — `<Button Classes="windowButton" Click="OnMinimizeClick" ToolTip.Tip="最小化">`
-- `HeliumTodo.Desktop\Views\ShellView.axaml:126` — `<Button Classes="windowButton" Click="OnMaximizeClick" ToolTip.Tip="最大化 / 还原">`
-- `HeliumTodo.Desktop\Views\ShellView.axaml:129` — `<Button Classes="windowButton close" Click="OnCloseClick" ToolTip.Tip="关闭">`
-- `HeliumTodo.Desktop\Views\ShellView.axaml:174` — `ToolTip.Tip="展开 / 收起功能名">`
+- `HeliumTodo.Desktop\Views\ShellView.axaml:122` — `<Button Classes="windowButton" Click="OnMinimizeClick" ToolTip.Tip="最小化">`
+- `HeliumTodo.Desktop\Views\ShellView.axaml:125` — `<Button Classes="windowButton" Click="OnMaximizeClick" ToolTip.Tip="最大化 / 还原">`
+- `HeliumTodo.Desktop\Views\ShellView.axaml:128` — `<Button Classes="windowButton close" Click="OnCloseClick" ToolTip.Tip="关闭">`
+- `HeliumTodo.Desktop\Views\ShellView.axaml:173` — `ToolTip.Tip="展开 / 收起功能名">`
 
 ### `HeliumTodo.Desktop\Views\StudyRoomView.axaml`（31 处）
 
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:27` — `<TextBlock Text="自习室" Classes="pageHeader" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:56` — `<TextBlock Text="局域网联机" Classes="cardHeader" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:65` — `<TextBlock Text="我想当房主" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:68` — `PlaceholderText="输入房间名称以创建房间" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:69` — `<Button Grid.Column="1" Content="创建" Classes="accent"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:75` — `<TextBlock Text="我想当房客" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:78` — `PlaceholderText="输入 6 位房间码"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:80` — `<Button Grid.Column="1" Content="加入" Command="{Binding JoinRoomCommand}" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:87` — `<TextBlock Text="输入联机地址" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:90` — `PlaceholderText="例如 192.168.1.5 或 [fe80::1]:47470"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:92` — `<Button Grid.Column="1" Content="连接" Classes="accent"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:106` — `<TextBlock Text="局域网联机默认关闭。要用联机自习，到「设置 → 自习室」把「局域网联机」打开。"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:130` — `<TextBlock Text="房间码" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:142` — `<Button Content="＋ 示例队友" FontSize="11" Padding="9,4"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:143` — `ToolTip.Tip="联机实现前，用来看看多人自习的样子"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:145` — `<Button Content="离开" FontSize="11" Padding="9,4"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:161` — `<TextBlock Classes="caption" Text="向你的同学分享房间IP"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:166` — `<Run Text="端口" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:192` — `<TextBox Text="{Binding FocusTitle}" PlaceholderText="这次专注做什么？" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:194` — `<TextBlock Text="时长" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:198` — `<TextBlock Text="分钟" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:201` — `<Run Text="我今天在自习室的累计专注：" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:207` — `<Button Content="开始专注" Classes="accent" MinWidth="96"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:211` — `<Button Content="结束专注" MinWidth="96"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:222` — `<TextBlock Text="房间成员" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:243` — `Text="{Binding FocusedToday, StringFormat='今日专注 {0:hh\\:mm}'}" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:245` — `Text="{Binding JoinedAt, StringFormat='{}{0:HH:mm} 加入'}" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:253` — `<TextBlock Text="专注中" Foreground="White" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:269` — `<TextBlock Grid.Row="0" Text="房间消息" Classes="cardHeader" />`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:305` — `PlaceholderText="说点什么…（回车发送）"`
-- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:307` — `<Button Grid.Column="1" Content="发送" Command="{Binding SendMessageCommand}" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:26` — `<TextBlock Text="自习室" Classes="pageHeader" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:55` — `<TextBlock Text="局域网联机" Classes="cardHeader" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:64` — `<TextBlock Text="我想当房主" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:67` — `PlaceholderText="输入房间名称以创建房间" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:68` — `<Button Grid.Column="1" Content="创建" Classes="accent"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:74` — `<TextBlock Text="我想当房客" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:77` — `PlaceholderText="输入 6 位房间码"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:79` — `<Button Grid.Column="1" Content="加入" Command="{Binding JoinRoomCommand}" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:86` — `<TextBlock Text="输入联机地址" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:89` — `PlaceholderText="例如 192.168.1.5 或 [fe80::1]:47470"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:91` — `<Button Grid.Column="1" Content="连接" Classes="accent"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:105` — `<TextBlock Text="局域网联机默认关闭。要用联机自习，到「设置 → 自习室」把「局域网联机」打开。"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:129` — `<TextBlock Text="房间码" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:141` — `<Button Content="＋ 示例队友" FontSize="11" Padding="9,4"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:142` — `ToolTip.Tip="联机实现前，用来看看多人自习的样子"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:144` — `<Button Content="离开" FontSize="11" Padding="9,4"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:160` — `<TextBlock Classes="caption" Text="向你的同学分享房间IP"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:165` — `<Run Text="端口" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:191` — `<TextBox Text="{Binding FocusTitle}" PlaceholderText="这次专注做什么？" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:193` — `<TextBlock Text="时长" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:197` — `<TextBlock Text="分钟" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:200` — `<Run Text="我今天在自习室的累计专注：" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:206` — `<Button Content="开始专注" Classes="accent" MinWidth="96"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:210` — `<Button Content="结束专注" MinWidth="96"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:221` — `<TextBlock Text="房间成员" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:242` — `Text="{Binding FocusedToday, StringFormat='今日专注 {0:hh\\:mm}'}" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:244` — `Text="{Binding JoinedAt, StringFormat='{}{0:HH:mm} 加入'}" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:252` — `<TextBlock Text="专注中" Foreground="White" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:268` — `<TextBlock Grid.Row="0" Text="房间消息" Classes="cardHeader" />`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:304` — `PlaceholderText="说点什么…（回车发送）"`
+- `HeliumTodo.Desktop\Views\StudyRoomView.axaml:306` — `<Button Grid.Column="1" Content="发送" Command="{Binding SendMessageCommand}" />`
 
 ### `HeliumTodo.Desktop\Views\TodoView.axaml`（32 处）
 
@@ -494,7 +494,7 @@
 
 ## 四、Core / Data 层拼出来的文字（运行时）
 
-共 39 个文件、250 处。
+共 41 个文件、253 处。
 
 ### `HeliumTodo.Application\Configuration\AccentSources.cs`（3 处）
 
@@ -504,8 +504,8 @@
 
 ### `HeliumTodo.Application\Configuration\AppConfig.cs`（2 处）
 
-- `HeliumTodo.Application\Configuration\AppConfig.cs:290` — `FallbackReason = $"{reason}；备用目录也不可用：{secondReason}";`
-- `HeliumTodo.Application\Configuration\AppConfig.cs:320` — `reason = $"{directory} 不可写（{ex.GetType().Name}: {ex.Message}）";`
+- `HeliumTodo.Application\Configuration\AppConfig.cs:333` — `FallbackReason = $"{reason}；备用目录也不可用：{secondReason}";`
+- `HeliumTodo.Application\Configuration\AppConfig.cs:363` — `reason = $"{directory} 不可写（{ex.GetType().Name}: {ex.Message}）";`
 
 ### `HeliumTodo.Application\Configuration\ColorSchemes.cs`（3 处）
 
@@ -555,35 +555,35 @@
 
 ### `HeliumTodo.Desktop\App.axaml.cs`（29 处）
 
-- `HeliumTodo.Desktop\App.axaml.cs:149` — `LogBackground("[插件] 检测到 plugins 目录，本版本不加载");`
-- `HeliumTodo.Desktop\App.axaml.cs:173` — `LogBackground("[单实例] 已经有一份在跑，已请它把窗口显示出来，本进程退出");`
-- `HeliumTodo.Desktop\App.axaml.cs:210` — `LogBackground($"[退出] 进程正常结束，退出码 {e.ApplicationExitCode}");`
-- `HeliumTodo.Desktop\App.axaml.cs:236` — `LogBackground("[提醒] 后台扫描已启动（每 30 秒一次）");`
-- `HeliumTodo.Desktop\App.axaml.cs:251` — `LogBackground($"[环境] 会话={System.Diagnostics.Process.GetCurrentProcess().SessionId}"`
-- `HeliumTodo.Desktop\App.axaml.cs:252` — `+ $" 管理员={IsElevated()}"`
-- `HeliumTodo.Desktop\App.axaml.cs:253` — `+ $" 资源管理器={DescribeExplorer()}"`
-- `HeliumTodo.Desktop\App.axaml.cs:254` — `+ $" 渲染后端={Application.Configuration.RenderBackendSettings.DisplayName(HeliumTodo.Desktop.Services.RenderBackendChoice.ActiveKey)}"`
-- `HeliumTodo.Desktop\App.axaml.cs:269` — `LogBackground("[托盘] 启动失败：没有托盘图标，但关闭仍会留在后台"`
-- `HeliumTodo.Desktop\App.axaml.cs:270` — `+ "（再双击一次程序即可唤回窗口）");`
-- `HeliumTodo.Desktop\App.axaml.cs:276` — `? "[托盘] 自检模式：假装托盘已就绪（没有真的图标）"`
-- `HeliumTodo.Desktop\App.axaml.cs:277` — `: "[托盘] 已启动，关闭按钮改为藏窗口");`
-- `HeliumTodo.Desktop\App.axaml.cs:300` — `? "[窗口] 关闭按钮被拦截，已隐藏到托盘（进程继续运行）"`
-- `HeliumTodo.Desktop\App.axaml.cs:301` — `: "[窗口] 关闭按钮被拦截，已隐藏（没有托盘图标，再双击程序可唤回）");`
-- `HeliumTodo.Desktop\App.axaml.cs:346` — `return "没有运行";`
-- `HeliumTodo.Desktop\App.axaml.cs:350` — `return $"PID {string.Join(',', processes.Select(p => p.Id))} 会话 {string.Join(',', sessions)}";`
-- `HeliumTodo.Desktop\App.axaml.cs:354` — `return "查不到";`
-- `HeliumTodo.Desktop\App.axaml.cs:418` — `? "[备份] 这次没做成"`
-- `HeliumTodo.Desktop\App.axaml.cs:419` — `: $"[备份] 已生成 {path}");`
-- `HeliumTodo.Desktop\App.axaml.cs:653` — `? $"[启动] 首次运行，已写入示例数据：{databasePath}"`
-- `HeliumTodo.Desktop\App.axaml.cs:654` — `: $"[启动] 数据库就绪：{databasePath}");`
-- `HeliumTodo.Desktop\App.axaml.cs:662` — `Console.Error.WriteLine($"[启动] 数据库初始化失败：{ex.Message}（库路径：{configService.ResolveDatabasePath()}）");`
-- `HeliumTodo.Desktop\App.axaml.cs:696` — `LogBackground("[重启] 检测到调试器，放弃自动重启："`
-- `HeliumTodo.Desktop\App.axaml.cs:697` — `+ "请用调试器的「重新启动」(Ctrl+Shift+F5)，"`
-- `HeliumTodo.Desktop\App.axaml.cs:698` — `+ "否则新进程不受调试器管理，还会占住 exe 让下次编译失败");`
-- `HeliumTodo.Desktop\App.axaml.cs:705` — `LogBackground("[重启] 拿不到当前可执行文件路径，放弃自动重启");`
-- `HeliumTodo.Desktop\App.axaml.cs:718` — `LogBackground($"[重启] 释放单实例锁失败（不影响继续重启）：{ex.Message}");`
-- `HeliumTodo.Desktop\App.axaml.cs:732` — `LogBackground($"[重启] 已启动新进程：{exePath}");`
-- `HeliumTodo.Desktop\App.axaml.cs:736` — `LogBackground($"[重启] 启动新进程失败：{ex.Message}");`
+- `HeliumTodo.Desktop\App.axaml.cs:150` — `LogBackground("[插件] 检测到 plugins 目录，本版本不加载");`
+- `HeliumTodo.Desktop\App.axaml.cs:174` — `LogBackground("[单实例] 已经有一份在跑，已请它把窗口显示出来，本进程退出");`
+- `HeliumTodo.Desktop\App.axaml.cs:211` — `LogBackground($"[退出] 进程正常结束，退出码 {e.ApplicationExitCode}");`
+- `HeliumTodo.Desktop\App.axaml.cs:237` — `LogBackground("[提醒] 后台扫描已启动（每 30 秒一次）");`
+- `HeliumTodo.Desktop\App.axaml.cs:252` — `LogBackground($"[环境] 会话={System.Diagnostics.Process.GetCurrentProcess().SessionId}"`
+- `HeliumTodo.Desktop\App.axaml.cs:253` — `+ $" 管理员={IsElevated()}"`
+- `HeliumTodo.Desktop\App.axaml.cs:254` — `+ $" 资源管理器={DescribeExplorer()}"`
+- `HeliumTodo.Desktop\App.axaml.cs:255` — `+ $" 渲染后端={Application.Configuration.RenderBackendSettings.DisplayName(HeliumTodo.Desktop.Services.RenderBackendChoice.ActiveKey)}"`
+- `HeliumTodo.Desktop\App.axaml.cs:270` — `LogBackground("[托盘] 启动失败：没有托盘图标，但关闭仍会留在后台"`
+- `HeliumTodo.Desktop\App.axaml.cs:271` — `+ "（再双击一次程序即可唤回窗口）");`
+- `HeliumTodo.Desktop\App.axaml.cs:277` — `? "[托盘] 自检模式：假装托盘已就绪（没有真的图标）"`
+- `HeliumTodo.Desktop\App.axaml.cs:278` — `: "[托盘] 已启动，关闭按钮改为藏窗口");`
+- `HeliumTodo.Desktop\App.axaml.cs:301` — `? "[窗口] 关闭按钮被拦截，已隐藏到托盘（进程继续运行）"`
+- `HeliumTodo.Desktop\App.axaml.cs:302` — `: "[窗口] 关闭按钮被拦截，已隐藏（没有托盘图标，再双击程序可唤回）");`
+- `HeliumTodo.Desktop\App.axaml.cs:347` — `return "没有运行";`
+- `HeliumTodo.Desktop\App.axaml.cs:351` — `return $"PID {string.Join(',', processes.Select(p => p.Id))} 会话 {string.Join(',', sessions)}";`
+- `HeliumTodo.Desktop\App.axaml.cs:355` — `return "查不到";`
+- `HeliumTodo.Desktop\App.axaml.cs:419` — `? "[备份] 这次没做成"`
+- `HeliumTodo.Desktop\App.axaml.cs:420` — `: $"[备份] 已生成 {path}");`
+- `HeliumTodo.Desktop\App.axaml.cs:632` — `? "[启动] 首次运行，已写入示例数据"`
+- `HeliumTodo.Desktop\App.axaml.cs:633` — `: "[启动] 数据库就绪");`
+- `HeliumTodo.Desktop\App.axaml.cs:660` — `Console.Error.WriteLine($"[启动] 数据库初始化失败：{ex.Message}（连接：{masked}）");`
+- `HeliumTodo.Desktop\App.axaml.cs:694` — `LogBackground("[重启] 检测到调试器，放弃自动重启："`
+- `HeliumTodo.Desktop\App.axaml.cs:695` — `+ "请用调试器的「重新启动」(Ctrl+Shift+F5)，"`
+- `HeliumTodo.Desktop\App.axaml.cs:696` — `+ "否则新进程不受调试器管理，还会占住 exe 让下次编译失败");`
+- `HeliumTodo.Desktop\App.axaml.cs:703` — `LogBackground("[重启] 拿不到当前可执行文件路径，放弃自动重启");`
+- `HeliumTodo.Desktop\App.axaml.cs:716` — `LogBackground($"[重启] 释放单实例锁失败（不影响继续重启）：{ex.Message}");`
+- `HeliumTodo.Desktop\App.axaml.cs:730` — `LogBackground($"[重启] 已启动新进程：{exePath}");`
+- `HeliumTodo.Desktop\App.axaml.cs:734` — `LogBackground($"[重启] 启动新进程失败：{ex.Message}");`
 
 ### `HeliumTodo.Desktop\Converters\CommonConverters.cs`（13 处）
 
@@ -705,10 +705,10 @@
 
 - `HeliumTodo.Domain\Backup\BackupManifest.cs:44` — `$"{Schedules} 条日程 · {Todos} 条待办 · {FocusSessions} 条专注记录" +`
 - `HeliumTodo.Domain\Backup\BackupManifest.cs:45` — `(StudyRooms > 0 ? $" · {StudyRooms} 个自习室" : string.Empty);`
-- `HeliumTodo.Domain\Backup\BackupManifest.cs:108` — `error = "清单内容为空。";`
-- `HeliumTodo.Domain\Backup\BackupManifest.cs:117` — `error = $"清单不是合法的 JSON：{ex.Message}";`
+- `HeliumTodo.Domain\Backup\BackupManifest.cs:117` — `error = "清单内容为空。";`
+- `HeliumTodo.Domain\Backup\BackupManifest.cs:126` — `error = $"清单不是合法的 JSON：{ex.Message}";`
 
-### `HeliumTodo.Domain\Backup\BackupPackageReader.cs`（14 处）
+### `HeliumTodo.Domain\Backup\BackupPackageReader.cs`（15 处）
 
 - `HeliumTodo.Domain\Backup\BackupPackageReader.cs:51` — `throw new BackupPackageException($"找不到备份文件：{filePath}");`
 - `HeliumTodo.Domain\Backup\BackupPackageReader.cs:63` — `throw new BackupPackageException("这个文件不是有效的 .zip，可能下载不完整或已经损坏。");`
@@ -719,24 +719,25 @@
 - `HeliumTodo.Domain\Backup\BackupPackageReader.cs:109` — `error = $"文件校验失败：{entry.Entry}（可能传输过程中损坏了）";`
 - `HeliumTodo.Domain\Backup\BackupPackageReader.cs:123` — `?? throw new BackupPackageException($"备份里缺少文件：{entryName}");`
 - `HeliumTodo.Domain\Backup\BackupPackageReader.cs:133` — `?? throw new BackupPackageException($"备份里缺少文件：{entryName}");`
-- `HeliumTodo.Domain\Backup\BackupPackageReader.cs:169` — `$"这个 zip 不是 Helium Todo 的备份（清单里的格式标识是「{manifest.Format}」）。");`
-- `HeliumTodo.Domain\Backup\BackupPackageReader.cs:175` — `$"这份备份来自更新版本的程序（备份格式 v{manifest.FormatVersion}），" +`
-- `HeliumTodo.Domain\Backup\BackupPackageReader.cs:176` — `$"当前程序最多支持 v{BackupFormat.CurrentVersion}。请先升级程序再导入。");`
-- `HeliumTodo.Domain\Backup\BackupPackageReader.cs:181` — `throw new BackupPackageException($"备份格式版本无效（v{manifest.FormatVersion}）。");`
-- `HeliumTodo.Domain\Backup\BackupPackageReader.cs:186` — `throw new BackupPackageException("清单里没有数据库条目，这个备份是空的。");`
+- `HeliumTodo.Domain\Backup\BackupPackageReader.cs:174` — `$"这个 zip 不是 Helium Todo 的备份（清单里的格式标识是「{manifest.Format}」）。");`
+- `HeliumTodo.Domain\Backup\BackupPackageReader.cs:180` — `$"这份备份来自更新版本的程序（备份格式 v{manifest.FormatVersion}），" +`
+- `HeliumTodo.Domain\Backup\BackupPackageReader.cs:181` — `$"当前程序最多支持 v{BackupFormat.CurrentVersion}。请先升级程序再导入。");`
+- `HeliumTodo.Domain\Backup\BackupPackageReader.cs:186` — `throw new BackupPackageException($"备份格式版本无效（v{manifest.FormatVersion}）。");`
+- `HeliumTodo.Domain\Backup\BackupPackageReader.cs:191` — `throw new BackupPackageException("清单里没有任何表数据，这个备份是空的。");`
+- `HeliumTodo.Domain\Backup\BackupPackageReader.cs:199` — `"这是 0.4 及以前的 SQLite 备份（格式 v1）。请先用旧版本程序打开并重新导出为 v2 格式，再在这里导入。");`
 
 ### `HeliumTodo.Domain\Backup\BackupPackageWriter.cs`（5 处）
 
-- `HeliumTodo.Domain\Backup\BackupPackageWriter.cs:78` — `throw new ArgumentException("数据库内容是空的，不能导出。", nameof(content));`
-- `HeliumTodo.Domain\Backup\BackupPackageWriter.cs:185` — `$"系统不允许往「{directory}」里写文件。常见原因：Windows 安全中心的「受控文件夹访问」把这个程序拦住了，"`
-- `HeliumTodo.Domain\Backup\BackupPackageWriter.cs:186` — `+ "或者这个文件夹本身只读 / 需要管理员权限。",`
-- `HeliumTodo.Domain\Backup\BackupPackageWriter.cs:187` — `DirectoryNotFoundException => $"目录「{directory}」不存在，也建不出来。",`
-- `HeliumTodo.Domain\Backup\BackupPackageWriter.cs:188` — `_ => $"写不进「{directory}」：{ex.Message}",`
+- `HeliumTodo.Domain\Backup\BackupPackageWriter.cs:84` — `throw new ArgumentException("没有任何表数据，不能导出。", nameof(content));`
+- `HeliumTodo.Domain\Backup\BackupPackageWriter.cs:206` — `$"系统不允许往「{directory}」里写文件。常见原因：Windows 安全中心的「受控文件夹访问」把这个程序拦住了，"`
+- `HeliumTodo.Domain\Backup\BackupPackageWriter.cs:207` — `+ "或者这个文件夹本身只读 / 需要管理员权限。",`
+- `HeliumTodo.Domain\Backup\BackupPackageWriter.cs:208` — `DirectoryNotFoundException => $"目录「{directory}」不存在，也建不出来。",`
+- `HeliumTodo.Domain\Backup\BackupPackageWriter.cs:209` — `_ => $"写不进「{directory}」：{ex.Message}",`
 
 ### `HeliumTodo.Domain\Models\FocusSession.cs`（2 处）
 
-- `HeliumTodo.Domain\Models\FocusSession.cs:95` — `error = "专注时长必须大于 0。";`
-- `HeliumTodo.Domain\Models\FocusSession.cs:101` — `error = "单次专注不能超过 8 小时（请拆成几次）。";`
+- `HeliumTodo.Domain\Models\FocusSession.cs:99` — `error = "专注时长必须大于 0。";`
+- `HeliumTodo.Domain\Models\FocusSession.cs:105` — `error = "单次专注不能超过 8 小时（请拆成几次）。";`
 
 ### `HeliumTodo.Domain\Models\ReminderPresets.cs`（5 处）
 
@@ -754,9 +755,9 @@
 
 ### `HeliumTodo.Domain\Models\StudyRoom.cs`（3 处）
 
-- `HeliumTodo.Domain\Models\StudyRoom.cs:31` — `public string HostName { get; set; } = "我";`
-- `HeliumTodo.Domain\Models\StudyRoom.cs:81` — `public string DisplayName { get; set; } = "我";`
-- `HeliumTodo.Domain\Models\StudyRoom.cs:112` — `public string SenderName { get; set; } = "我";`
+- `HeliumTodo.Domain\Models\StudyRoom.cs:33` — `public string HostName { get; set; } = "我";`
+- `HeliumTodo.Domain\Models\StudyRoom.cs:85` — `public string DisplayName { get; set; } = "我";`
+- `HeliumTodo.Domain\Models\StudyRoom.cs:116` — `public string SenderName { get; set; } = "我";`
 
 ### `HeliumTodo.Domain\Models\TodoItem.cs`（2 处）
 
@@ -832,19 +833,22 @@
 - `HeliumTodo.Infrastructure\BackupImportResult.cs:46` — `text += "；配置已同步";`
 - `HeliumTodo.Infrastructure\BackupImportResult.cs:51` — `text += "；壁纸已恢复";`
 
-### `HeliumTodo.Infrastructure\DataBackupService.cs`（11 处）
+### `HeliumTodo.Infrastructure\DataBackupService.cs`（9 处）
 
-- `HeliumTodo.Infrastructure\DataBackupService.cs:102` — `$"[DataBackupService] 目标位置不可写，改存到 {fallbackPath}；原因：{denied.Message}");`
-- `HeliumTodo.Infrastructure\DataBackupService.cs:195` — `return BackupInspection.Failed(zipPath, checksumError ?? "备份文件校验失败。");`
-- `HeliumTodo.Infrastructure\DataBackupService.cs:222` — `return BackupInspection.Failed(zipPath, $"读取备份时出错：{ex.Message}");`
-- `HeliumTodo.Infrastructure\DataBackupService.cs:249` — `throw new BackupPackageException(checksumError ?? "备份文件校验失败。");`
-- `HeliumTodo.Infrastructure\DataBackupService.cs:277` — `throw new BackupPackageException($"导入失败：{ex.Message}");`
-- `HeliumTodo.Infrastructure\DataBackupService.cs:406` — `return new WallpaperPayload(null, info.Name, $"壁纸超过 {limit} MB，没有打进备份");`
-- `HeliumTodo.Infrastructure\DataBackupService.cs:413` — `return new WallpaperPayload(null, Path.GetFileName(path), $"壁纸读取失败：{ex.Message}");`
-- `HeliumTodo.Infrastructure\DataBackupService.cs:556` — `$"备份里的数据库打不开（可能不是有效的 SQLite 文件）：{ex.Message}");`
-- `HeliumTodo.Infrastructure\DataBackupService.cs:585` — `throw new BackupPackageException("备份里的数据库结构不认识（找不到日程/待办这些表）。");`
-- `HeliumTodo.Infrastructure\DataBackupService.cs:881` — `warnings.Add("这份备份没带配置，导入后界面设置保持本机的");`
-- `HeliumTodo.Infrastructure\DataBackupService.cs:892` — `warnings.Add("这份备份里没有日程/待办/专注记录，导入后本地数据会被清空");`
+- `HeliumTodo.Infrastructure\DataBackupService.cs:121` — `$"[DataBackupService] 目标位置不可写，改存到 {fallbackPath}；原因：{denied.Message}");`
+- `HeliumTodo.Infrastructure\DataBackupService.cs:214` — `return BackupInspection.Failed(zipPath, checksumError ?? "备份文件校验失败。");`
+- `HeliumTodo.Infrastructure\DataBackupService.cs:241` — `return BackupInspection.Failed(zipPath, $"读取备份时出错：{ex.Message}");`
+- `HeliumTodo.Infrastructure\DataBackupService.cs:268` — `throw new BackupPackageException(checksumError ?? "备份文件校验失败。");`
+- `HeliumTodo.Infrastructure\DataBackupService.cs:289` — `throw new BackupPackageException($"导入失败：{ex.Message}");`
+- `HeliumTodo.Infrastructure\DataBackupService.cs:572` — `return new WallpaperPayload(null, info.Name, $"壁纸超过 {limit} MB，没有打进备份");`
+- `HeliumTodo.Infrastructure\DataBackupService.cs:579` — `return new WallpaperPayload(null, Path.GetFileName(path), $"壁纸读取失败：{ex.Message}");`
+- `HeliumTodo.Infrastructure\DataBackupService.cs:627` — `warnings.Add("这份备份没带配置，导入后界面设置保持本机的");`
+- `HeliumTodo.Infrastructure\DataBackupService.cs:638` — `warnings.Add("这份备份里没有日程/待办/专注记录，导入后本地数据会被清空");`
+
+### `HeliumTodo.Infrastructure\DatabaseInitializer.cs`（2 处）
+
+- `HeliumTodo.Infrastructure\DatabaseInitializer.cs:64` — `"数据库结构比当前程序新（已应用未知迁移：" + string.Join("、", unknown) +`
+- `HeliumTodo.Infrastructure\DatabaseInitializer.cs:65` — `"）。请升级程序，不要用旧版本继续写这个库。");`
 
 ### `HeliumTodo.Infrastructure\LanPeerTransport.cs`（10 处）
 
@@ -862,3 +866,8 @@
 ### `HeliumTodo.Infrastructure\LocalOnlyPeerTransport.cs`（1 处）
 
 - `HeliumTodo.Infrastructure\LocalOnlyPeerTransport.cs:67` — `public string LocalAddressText => "（本地模式）";`
+
+### `HeliumTodo.Infrastructure\Persistence\PostgresConnection.cs`（2 处）
+
+- `HeliumTodo.Infrastructure\Persistence\PostgresConnection.cs:36` — `$"不支持的存储提供程序「{storage.Provider}」；0.5.0 只支持 postgres。");`
+- `HeliumTodo.Infrastructure\Persistence\PostgresConnection.cs:80` — `return "<无法解析的连接串>";`

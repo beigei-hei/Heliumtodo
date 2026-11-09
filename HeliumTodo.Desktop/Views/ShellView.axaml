@@ -6,7 +6,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:HeliumTodo.Desktop.ViewModels"
-             xmlns:fa="using:FluentAvalonia.UI.Controls"
              x:Class="HeliumTodo.Desktop.Views.ShellView"
              x:DataType="vm:ShellViewModel"
              Background="Transparent">
@@ -190,13 +189,32 @@
       <!-- ───── 内容区 ───── -->
       <Grid Grid.Column="1" RowDefinitions="Auto,*">
 
-        <!-- 严重冲突时的提醒条：贴在内容区顶部，不占卡片位置 -->
-        <fa:FAInfoBar Grid.Row="0"
-                      Margin="4,0,12,4"
-                      IsOpen="{Binding IsAlertVisible}"
-                      Severity="Warning"
-                      Message="{Binding AlertMessage}"
-                      IsClosable="True" />
+        <!--
+          严重冲突时的提醒条：贴在内容区顶部，不占卡片位置。
+          P4 起不再用 FAInfoBar（它把整行高度、圆角和关闭按钮都写死在 FA 模板里），
+          改为和设置页提示条同一套自绘底板 —— 明暗跟随 Notice* 令牌。
+        -->
+        <Border Grid.Row="0"
+                Margin="4,0,12,4"
+                Padding="12,8"
+                CornerRadius="8"
+                Background="{DynamicResource NoticeSurfaceBrush}"
+                BorderBrush="{DynamicResource NoticeBorderBrush}"
+                BorderThickness="1"
+                IsVisible="{Binding IsAlertVisible}">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+            <TextBlock Text="&#xE7BA;"
+                       FontFamily="{DynamicResource IconFont}"
+                       FontSize="14"
+                       Foreground="#FFB900"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1"
+                       Text="{Binding AlertMessage}"
+                       Foreground="{DynamicResource NoticeForegroundBrush}"
+                       TextWrapping="Wrap"
+                       VerticalAlignment="Center" />
+          </Grid>
+        </Border>
 
         <ContentControl Grid.Row="1" Content="{Binding CurrentPage}" />
       </Grid>

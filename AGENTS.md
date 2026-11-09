@@ -1,6 +1,6 @@
 # AGENTS.md · 给 AI 的硬规则
 
-> 这是一个 **C# 14 / .NET 10 + Avalonia 12 + Material.Avalonia 3.21 + PostgreSQL 17** 的本地优先桌面应用（0.5.0-alpha P3；FluentAvalonia 3.1 仅剩过渡控件）。
+> 这是一个 **C# 14 / .NET 10 + Avalonia 12 + Material.Avalonia 3.21 + PostgreSQL 17** 的本地优先桌面应用（0.5.0-alpha P4；FluentAvalonia 已移除）。
 > 改代码之前先读 [`DEVELOPMENT_PLAYBOOK.md`](DEVELOPMENT_PLAYBOOK.md)（流程）与 [`ARCHITECTURE.md`](ARCHITECTURE.md)（约定）。
 > 本文件只列**不许破**的规则，不解释为什么——解释在 playbook 里。
 
@@ -25,7 +25,7 @@
 - 提示条**不用** `FAInfoBar`：自绘 `Border Name="NoticeBar"` + `ZIndex="10"`，
   和卡片同格、排在卡片**后面**（叠在功能区上方），底板跟随明暗，3 秒自动收起（`NoticePolicy`）。
   注意 Avalonia 12 里写 `ZIndex="10"`，写 `Panel.ZIndex` 会报 `AVLN3000`。
-- 设置页里的 `FASettingsExpander` **和** `FASettingsExpanderItem` 都不许自带底色（控件主题里写死了 `#B3FFFFFF`），四条 `fa|` 样式已统一透明；`--rail-check` 会数着 34 行验证。
+- 设置页折叠分组是自绘 `SettingsExpander` / `SettingsExpanderItem`（`Desktop/Controls/SettingsExpander.cs`，模板在 `Styles/SettingsControls.axaml`）：模板里**任何一层都不许给背景**（0.4 的 FA 模板写死 `#B3FFFFFF`，就是"控件下面垫一层"的根因）；`--rail-check` 会数着 10 组 27 行验证。
 - 卡片内容必须向内缩：`Border.card` 用 `Padding="8"`，里面再套一层同半径（`RadiusCard`）且 `ClipToBounds="True"` 的容器才放滚动区，否则悬停色块会压在圆角上。
 - 图标轨宽度只能取自 `RailMetrics`（收起 56 / 展开 188 / 条目 44 / 176），别在 XAML 里写数字。
 - 改 XAML 时小心 `FINAL` 属性（`ComboBox.currentValue` 之类）与名字冲突（`Name="WindowEdge"` 会遮住 `WindowEdge` 枚举）。

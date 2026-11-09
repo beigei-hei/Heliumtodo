@@ -77,19 +77,19 @@ public sealed class ThemeService
     /// <summary>
     /// 把强调色真正应用上去。
     ///
-    /// 这里的做法换过一次，把经过记下来，免得以后又绕回去：
+    /// 这里的做法换过两次，把经过记下来，免得以后又绕回去：
     ///
-    ///   原来的写法是往 <c>Application.Current.Resources</c> 里写
-    ///   "SystemAccentColor" 等 7 个颜色键。这个写法**其实是有效的**
-    ///   （实测：换成紫色主题后，SystemAccentColor 与 FluentAvalonia
-    ///   自己算出来的 AccentFillColorDefaultBrush 都跟着变成了紫色）。
+    ///   0.3.x：往 <c>Application.Current.Resources</c> 里写
+    ///   "SystemAccentColor" 等 7 个颜色键。有效，但色阶要自己算，
+    ///   容易漏掉某个色阶。
     ///
-    ///   现在改成用 FluentAvaloniaTheme 的公开属性 CustomAccentColor，
-    ///   原因是：
-    ///     · 它是官方给的入口，语义清楚，不像写资源那样靠"猜"查找顺序
-    ///     · 整套色阶（Light1..3 / Dark1..3）由它自己算，我们不必
-    ///       手工维护 6 个深浅色，也就不可能出现"某个色阶忘了改"的偏差
-    ///   （两种写法实测颜色几乎一致，只有 1 个最低位的差别。）
+    ///   0.4.x：改用 FluentAvaloniaTheme.CustomAccentColor（已随 FA 删除）。
+    ///
+    ///   0.5.0 P3：MaterialTheme 的 PrimaryColor 只接受枚举色板，无法承载
+    ///   设置页里的任意十六进制强调色；PaletteHelper 写出的主题又不会被
+    ///   MaterialTheme 消费。最后定为：直接写 MaterialPrimary* /
+    ///   MaterialSecondary* 资源键（见 <see cref="ApplyMaterialAccent"/>），
+    ///   同时保留 SystemAccentColor 系列给 Avalonia 内建控件兜底。
     ///
     ///   ⚠️ 顺带记一个踩过的假坑：我曾以为"强调色从来没生效过"，
     ///   排查半天。真实原因是改配置文件时把键名写成了 camelCase，
@@ -109,20 +109,10 @@ public sealed class ThemeService
         //    主题换成紫色以后那几处还是蓝的 —— 这就是"主题色不统一"的来源。
         ApplyDerivedAccentTokens(baseColor, isDark);
 
-        // ② 主途径：Material 主题自己算色阶（0.5.0 P3 起）
+        // ② 主途径：Material 3 的色阶资源键（0.5.0 P3 起）
         ApplyMaterialAccent(baseColor);
 
-        // ③ 过渡期：FA 控件还没换完，继续把强调色交给 FluentAvaloniaTheme，
-        //    否则设置页、导航轨里的 FA 控件会停在默认蓝色。P4 删除。
-        var fluentTheme = FindFluentAvaloniaTheme();
-        if (fluentTheme is not null)
-        {
-            fluentTheme.CustomAccentColor = baseColor;
-            return;
-        }
-
-        // ④ 兜底：万一样式表里没有 FluentAvaloniaTheme（比如无头测试换了别的样式），
-        //    直接写资源也能生效，只是色阶要自己算。
+        // ③ 兜底：Avalonia 内建控件仍读 SystemAccentColor 系列。
         if (Avalonia.Application.Current?.Resources is not { } resources) return;
 
         resources["SystemAccentColor"] = baseColor;
@@ -277,25 +267,6 @@ public sealed class ThemeService
         return luminance > 0.55 ? Avalonia.Media.Colors.Black : Avalonia.Media.Colors.White;
     }
 
-
-    /// <summary>
-    /// 在应用的样式表里找那个 FluentAvaloniaTheme 实例（App.axaml 里声明的那一个）。
-    ///
-    /// 为什么不自己 new 一个？
-    ///   强调色是"样子"的一部分，必须设在真正生效的那个样式对象上。
-    ///   另起一个新的没有任何控件用它，改了也白改。
-    /// </summary>
-    private static FluentAvalonia.Styling.FluentAvaloniaTheme? FindFluentAvaloniaTheme()
-    {
-        if (Avalonia.Application.Current is not { } app) return null;
-
-        foreach (var style in app.Styles)
-        {
-            if (style is FluentAvalonia.Styling.FluentAvaloniaTheme fluent) return fluent;
-        }
-
-        return null;
-    }
 
     /// <summary>
     /// 按「当前配置 + 当前壁纸」算出该用哪个强调色，并应用。
