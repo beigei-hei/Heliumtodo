@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using HeliumTodo.Domain.Models;
-using HeliumTodo.Domain.Notifications;
 using Xunit;
+using HeliumTodo.Domain.Services;
 
 namespace HeliumTodo.Tests;
 

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using CommunityToolkit.Mvvm.ComponentModel;
-using HeliumTodo.Domain.Configuration;
+using HeliumTodo.Application.Configuration;
 using HeliumTodo.Domain.Services;
 using HeliumTodo.Domain.Theming;
 

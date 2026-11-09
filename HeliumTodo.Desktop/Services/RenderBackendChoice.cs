@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 using Avalonia;
-using HeliumTodo.Domain.Configuration;
+using HeliumTodo.Application.Configuration;
 
 namespace HeliumTodo.Desktop.Services;
 

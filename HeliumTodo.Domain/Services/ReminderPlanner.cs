@@ -4,7 +4,7 @@
 using HeliumTodo.Domain.Models;
 using HeliumTodo.Domain.Services;
 
-namespace HeliumTodo.Domain.Notifications;
+namespace HeliumTodo.Domain.Services;
 
 /// <summary>
 /// 提醒的"什么时候该响"这件事，单独抽成一个纯函数。

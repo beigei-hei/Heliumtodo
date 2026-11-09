@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2025 Helium Todo contributors
 // SPDX-License-Identifier: GPL-3.0-only
 
-using HeliumTodo.Domain.Configuration;
+using HeliumTodo.Application.Configuration;
 using HeliumTodo.Domain.Models;
 
 using HeliumTodo.Domain.Networking;
 
-namespace HeliumTodo.Domain.Services;
+namespace HeliumTodo.Application.Services;
 
 /// <summary>
 /// 自习室服务 —— 扩展功能。

@@ -4,7 +4,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace HeliumTodo.Domain.Ipc;
+namespace HeliumTodo.Application.Ipc;
 
 /// <summary>
 /// 进程间通信的请求。

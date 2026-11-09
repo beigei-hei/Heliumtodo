@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Helium Todo contributors
 // SPDX-License-Identifier: GPL-3.0-only
 
-namespace HeliumTodo.Domain.Notifications;
+namespace HeliumTodo.Domain.Policies;
 
 /// <summary>
 /// 界面右上/顶部那种"改好了"的提示条，该显示多久。

@@ -3,7 +3,7 @@
 
 using System;
 
-namespace HeliumTodo.Domain.Configuration;
+namespace HeliumTodo.Application.Configuration;
 
 /// <summary>
 /// 渲染后端的取值表。

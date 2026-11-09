@@ -1,7 +1,9 @@
 // SPDX-FileCopyrightText: 2025 Helium Todo contributors
 // SPDX-License-Identifier: GPL-3.0-only
 
-namespace HeliumTodo.Domain.Notifications;
+using HeliumTodo.Domain.Models;
+
+namespace HeliumTodo.Application.Abstractions;
 
 /// <summary>
 /// 系统通知（Windows 上是"通知中心"里那条）。

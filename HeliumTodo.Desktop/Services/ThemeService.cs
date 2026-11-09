@@ -206,7 +206,7 @@ public sealed class ThemeService
     /// 这个方法是唯一决定"强调色到底是谁"的地方，
     /// 界面里改了任何相关设置只要重新调它一次就行，不用各页面各写一遍判断。
     /// </summary>
-    public void ApplyFor(HeliumTodo.Domain.Configuration.AppConfig config, WallpaperService? wallpaper)
+    public void ApplyFor(HeliumTodo.Application.Configuration.AppConfig config, WallpaperService? wallpaper)
     {
         var overrideHex = ResolveAccentOverride(config, wallpaper);
         Apply(Current, overrideHex);
@@ -214,7 +214,7 @@ public sealed class ThemeService
 
     /// <summary>按配置算出强调色覆盖值；返回 null 表示用主题自带的。</summary>
     public static string? ResolveAccentOverride(
-        HeliumTodo.Domain.Configuration.AppConfig config,
+        HeliumTodo.Application.Configuration.AppConfig config,
         WallpaperService? wallpaper)
     {
         // 真正的判断逻辑在 Core 层（AccentSources.ResolveOverride），那边有单元测试。
@@ -222,7 +222,7 @@ public sealed class ThemeService
         // 壁纸没加载好（或加载失败）就传 null，规则自然退回主题色。
         var wallpaperHex = wallpaper is { IsLoaded: true } ? wallpaper.Accent.ToHex() : null;
 
-        return HeliumTodo.Domain.Configuration.AccentSources.ResolveOverride(
+        return HeliumTodo.Application.Configuration.AccentSources.ResolveOverride(
             config.AccentSource,
             config.CustomAccentHex,
             wallpaperHex);

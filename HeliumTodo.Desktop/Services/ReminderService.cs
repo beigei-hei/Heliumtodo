@@ -1,9 +1,11 @@
 // SPDX-FileCopyrightText: 2025 Helium Todo contributors
 // SPDX-License-Identifier: GPL-3.0-only
 
-using HeliumTodo.Domain.Notifications;
+using HeliumTodo.Application.Abstractions;
 using HeliumTodo.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using HeliumTodo.Domain.Models;
+using HeliumTodo.Domain.Services;
 
 namespace HeliumTodo.Desktop.Services;
 

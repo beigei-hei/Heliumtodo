@@ -7,7 +7,7 @@ using System.Globalization;
 using System.Text;
 using HeliumTodo.Domain;
 using HeliumTodo.Domain.Backup;
-using HeliumTodo.Domain.Configuration;
+using HeliumTodo.Application.Configuration;
 using Microsoft.EntityFrameworkCore;
 
 namespace HeliumTodo.Infrastructure;

@@ -8,13 +8,14 @@ using CommunityToolkit.Mvvm.Input;
 using HeliumTodo.Desktop.Services;
 using HeliumTodo.Domain;
 using HeliumTodo.Domain.Backup;
-using HeliumTodo.Domain.Configuration;
-using HeliumTodo.Domain.Notifications;
+using HeliumTodo.Application.Configuration;
 using HeliumTodo.Domain.Lifecycle;
 using HeliumTodo.Domain.Theming;
 using HeliumTodo.Infrastructure;
-using AccentSourceDefs = HeliumTodo.Domain.Configuration.AccentSources;
-using ColorSchemeDefs = HeliumTodo.Domain.Configuration.ColorSchemes;
+using AccentSourceDefs = HeliumTodo.Application.Configuration.AccentSources;
+using ColorSchemeDefs = HeliumTodo.Application.Configuration.ColorSchemes;
+using HeliumTodo.Application.Abstractions;
+using HeliumTodo.Domain.Policies;
 
 namespace HeliumTodo.Desktop.ViewModels;
 

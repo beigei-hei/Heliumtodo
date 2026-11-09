@@ -344,8 +344,8 @@ public partial class MainWindow : Window
     {
         // 恢复上次的窗口大小（做个范围检查，防止配置被改坏导致窗口看不见）
         if (DataContext is ShellViewModel
-            && App.Services.GetService(typeof(Domain.Configuration.ConfigService))
-                is Domain.Configuration.ConfigService config)
+            && App.Services.GetService(typeof(Application.Configuration.ConfigService))
+                is Application.Configuration.ConfigService config)
         {
             // 默认尺寸是 1920×1080（见 AppConfig.WindowWidth）。这里只做"配置被改坏了"的范围检查。
             Width = Math.Clamp(config.Current.WindowWidth, MinWidth, 4000);
@@ -381,8 +381,8 @@ public partial class MainWindow : Window
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)
     {
-        if (App.Services.GetService(typeof(Domain.Configuration.ConfigService))
-            is not Domain.Configuration.ConfigService config)
+        if (App.Services.GetService(typeof(Application.Configuration.ConfigService))
+            is not Application.Configuration.ConfigService config)
         {
             return;
         }

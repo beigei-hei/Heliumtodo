@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Helium Todo contributors
 // SPDX-License-Identifier: GPL-3.0-only
 
-namespace HeliumTodo.Domain.Configuration;
+namespace HeliumTodo.Application.Configuration;
 
 /// <summary>
 /// 强调色来源的取值。

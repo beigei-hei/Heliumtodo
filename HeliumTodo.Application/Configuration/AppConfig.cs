@@ -4,7 +4,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace HeliumTodo.Domain.Configuration;
+namespace HeliumTodo.Application.Configuration;
 
 /// <summary>
 /// 程序配置。

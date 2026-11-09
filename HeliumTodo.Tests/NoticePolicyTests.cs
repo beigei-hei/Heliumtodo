@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Helium Todo contributors
 // SPDX-License-Identifier: GPL-3.0-only
 
-using HeliumTodo.Domain.Notifications;
 using Xunit;
+using HeliumTodo.Domain.Policies;
 
 namespace HeliumTodo.Tests;
 

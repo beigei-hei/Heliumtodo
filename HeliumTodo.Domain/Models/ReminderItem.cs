@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Helium Todo contributors
 // SPDX-License-Identifier: GPL-3.0-only
 
-namespace HeliumTodo.Domain.Notifications;
+namespace HeliumTodo.Domain.Models;
 
 /// <summary>提醒是从哪一类东西来的。界面要据此决定点通知时跳哪一页。</summary>
 public enum ReminderSourceKind

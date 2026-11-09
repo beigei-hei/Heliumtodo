@@ -8,16 +8,17 @@ using HeliumTodo.Desktop.Services;
 using HeliumTodo.Desktop.ViewModels;
 using HeliumTodo.Desktop.Views;
 using HeliumTodo.Domain;
-using HeliumTodo.Domain.Configuration;
-using HeliumTodo.Domain.Ipc;
+using HeliumTodo.Application.Configuration;
+using HeliumTodo.Application.Services;
+using HeliumTodo.Application.Ipc;
 using HeliumTodo.Domain.Lifecycle;
-using HeliumTodo.Domain.Notifications;
 using HeliumTodo.Domain.Networking;
 using HeliumTodo.Domain.Services;
 using HeliumTodo.Domain.Theming;
 using HeliumTodo.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using HeliumTodo.Application.Abstractions;
 
 namespace HeliumTodo.Desktop;
 
@@ -250,7 +251,7 @@ public partial class App : Avalonia.Application
         LogBackground($"[环境] 会话={System.Diagnostics.Process.GetCurrentProcess().SessionId}"
                       + $" 管理员={IsElevated()}"
                       + $" 资源管理器={DescribeExplorer()}"
-                      + $" 渲染后端={Domain.Configuration.RenderBackendSettings.DisplayName(HeliumTodo.Desktop.Services.RenderBackendChoice.ActiveKey)}"
+                      + $" 渲染后端={Application.Configuration.RenderBackendSettings.DisplayName(HeliumTodo.Desktop.Services.RenderBackendChoice.ActiveKey)}"
                       + $"{(_hasEnvironmentOverride ? "（环境变量指定）" : string.Empty)}");
 
         _tray.Trace = LogBackground;

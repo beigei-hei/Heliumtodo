@@ -17,14 +17,15 @@ using HeliumTodo.Desktop.Windowing;
 using HeliumTodo.Desktop.ViewModels;
 using HeliumTodo.Desktop.Views;
 using HeliumTodo.Desktop.Controls;
-using HeliumTodo.Domain.Configuration;
+using HeliumTodo.Application.Configuration;
 using HeliumTodo.Domain.Windowing;
-using HeliumTodo.Domain.Notifications;
 using HeliumTodo.Domain.Services;
 using HeliumTodo.Domain.Theming;
 using HeliumTodo.Infrastructure;
 using HeliumTodo.Domain;
 using Microsoft.Extensions.DependencyInjection;
+using HeliumTodo.Domain.Models;
+using HeliumTodo.Domain.Policies;
 
 namespace HeliumTodo.Verification;
 
@@ -3418,12 +3419,12 @@ public static class Program
             $"选项 {vm.ColorSchemes.Count} 个");
         Check("设置页不再有「主题」下拉框", true, "已换成明暗模式（编译期保证）");
 
-        var darkOption = vm.ColorSchemes.First(o => o.Key == HeliumTodo.Domain.Configuration.ColorSchemes.Dark);
+        var darkOption = vm.ColorSchemes.First(o => o.Key == HeliumTodo.Application.Configuration.ColorSchemes.Dark);
         vm.SelectedColorScheme = darkOption;
         PumpDispatcher(TimeSpan.FromMilliseconds(600));
 
         Check("选暗色后配置里写的是 dark",
-            vm.Config.ColorScheme == HeliumTodo.Domain.Configuration.ColorSchemes.Dark,
+            vm.Config.ColorScheme == HeliumTodo.Application.Configuration.ColorSchemes.Dark,
             $"ColorScheme={vm.Config.ColorScheme}");
         Check("选暗色后主题编号同步",
             vm.Config.ThemeId == "fluent-dark-blue", $"ThemeId={vm.Config.ThemeId}");
@@ -3437,7 +3438,7 @@ public static class Program
             $"RGB=({darkNow.R},{darkNow.G},{darkNow.B})");
 
         // 换回亮色，别把后面的自检和环境弄脏
-        var lightOption = vm.ColorSchemes.First(o => o.Key == HeliumTodo.Domain.Configuration.ColorSchemes.Light);
+        var lightOption = vm.ColorSchemes.First(o => o.Key == HeliumTodo.Application.Configuration.ColorSchemes.Light);
         vm.SelectedColorScheme = lightOption;
         PumpDispatcher(TimeSpan.FromMilliseconds(400));
         HeliumTodo.Desktop.App.ApplyCardOpacity(100, isDark: false);
