@@ -9,7 +9,7 @@ namespace HeliumTodo.Domain.Backup;
 /// <summary>清单里记录的一个文件：位置、大小、SHA256。</summary>
 public sealed class BackupFileEntry
 {
-    /// <summary>在 zip 里的路径，例如 data/helium.db。</summary>
+    /// <summary>在 zip 里的路径，例如 data/Todos.jsonl。</summary>
     public string Entry { get; set; } = string.Empty;
 
     /// <summary>解压后的大小（字节）。</summary>
@@ -62,10 +62,19 @@ public sealed class BackupManifest
     /// <summary>导出这份备份的程序版本（例如 0.5.0-alpha）。</summary>
     public string AppVersion { get; set; } = string.Empty;
 
-    /// <summary>导出时间（本地时间）。</summary>
+    /// <summary>导出时的存储提供程序（0.5.0 起固定为 postgres）。</summary>
+    public string Provider { get; set; } = "postgres";
+
+    /// <summary>导出时间（本地时间，界面展示用）。</summary>
     public DateTime ExportedAt { get; set; } = DateTime.Now;
 
-    /// <summary>数据库文件。</summary>
+    /// <summary>导出时间（UTC，规格 §7.5 的 createdAtUtc）。</summary>
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+
+    /// <summary>每张表的 JSONL 文件（v2）。</summary>
+    public List<BackupFileEntry> Tables { get; set; } = new();
+
+    /// <summary>旧版（v1）的 SQLite 数据库文件；v2 备份里为 null。</summary>
     public BackupFileEntry? Database { get; set; }
 
     /// <summary>配置文件（可能没有）。</summary>

@@ -1,10 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Helium Todo contributors
 // SPDX-License-Identifier: GPL-3.0-only
 
-using HeliumTodo.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace HeliumTodo.Infrastructure;
 
@@ -18,27 +16,27 @@ public static class DataServiceCollectionExtensions
     /// 把数据库服务注册进依赖注入容器。
     /// </summary>
     /// <param name="services">DI 容器。</param>
-    /// <param name="databaseFilePath">SQLite 文件的完整路径。</param>
+    /// <param name="connectionString">PostgreSQL 连接串（已由 <c>PostgresConnection.Resolve</c> 组装）。</param>
     /// <param name="enableSensitiveDataLogging">
     /// 是否在日志里打印参数值（只在 Debug 打开，发布版要关掉，避免把隐私写进日志）。
     /// </param>
     public static IServiceCollection AddHeliumData(
         this IServiceCollection services,
-        string databaseFilePath,
+        string connectionString,
         bool enableSensitiveDataLogging = false)
     {
-        // 确保数据库文件所在目录存在，否则 SQLite 会报「unable to open database file」
-        var directory = Path.GetDirectoryName(databaseFilePath);
-        if (!string.IsNullOrEmpty(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
         // 用「工厂」的方式注册：每次操作开一个新的 DbContext，用完就扔。
         // 这是 EF Core 在桌面程序里的推荐做法（DbContext 不是线程安全的，不能长期共用）。
         services.AddDbContextFactory<HeliumDbContext>(options =>
         {
-            options.UseSqlite($"Data Source={databaseFilePath}");
+            options.UseNpgsql(connectionString, npgsql =>
+            {
+                // 迁移失败时不要无限重试：桌面程序启动阶段，连不上就应该给用户看错误。
+                npgsql.CommandTimeout(30);
+                npgsql.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(2), errorCodesToAdd: null);
+            });
 
             if (enableSensitiveDataLogging)
             {

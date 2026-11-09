@@ -1,13 +1,15 @@
 // SPDX-FileCopyrightText: 2025 Helium Todo contributors
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Text.Json.Serialization;
+
 namespace HeliumTodo.Domain.Models;
 
 /// <summary>
 /// 自习室房间 —— 扩展功能。
 ///
 /// 【当前状态：本地占位实现】
-/// 房间数据先存在本地 SQLite 里，单人也能创建、进入、查看。
+/// 房间数据存在 PostgreSQL 里，单人也能创建、进入、查看。
 /// 多人联机（无中心服务器方案）的接口已经预留好（见 <see cref="Abstractions.IPeerTransport"/>），
 /// 但具体实现标记为「暂缓」，不影响现在的编译和运行。
 ///
@@ -50,6 +52,8 @@ public class StudyRoom
     public DateTime? ClosedAt { get; set; }
 
     /// <summary>房间里的成员（本地占位：目前只有自己）。</summary>
+    /// <remarks>成员单独存在 StudyRoomMembers 表里；备份序列化时跳过，避免环和重复。</remarks>
+    [JsonIgnore]
     public List<StudyRoomMember> Members { get; set; } = new();
 
     /// <summary>生成一个新的房间码（6 位，去掉容易看错的 0/O/1/I）。</summary>

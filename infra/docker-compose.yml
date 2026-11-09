@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: 2025 Helium Todo contributors
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# 0.5.0 的数据库依赖：PostgreSQL 17。
+#
+# 为什么把这个文件放进仓库：开发机上不一定装了 PostgreSQL，
+# 但"跑一次测试"不应该变成"先读一篇安装教程"。
+#   docker compose -f infra/docker-compose.yml up -d
+#   export HELIUM_DB="Host=127.0.0.1;Port=5432;Database=helium_todo;Username=helium;Password=helium"
+#
+# 测试库默认指向同一个实例的 postgres 管理库，测试会在里面逐个建/删临时库
+# （见 HeliumTodo.Tests/PostgresTestDatabase.cs），所以不用再开第二个容器。
+#
+# 数据卷用命名卷而不是宿主机路径：Windows / macOS / Linux 的挂载行为差异太大，
+# 命名卷由 Docker 自己管，换机器时不会因为权限问题起不来。
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: helium-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: helium_todo
+      POSTGRES_USER: helium
+      POSTGRES_PASSWORD: helium
+      # 中文内容不需要额外编码设置（UTF8 是默认值），
+      # 但显式写出来，避免某些旧镜像用 SQL_ASCII 初始化后存中文报错
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - helium-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U helium -d helium_todo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  helium-pgdata:

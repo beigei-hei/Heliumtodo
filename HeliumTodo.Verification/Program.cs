@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Helium Todo contributors
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Data;
 using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
@@ -22,6 +23,7 @@ using HeliumTodo.Domain.Windowing;
 using HeliumTodo.Domain.Services;
 using HeliumTodo.Domain.Theming;
 using HeliumTodo.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using HeliumTodo.Domain;
 using Microsoft.Extensions.DependencyInjection;
 using HeliumTodo.Domain.Models;
@@ -67,7 +69,8 @@ public static class Program
         // 所以先把配置目录换成一个临时沙盒，App 初始化时读的就是这个。
         if (args.Contains("--backup-check") || args.Contains("--refresh-check")
             || args.Contains("--room-check") || args.Contains("--shell-check")
-            || args.Contains("--reminder-check") || args.Contains("--window-check"))
+            || args.Contains("--reminder-check") || args.Contains("--window-check")
+            || args.Contains("--db-check"))
         {
             // 沙盒放在程序自己的目录下：这台机器的 %TEMP% 对 .NET 进程是拒绝写入的
             // （python 能建、.NET 建不了，报 UnauthorizedAccessException），
@@ -144,6 +147,13 @@ public static class Program
         if (args.Any(a => a.Equals("--backup-check", StringComparison.OrdinalIgnoreCase)))
         {
             return RunBackupCheck(services);
+        }
+
+        // 数据库自检：连上真实的 PostgreSQL，确认迁移已应用、时间列的类型没写反、
+        // 规格要求的索引都在。这些是"跑起来没事、过两个月才炸"的那类问题。
+        if (args.Any(a => a.Equals("--db-check", StringComparison.OrdinalIgnoreCase)))
+        {
+            return RunDbCheck(services);
         }
 
         // 自习室自检：建房间 → 离开 → 重进页面，看还会不会显示在房间里。
@@ -3009,6 +3019,125 @@ public static class Program
         Console.WriteLine(failures == 0
             ? "   自习室自检全部通过。"
             : $"   自习室自检有 {failures} 项没过。");
+
+        return failures == 0 ? 0 : 1;
+    }
+
+    /// <summary>
+    /// 数据库结构自检（0.5.0 起新增）。
+    ///
+    /// 为什么值得单独跑一遍：EF 的模型映射错了往往是"能存能读、但语义悄悄变了"。
+    /// 最典型的是把业务时间（墙上时钟）存成 timestamptz：换时区之后同样的
+    /// "晚上 8 点"会变成另一个时刻，界面上看不出任何异常。
+    /// 这里直接问 PostgreSQL 的 information_schema / pg_indexes，
+    /// 不信任 EF 的模型元数据 —— 只信数据库里真实建出来的东西。
+    /// </summary>
+    private static int RunDbCheck(IServiceProvider services)
+    {
+        Console.WriteLine("── 数据库结构（连接真实 PostgreSQL）──");
+
+        var failures = 0;
+
+        void Check(string name, bool ok, string? detail = null)
+        {
+            Console.WriteLine(ok ? $"  [通过] {name}" : $"  [失败] {name}{(detail is null ? "" : $"：{detail}")}");
+            if (!ok) failures++;
+        }
+
+        var factory = services.GetRequiredService<IDbContextFactory<HeliumDbContext>>();
+        using var db = factory.CreateDbContext();
+
+        var connection = db.Database.GetDbConnection();
+        if (connection.State != ConnectionState.Open)
+        {
+            connection.Open();
+        }
+
+        string? Scalar(string sql)
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = sql;
+            return command.ExecuteScalar()?.ToString();
+        }
+
+        var version = Scalar("SHOW server_version");
+        Check("PostgreSQL 17", version?.StartsWith("17.", StringComparison.Ordinal) == true, version ?? "未知");
+
+        var applied = db.Database.GetAppliedMigrations().ToList();
+        Check(
+            "初始迁移已应用",
+            applied.Any(m => m.EndsWith("_InitialPostgres", StringComparison.Ordinal)),
+            applied.Count == 0 ? "没有任何迁移记录" : string.Join(", ", applied));
+
+        // 规格 §7.3：业务时间是 timestamp without time zone，审计时间是 timestamptz
+        var expectedColumns = new[]
+        {
+            ("Todos", "DueAt", "timestamp without time zone"),
+            ("Todos", "PlannedStart", "timestamp without time zone"),
+            ("Todos", "CompletedAt", "timestamp without time zone"),
+            ("Todos", "CreatedAt", "timestamp with time zone"),
+            ("Schedules", "Start", "timestamp without time zone"),
+            ("Schedules", "Duration", "interval"),
+            ("FocusSessions", "StartedAt", "timestamp without time zone"),
+            ("FocusSessions", "PlannedStart", "timestamp without time zone"),
+            ("StudyRooms", "CreatedAt", "timestamp with time zone"),
+            ("StudyRoomMembers", "JoinedAt", "timestamp without time zone"),
+            ("StudyRoomMessages", "SentAt", "timestamp without time zone"),
+        };
+
+        foreach (var (table, column, expected) in expectedColumns)
+        {
+            var actual = Scalar(
+                "SELECT data_type FROM information_schema.columns " +
+                $"WHERE table_schema = 'public' AND table_name = '{table}' AND column_name = '{column}'");
+
+            Check($"{table}.{column} = {expected}", actual == expected, actual ?? "列不存在");
+        }
+
+        // 主键必须是自增 identity，而不是 "Id 由应用自己算"
+        var identity = Scalar(
+            "SELECT is_identity FROM information_schema.columns " +
+            "WHERE table_schema = 'public' AND table_name = 'Todos' AND column_name = 'Id'");
+        Check("Todos.Id 是 identity", identity == "YES", identity ?? "列不存在");
+
+        var expectedIndexes = new[]
+        {
+            "IX_Schedules_Start",
+            "IX_Todos_DueAt",
+            "IX_Todos_IsCompleted_Priority",
+            "IX_FocusSessions_StartedAt",
+            "IX_StudyRoomMembers_StudyRoomId",
+            "IX_StudyRoomMessages_StudyRoomId_SentAt",
+        };
+
+        foreach (var index in expectedIndexes)
+        {
+            var exists = Scalar(
+                "SELECT count(*) FROM pg_indexes " +
+                $"WHERE schemaname = 'public' AND indexname = '{index}'");
+            Check($"索引 {index}", exists == "1", exists ?? "查询失败");
+        }
+
+        // 房间码唯一：只能有一个唯一索引，而且必须真的 unique
+        var uniqueCode = Scalar(
+            "SELECT count(*) FROM pg_indexes i JOIN pg_class c ON c.relname = i.indexname " +
+            "JOIN pg_index x ON x.indexrelid = c.oid " +
+            "WHERE i.schemaname = 'public' AND i.indexname = 'IX_StudyRooms_Code' AND x.indisunique");
+        Check("房间码唯一约束", uniqueCode == "1", uniqueCode ?? "查询失败");
+
+        // 六张表都在
+        var tableCount = Scalar(
+            "SELECT count(*) FROM information_schema.tables " +
+            "WHERE table_schema = 'public' AND table_name IN " +
+            "('Schedules','Todos','FocusSessions','StudyRooms','StudyRoomMembers','StudyRoomMessages')");
+        Check("六张业务表齐全", tableCount == "6", tableCount ?? "查询失败");
+
+        connection.Close();
+
+        Console.WriteLine();
+        Console.WriteLine(failures == 0
+            ? "   数据库结构自检全部通过。"
+            : $"   数据库结构自检有 {failures} 项没过。");
 
         return failures == 0 ? 0 : 1;
     }

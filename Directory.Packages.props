@@ -1,4 +1,4 @@
-﻿<Project>
+<Project>
 
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
@@ -105,16 +105,22 @@
     <!-- ===== MVVM 工具包：源生成器写法，省掉大量样板代码 ===== -->
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.0" />
 
-    <!-- ===== 数据库：EF Core + SQLite ===== -->
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.11" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11" />
+    <!-- ===== 数据库：EF Core + PostgreSQL ===== -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.14" />
+    <!--
+      Npgsql 10.0.3 声明依赖 EF Core Relational 10.0.4，而主包是 10.0.14。
+      不显式钉这一行的话 MSB3277 会挑 10.0.4 当"主版本"，
+      运行期加载的 Relational 比编译期旧，Npgsql 的查询会抛 MissingMethodException。
+    -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.14" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14" />
 
     <!-- ===== 依赖注入 / 日志 ===== -->
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.1" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.14" />
 
     <!-- ===== 测试 ===== -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />

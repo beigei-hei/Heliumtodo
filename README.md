@@ -4,20 +4,37 @@
 > 源码：本仓库（发布时填写公开仓库地址）。本项目不联网、不上传数据。
 
 一个**本地优先**的「日程 + 专注 + 待办」桌面工具：C# 14 / .NET 10，Avalonia 12 界面，
-数据默认存在本机 SQLite 文件里。
+数据存在本机 PostgreSQL 17 里（也可以用便携版，不装服务）。
 
 ## 现在是什么状态
 
-当前是 **0.5.0-alpha 的 P0 工程基建**快照：
+当前是 **0.5.0-alpha 的 P2 数据层**快照：
 
 - 七个项目已按目标分层改名：`HeliumTodo.Domain` / `Application` / `Infrastructure` /
   `Desktop` / `Tests` / `SelfTest` / `Verification`。
 - 版本号统一为 `0.5.0-alpha`，新增 GPL-3.0 许可证与逐文件 SPDX 头。
 - 插件宿主已移除，`IHeliumPlugin` 收进 `#if HELIUM_PLUGINS`。
+- 主存储已切到 **PostgreSQL 17**：EF Core 10 + Npgsql，只用 Migration 建表；
+  业务时间是墙上时钟、审计时间是 `timestamptz`。
+- 备份升到 **v2**（`manifest.json` + 每表一份 JSONL，带 SHA256），支持 Replace / Merge；
+  0.4 的 SQLite 备份只识别、不自动转换。
 
-目标技术栈（Material.Avalonia、PostgreSQL、EF Core 10）尚未切换：本机处于离线环境，
-NuGet 与 PostgreSQL 都装不上，P1 之后的迁移计划见 [`DEVELOPMENT_SPEC.md`](DEVELOPMENT_SPEC.md)。
-真实技术栈与已知偏差以 [`TECH_STACK.md`](TECH_STACK.md) 和 [`PROGRESS.md`](PROGRESS.md) 为准。
+界面主题仍是 FluentAvalonia 3.1，Material.Avalonia 与 Avalonia 12.1.5 的切换在 P3/P4。
+
+## 准备数据库
+
+需要本机有 PostgreSQL 17，并且存在一个可连接的库。便携版（免安装、免管理员）示例：
+
+```powershell
+# 解压 postgresql-17.x-windows-x64-binaries.zip 后
+.\pgsql\bin\initdb.exe -D .\data -U postgres -A trust --encoding=UTF8 --locale=C
+.\pgsql\bin\pg_ctl.exe -D .\data -o "-p 55432" start
+.\pgsql\bin\createdb.exe -h 127.0.0.1 -p 55432 -U postgres helium_todo
+$env:HELIUM_DB = "Host=127.0.0.1;Port=55432;Database=helium_todo;Username=postgres"
+```
+
+默认连接是 `localhost:5432/helium_todo`（用户 `helium`）；用 `HELIUM_DB` 覆盖整条连接串，
+或用 `HELIUM_DB_PASSWORD` 只覆盖密码。仓库里的 `infra/docker-compose.yml` 也可以直接拉起一个实例。
 
 ## 构建与运行
 
@@ -34,7 +51,7 @@ dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll
 dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --layout-check
 ```
 
-`--check` 共十五项，另有 `--shell` 截图模式；完整命令见 [`AGENTS.md`](AGENTS.md)。
+`--check` 共十六项（含 `--db-check`），另有 `--shell` 截图模式；完整命令见 [`AGENTS.md`](AGENTS.md)。
 
 ## 文档
 

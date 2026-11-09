@@ -2,7 +2,7 @@
 
   <!--
     HeliumTodo.Infrastructure —— 基础设施层
-    用 EF Core + SQLite 把 Domain 里的模型存到本地文件。
+    用 EF Core + PostgreSQL（Npgsql）把 Domain 里的模型存到数据库。
     只依赖 Domain / Application，不依赖界面。
   -->
   <PropertyGroup>
@@ -13,7 +13,12 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>

@@ -152,6 +152,11 @@ public sealed class BackupPackageReader : IDisposable
 
     private IEnumerable<BackupFileEntry> DeclaredEntries()
     {
+        foreach (var table in Manifest.Tables)
+        {
+            yield return table;
+        }
+
         if (Manifest.Database is not null) yield return Manifest.Database;
         if (Manifest.Config is not null) yield return Manifest.Config;
         if (Manifest.Wallpaper is not null) yield return Manifest.Wallpaper;
@@ -181,9 +186,17 @@ public sealed class BackupPackageReader : IDisposable
             throw new BackupPackageException($"备份格式版本无效（v{manifest.FormatVersion}）。");
         }
 
-        if (manifest.Database is null)
+        if (manifest.Tables.Count == 0 && manifest.Database is null)
         {
-            throw new BackupPackageException("清单里没有数据库条目，这个备份是空的。");
+            throw new BackupPackageException("清单里没有任何表数据，这个备份是空的。");
+        }
+
+        // v1（SQLite 快照）仍然能打开查看，但导入时会明确拒绝 ——
+        // 让用户在"检查"这一步就知道该怎么办，而不是导入到一半才失败。
+        if (manifest.Tables.Count == 0 && manifest.Database is not null)
+        {
+            throw new BackupPackageException(
+                "这是 0.4 及以前的 SQLite 备份（格式 v1）。请先用旧版本程序打开并重新导出为 v2 格式，再在这里导入。");
         }
     }
 

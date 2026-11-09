@@ -1,34 +1,52 @@
 // SPDX-FileCopyrightText: 2025 Helium Todo contributors
 // SPDX-License-Identifier: GPL-3.0-only
 
-using System.Data;
-using System.Data.Common;
 using System.Globalization;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using HeliumTodo.Application.Configuration;
 using HeliumTodo.Domain;
 using HeliumTodo.Domain.Backup;
-using HeliumTodo.Application.Configuration;
+using HeliumTodo.Domain.Models;
+using HeliumTodo.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace HeliumTodo.Infrastructure;
 
 /// <summary>
-/// 备份 / 恢复（统一用 .zip）。
+/// 备份 / 恢复（统一用 .zip，格式 v2）。
 ///
 /// 为什么要有这么一个服务，而不是在界面里直接拷文件？
-///   ① 一次备份要包含三样东西：数据库、配置、壁纸。少一样恢复到新电脑上就不完整。
+///   ① 一次备份要包含三样东西：数据、配置、壁纸。少一样恢复到新电脑上就不完整。
 ///   ② 导入必须"先验后动"：确认是合法备份、校验和都对，再动用户的真实数据。
 ///   ③ 导入前要自动存一份当前数据 —— 万一导错了还能退回去。
-///   这三件事都不该散落在界面代码里，所以集中在这里。
 ///
-/// 导入为什么用 ATTACH 而不是"关程序、换文件"？
-///   换文件要求那一刻没有任何连接打开着数据库，Windows 上很容易失败
-///   （某个后台计时器还开着连接，用户就会看到"文件被占用"）。
-///   ATTACH 之后用 SQL 把数据搬进来，连接一直是程序自己的，
-///   不需要关文件、也不会被杀毒软件拦住。
+/// 0.5.0 起数据库换成 PostgreSQL，备份不再是"拷一个数据库文件"：
+/// 每张表序列化成 `data/&lt;Table&gt;.jsonl`，一行一条记录（规格 §7.5）。
+/// 这样跨机器、跨 PostgreSQL 小版本都能导，也不用关心数据目录权限。
 /// </summary>
 public sealed class DataBackupService
 {
+    /// <summary>导入顺序：父表在前，子表在后。</summary>
+    private static readonly string[] TableOrder =
+    {
+        "Schedules",
+        "Todos",
+        "FocusSessions",
+        "StudyRooms",
+        "StudyRoomMembers",
+        "StudyRoomMessages",
+    };
+
+    private static readonly JsonSerializerOptions RowJson = new()
+    {
+        WriteIndented = false,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        DefaultIgnoreCondition = JsonIgnoreCondition.Never,
+    };
+
     private readonly IDbContextFactory<HeliumDbContext> _factory;
     private readonly ConfigService _config;
 
@@ -38,19 +56,12 @@ public sealed class DataBackupService
         _config = config;
     }
 
-    /// <summary>当前数据库文件路径。</summary>
-    public string DatabasePath => _config.ResolveDatabasePath();
+    /// <summary>当前数据库连接（已隐去密码），界面和日志用它说明"数据在哪"。</summary>
+    public string DatabasePath => PostgresConnection.Mask(
+        PostgresConnection.Resolve(_config.GetStorageSettings()));
 
-    /// <summary>备份目录（数据库旁边的 backups 文件夹）。</summary>
-    public string BackupDirectory
-    {
-        get
-        {
-            var directory = Path.GetDirectoryName(DatabasePath);
-            return Path.Combine(string.IsNullOrEmpty(directory) ? _config.ConfigDirectory : directory,
-                BackupFormat.BackupDirectoryName);
-        }
-    }
+    /// <summary>备份目录（配置目录下的 backups 文件夹）。</summary>
+    public string BackupDirectory => Path.Combine(_config.ConfigDirectory, BackupFormat.BackupDirectoryName);
 
     // ════════════════════════════ 导出 ════════════════════════════
 
@@ -70,15 +81,23 @@ public sealed class DataBackupService
             StudyRoomMessages = db.StudyRoomMessages.Count(),
         };
 
-        var databaseBytes = TakeDatabaseSnapshot(db);
-        var configBytes = _config.ExportJsonBytes();
+        var tables = new Dictionary<string, byte[]>(StringComparer.Ordinal)
+        {
+            ["Schedules"] = SerializeRows(db.Schedules.AsNoTracking().OrderBy(e => e.Id)),
+            ["Todos"] = SerializeRows(db.Todos.AsNoTracking().OrderBy(e => e.Id)),
+            ["FocusSessions"] = SerializeRows(db.FocusSessions.AsNoTracking().OrderBy(e => e.Id)),
+            ["StudyRooms"] = SerializeRows(db.StudyRooms.AsNoTracking().OrderBy(e => e.Id)),
+            ["StudyRoomMembers"] = SerializeRows(db.StudyRoomMembers.AsNoTracking().OrderBy(e => e.Id)),
+            ["StudyRoomMessages"] = SerializeRows(db.StudyRoomMessages.AsNoTracking().OrderBy(e => e.Id)),
+        };
 
         var wallpaper = ReadWallpaper();
 
         var content = new BackupPackageContent
         {
-            Database = databaseBytes,
-            Config = configBytes,
+            Tables = tables,
+            Provider = "postgres",
+            Config = _config.ExportJsonBytes(),
             Wallpaper = wallpaper.Bytes,
             WallpaperFileName = wallpaper.FileName,
             WallpaperSkippedReason = wallpaper.SkippedReason,
@@ -207,7 +226,7 @@ public sealed class DataBackupService
                 AppVersion = manifest.AppVersion,
                 ExportedAt = manifest.ExportedAt,
                 Counts = manifest.Counts,
-                DatabaseBytes = manifest.Database?.SizeBytes ?? 0,
+                DatabaseBytes = manifest.Tables.Sum(t => t.SizeBytes) + (manifest.Database?.SizeBytes ?? 0),
                 HasConfig = manifest.Config is not null,
                 HasWallpaper = manifest.Wallpaper is not null,
                 WallpaperFileName = manifest.WallpaperFileName,
@@ -235,8 +254,8 @@ public sealed class DataBackupService
     /// 流程（每一步失败都不会把库改坏）：
     ///   ① 打开并校验备份（格式、版本、SHA256）
     ///   ② 替换模式下，先把当前数据自动备份一份
-    ///   ③ 把备份里的数据库解压到临时文件并 ATTACH 进来
-    ///   ④ 在一个事务里搬数据：替换 = 清空后照搬；合并 = 追加并重编号
+    ///   ③ 在一个事务里写数据：替换 = 清空后照搬；合并 = 同 Id 更新、不同 Id 追加
+    ///   ④ 修好自增序列，否则下一次新建记录会撞主键
     ///   ⑤ 应用配置（本机路径类设置不覆盖）
     ///   ⑥ 恢复壁纸
     /// </summary>
@@ -256,17 +275,10 @@ public sealed class DataBackupService
             ? BackupAutomatically(isPreImport: true)
             : null;
 
-        // ③ 解压到临时文件：绝不让 SQLite 直接打开 zip 里的东西。
-        //    放数据库旁边而不是 %TEMP% —— 那才是这台机器上确定可写的目录
-        //    （有些环境里 .NET 进程建不了 %TEMP% 下的文件，解压会直接 Access denied）。
-        var scratchDirectory = Path.GetDirectoryName(Path.GetFullPath(DatabasePath)) ?? ".";
-        var tempDatabase = Path.Combine(scratchDirectory, $"helium-import-{Guid.NewGuid():N}.db");
-
         BackupCounts imported;
         try
         {
-            reader.ExtractEntryTo(manifest.Database!.Entry, tempDatabase);
-            imported = CopyFromDatabase(tempDatabase, mode);
+            imported = WriteRows(reader, manifest, mode);
         }
         catch (BackupPackageException)
         {
@@ -275,10 +287,6 @@ public sealed class DataBackupService
         catch (Exception ex)
         {
             throw new BackupPackageException($"导入失败：{ex.Message}");
-        }
-        finally
-        {
-            TryDelete(tempDatabase);
         }
 
         // ⑤ 配置
@@ -324,66 +332,224 @@ public sealed class DataBackupService
         CancellationToken cancellationToken = default) =>
         Task.Run(() => Import(zipPath, mode), cancellationToken);
 
-    // ════════════════════════════ 内部：快照与壁纸 ════════════════════════════
+    // ════════════════════════════ 内部：把数据搬进来 ════════════════════════════
+
+    private BackupCounts WriteRows(BackupPackageReader reader, BackupManifest manifest, BackupImportMode mode)
+    {
+        var schedules = ReadTable<ScheduleItem>(reader, manifest, "Schedules");
+        var todos = ReadTable<TodoItem>(reader, manifest, "Todos");
+        var sessions = ReadTable<FocusSession>(reader, manifest, "FocusSessions");
+        var rooms = ReadTable<StudyRoom>(reader, manifest, "StudyRooms");
+        var members = ReadTable<StudyRoomMember>(reader, manifest, "StudyRoomMembers");
+        var messages = ReadTable<StudyRoomMessage>(reader, manifest, "StudyRoomMessages");
+
+        // 连接上开了 EnableRetryOnFailure（规格 §7.1），这种情况下不能自己 BeginTransaction：
+        // 重试执行器会拒绝"用户发起的事务"，因为失败重放时事务状态已经不可信。
+        // 正确做法是把整段搬数据的操作交给执行策略，由它决定什么时候重跑。
+        using var probe = _factory.CreateDbContext();
+        var strategy = probe.Database.CreateExecutionStrategy();
+
+        strategy.Execute(() =>
+        {
+            using var db = _factory.CreateDbContext();
+            using var transaction = db.Database.BeginTransaction();
+
+            if (mode == BackupImportMode.Replace)
+            {
+                // 倒序清：先删依赖别人的表
+                db.StudyRoomMessages.ExecuteDelete();
+                db.StudyRoomMembers.ExecuteDelete();
+                db.FocusSessions.ExecuteDelete();
+                db.Todos.ExecuteDelete();
+                db.StudyRooms.ExecuteDelete();
+                db.Schedules.ExecuteDelete();
+
+                db.Schedules.AddRange(schedules);
+                db.Todos.AddRange(todos);
+                db.FocusSessions.AddRange(sessions);
+                db.StudyRooms.AddRange(rooms);
+                db.StudyRoomMembers.AddRange(members);
+                db.StudyRoomMessages.AddRange(messages);
+            }
+            else
+            {
+                MergeInto(db, schedules, todos, sessions, rooms, members, messages);
+            }
+
+            db.SaveChanges();
+            FixSequences(db);
+            transaction.Commit();
+
+            return 0;
+        });
+
+        return new BackupCounts
+        {
+            Schedules = schedules.Count,
+            Todos = todos.Count,
+            FocusSessions = sessions.Count,
+            StudyRooms = rooms.Count,
+            StudyRoomMembers = members.Count,
+            StudyRoomMessages = messages.Count,
+        };
+    }
 
     /// <summary>
-    /// 取一份"干净的"数据库快照。
-    ///
-    /// 为什么不用 File.Copy？
-    ///   开了 WAL 之后，最新的数据可能还在 helium.db-wal 里，
-    ///   只拷主文件会丢掉最近的改动。`VACUUM INTO` 由 SQLite 自己写出一份整理好的完整副本，
-    ///   天然一致，不需要先 checkpoint 再赌一把。
+    /// 合并：同 Id 覆盖（规格 §7.5 的 ON CONFLICT DO UPDATE），新 Id 追加。
+    /// 外键指向不存在的父记录时断开，别把别人的数据挂成孤儿。
     /// </summary>
-    private byte[] TakeDatabaseSnapshot(HeliumDbContext db)
+    private static void MergeInto(
+        HeliumDbContext db,
+        List<ScheduleItem> schedules,
+        List<TodoItem> todos,
+        List<FocusSession> sessions,
+        List<StudyRoom> rooms,
+        List<StudyRoomMember> members,
+        List<StudyRoomMessage> messages)
     {
-        // 快照先写到数据库所在目录 —— 那里一定是可写的（库本身就在那儿），
-        // 而 %TEMP% 未必：有些机器上 .NET 进程建不了临时文件，VACUUM INTO 会直接失败。
-        var databasePath = db.Database.GetDbConnection().DataSource;
-        var snapshotDirectory = Path.GetDirectoryName(Path.GetFullPath(databasePath)) ?? ".";
-        var snapshotPath = Path.Combine(snapshotDirectory, $"helium-snapshot-{Guid.NewGuid():N}.db");
+        var scheduleIds = db.Schedules.Select(e => e.Id).ToHashSet();
+        var todoIds = db.Todos.Select(e => e.Id).ToHashSet();
+        var sessionIds = db.FocusSessions.Select(e => e.Id).ToHashSet();
+        var roomIds = db.StudyRooms.Select(e => e.Id).ToHashSet();
+        var roomIdByCode = db.StudyRooms.AsNoTracking()
+            .ToDictionary(e => e.Code, e => e.Id, StringComparer.Ordinal);
+        var memberIds = db.StudyRoomMembers.Select(e => e.Id).ToHashSet();
+        var messageIds = db.StudyRoomMessages.Select(e => e.Id).ToHashSet();
 
-        try
+        foreach (var row in schedules)
         {
-            db.Database.ExecuteSqlRaw("VACUUM INTO {0}", snapshotPath);
-            return ReadFileShared(snapshotPath);
+            if (scheduleIds.Contains(row.Id)) db.Schedules.Update(row);
+            else db.Schedules.Add(row);
         }
-        catch (Exception ex)
+
+        foreach (var row in todos)
         {
-            // VACUUM INTO 要 SQLite 3.27+；万一失败就退回"先 checkpoint 再读文件"
-            System.Diagnostics.Debug.WriteLine($"[DataBackupService] VACUUM INTO 失败，改用文件读取：{ex.Message}");
-
-            try
-            {
-                db.Database.ExecuteSqlRaw("PRAGMA wal_checkpoint(TRUNCATE)");
-            }
-            catch
-            {
-                // checkpoint 也失败就按现状读，至少比导出失败强
-            }
-
-            return ReadFileShared(databasePath);
+            if (todoIds.Contains(row.Id)) db.Todos.Update(row);
+            else db.Todos.Add(row);
         }
-        finally
+
+        foreach (var row in sessions)
         {
-            TryDelete(snapshotPath);
+            if (row.TodoId is { } todoId && !todoIds.Contains(todoId))
+            {
+                row.TodoId = null;
+            }
+
+            if (sessionIds.Contains(row.Id)) db.FocusSessions.Update(row);
+            else db.FocusSessions.Add(row);
+        }
+
+        var roomIdMap = new Dictionary<int, int>();
+        foreach (var row in rooms)
+        {
+            if (roomIds.Contains(row.Id))
+            {
+                db.StudyRooms.Update(row);
+                roomIdMap[row.Id] = row.Id;
+                continue;
+            }
+
+            // 同一个房间码就是同一个房间：别硬塞第二份，把子记录挪过去
+            if (roomIdByCode.TryGetValue(row.Code, out var existingId))
+            {
+                roomIdMap[row.Id] = existingId;
+                continue;
+            }
+
+            db.StudyRooms.Add(row);
+        }
+
+        foreach (var row in members)
+        {
+            if (!roomIdMap.TryGetValue(row.StudyRoomId, out var roomId)
+                && !roomIds.Contains(row.StudyRoomId))
+            {
+                continue;
+            }
+
+            row.StudyRoomId = roomIdMap.TryGetValue(row.StudyRoomId, out var mapped) ? mapped : row.StudyRoomId;
+
+            if (memberIds.Contains(row.Id)) db.StudyRoomMembers.Update(row);
+            else db.StudyRoomMembers.Add(row);
+        }
+
+        foreach (var row in messages)
+        {
+            if (!roomIdMap.TryGetValue(row.StudyRoomId, out var roomId)
+                && !roomIds.Contains(row.StudyRoomId))
+            {
+                continue;
+            }
+
+            row.StudyRoomId = roomIdMap.TryGetValue(row.StudyRoomId, out var mapped) ? mapped : row.StudyRoomId;
+
+            if (messageIds.Contains(row.Id)) db.StudyRoomMessages.Update(row);
+            else db.StudyRoomMessages.Add(row);
         }
     }
 
     /// <summary>
-    /// 读一个数据库文件，允许别人同时开着它。
-    ///
-    /// 为什么不用 File.ReadAllBytes：它按 FileShare.Read 打开，等于告诉系统
-    /// "别人只能读"。可数据库连接自己拿着写权限，两边一撞就是
-    /// IOException：文件正由另一进程使用。导入导出又恰恰总在"库还开着"的时候做，
-    /// 所以必须显式声明 ReadWrite + Delete 共享。
+    /// 把每张表的自增序列拨到当前最大 Id。
+    /// 不修的话，导入的 Id 是 1..100，序列却还停在 3，下一次新建就撞主键。
     /// </summary>
-    private static byte[] ReadFileShared(string path)
+    private static void FixSequences(HeliumDbContext db)
     {
-        using var stream = new FileStream(
-            path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-        using var buffer = new MemoryStream();
-        stream.CopyTo(buffer);
-        return buffer.ToArray();
+        foreach (var table in TableOrder)
+        {
+            // 表名来自上面的编译期常量数组（六张表写死），不是用户输入；
+            // 这里也不能用参数占位符 —— PostgreSQL 的标识符不能当参数传。
+            // EF1003 在这条语句上是误报，明确压掉并写明理由。
+#pragma warning disable EF1003
+            db.Database.ExecuteSqlRaw(
+                $"SELECT setval(pg_get_serial_sequence('\"{table}\"', 'Id'), " +
+                $"COALESCE((SELECT MAX(\"Id\") FROM \"{table}\"), 1), " +
+                $"EXISTS (SELECT 1 FROM \"{table}\"));");
+#pragma warning restore EF1003
+        }
+    }
+
+    /// <summary>读一张表的 JSONL。缺文件按空表处理（旧备份/手工删过）。</summary>
+    private static List<T> ReadTable<T>(BackupPackageReader reader, BackupManifest manifest, string table)
+    {
+        var entry = manifest.Tables.FirstOrDefault(
+            e => string.Equals(Path.GetFileNameWithoutExtension(e.Entry), table, StringComparison.OrdinalIgnoreCase));
+
+        if (entry is null)
+        {
+            return new List<T>();
+        }
+
+        var text = Encoding.UTF8.GetString(reader.ReadEntry(entry.Entry));
+        var rows = new List<T>();
+
+        foreach (var line in text.Split('\n'))
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                continue;
+            }
+
+            var row = JsonSerializer.Deserialize<T>(line, RowJson);
+            if (row is not null)
+            {
+                rows.Add(row);
+            }
+        }
+
+        return rows;
+    }
+
+    private static byte[] SerializeRows<T>(IEnumerable<T> rows)
+    {
+        var builder = new StringBuilder();
+
+        foreach (var row in rows)
+        {
+            builder.Append(JsonSerializer.Serialize(row, RowJson));
+            builder.Append('\n');
+        }
+
+        return Encoding.UTF8.GetBytes(builder.ToString());
     }
 
     private sealed record WallpaperPayload(byte[]? Bytes, string? FileName, string? SkippedReason);
@@ -450,429 +616,9 @@ public sealed class DataBackupService
         }
     }
 
-    // ════════════════════════════ 内部：把数据搬进来 ════════════════════════════
-
-    /// <summary>一张表的搬运规则：外键列指向哪张父表的哪个列。</summary>
-    /// <param name="UniqueColumn">
-    /// 这张表上的唯一列（目前只有自习室的房间码）。
-    /// 合并导入时碰到同一个值就不再重复搬 —— 同一个房间码就是同一个房间。
-    /// </param>
-    private sealed record TableSpec(
-        string Name,
-        string? ParentTable = null,
-        string? ForeignKey = null,
-        string? UniqueColumn = null);
-
-    /// <summary>
-    /// 搬运顺序很重要：父表在前、子表在后。
-    /// 合并模式下要给子表的外键换成新编号，所以必须等父表搬完。
-    /// </summary>
-    private static readonly TableSpec[] Tables =
-    {
-        new("Schedules"),
-        new("Todos"),
-        new("FocusSessions", "Todos", "TodoId"),
-        new("StudyRooms", UniqueColumn: "Code"),
-        new("StudyRoomMembers", "StudyRooms", "StudyRoomId"),
-        new("StudyRoomMessages", "StudyRooms", "StudyRoomId"),
-    };
-
-    /// <summary>
-    /// 把备份库（临时文件）里的数据搬进当前库。
-    /// </summary>
-    /// <param name="sourceDatabasePath">解压出来的备份数据库。</param>
-    /// <param name="mode">替换还是合并。</param>
-    private BackupCounts CopyFromDatabase(string sourceDatabasePath, BackupImportMode mode)
-    {
-        using var db = _factory.CreateDbContext();
-
-        // 让主库的 WAL 落盘，避免"搬完了但文件里还是旧的"
-        try
-        {
-            db.Database.ExecuteSqlRaw("PRAGMA wal_checkpoint(TRUNCATE)");
-        }
-        catch
-        {
-            // 有别的连接在读时 checkpoint 会失败，不影响后面的 ATTACH + 事务
-        }
-
-        var connection = db.Database.GetDbConnection();
-        if (connection.State != ConnectionState.Open)
-        {
-            connection.Open();
-        }
-
-        Attach(connection, sourceDatabasePath);
-
-        try
-        {
-            EnsureSourceSchema(connection);
-
-            using var transaction = connection.BeginTransaction();
-
-            if (mode == BackupImportMode.Replace)
-            {
-                ClearTables(connection, transaction);
-            }
-
-            var counts = new BackupCounts();
-            var idMaps = new Dictionary<string, Dictionary<long, long>>(StringComparer.Ordinal);
-
-            // 合并时"库里已经有同一条"而被跳过的父记录。
-            // 子表碰到这些父记录的子行也要跳过 —— 否则它们会挂到一个 null 外键上，
-            // 变成一堆"不属于任何房间的成员"。
-            var skippedIds = new Dictionary<string, HashSet<long>>(StringComparer.Ordinal);
-
-            foreach (var spec in Tables)
-            {
-                var imported = CopyTable(connection, transaction, spec, mode, idMaps, skippedIds);
-                AssignCount(counts, spec.Name, imported);
-            }
-
-            transaction.Commit();
-            return counts;
-        }
-        finally
-        {
-            Detach(connection);
-        }
-    }
-
-    private static void Attach(DbConnection connection, string sourcePath)
-    {
-        try
-        {
-            using var command = connection.CreateCommand();
-            command.CommandText = "ATTACH DATABASE $path AS src";
-            var parameter = command.CreateParameter();
-            parameter.ParameterName = "$path";
-            parameter.Value = sourcePath;
-            command.Parameters.Add(parameter);
-            command.ExecuteNonQuery();
-        }
-        catch (DbException ex)
-        {
-            throw new BackupPackageException(
-                $"备份里的数据库打不开（可能不是有效的 SQLite 文件）：{ex.Message}");
-        }
-    }
-
-    private static void Detach(DbConnection connection)
-    {
-        try
-        {
-            using var command = connection.CreateCommand();
-            command.CommandText = "DETACH DATABASE src";
-            command.ExecuteNonQuery();
-        }
-        catch (DbException)
-        {
-            // 连接关掉时 SQLite 也会自动解开，这里失败不用管
-        }
-    }
-
-    /// <summary>确认备份库里确实有我们认识的表，否则给一句人能看懂的话。</summary>
-    private static void EnsureSourceSchema(DbConnection connection)
-    {
-        using var command = connection.CreateCommand();
-        command.CommandText =
-            "SELECT COUNT(*) FROM src.sqlite_master WHERE type = 'table' AND name IN " +
-            "('Schedules', 'Todos', 'FocusSessions', 'StudyRooms')";
-
-        var count = Convert.ToInt64(command.ExecuteScalar(), CultureInfo.InvariantCulture);
-        if (count == 0)
-        {
-            throw new BackupPackageException("备份里的数据库结构不认识（找不到日程/待办这些表）。");
-        }
-    }
-
-    /// <summary>清空现有数据。子表先删，否则外键会拦着。</summary>
-    private static void ClearTables(DbConnection connection, DbTransaction transaction)
-    {
-        // 倒序：先删依赖别人的表
-        for (var i = Tables.Length - 1; i >= 0; i--)
-        {
-            using var command = connection.CreateCommand();
-            command.Transaction = transaction;
-            command.CommandText = $"DELETE FROM main.\"{Tables[i].Name}\"";
-            command.ExecuteNonQuery();
-        }
-    }
-
-    /// <summary>
-    /// 搬一张表。
-    ///   替换模式：连 Id 一起照搬（外键天然对得上）。
-    ///   合并模式：不带 Id，让 SQLite 发新号；子表的外键换成新号。
-    /// </summary>
-    private static int CopyTable(
-        DbConnection connection,
-        DbTransaction transaction,
-        TableSpec spec,
-        BackupImportMode mode,
-        Dictionary<string, Dictionary<long, long>> idMaps,
-        Dictionary<string, HashSet<long>> skippedIds)
-    {
-        var targetColumns = GetColumns(connection, transaction, "main", spec.Name);
-        var sourceColumns = GetColumns(connection, transaction, "src", spec.Name);
-
-        // 两边都有的列才搬 —— 这样旧版本备份少几个列也能导进来
-        var common = targetColumns.Where(c => sourceColumns.Contains(c, StringComparer.OrdinalIgnoreCase)).ToList();
-        if (common.Count == 0)
-        {
-            return 0;
-        }
-
-        if (mode == BackupImportMode.Replace)
-        {
-            return CopyTableKeepingIds(connection, transaction, spec.Name, common);
-        }
-
-        return CopyTableRemappingIds(connection, transaction, spec, common, idMaps, skippedIds);
-    }
-
-    /// <summary>替换模式：一条 INSERT ... SELECT，Id 原样保留。</summary>
-    private static int CopyTableKeepingIds(
-        DbConnection connection,
-        DbTransaction transaction,
-        string table,
-        List<string> columns)
-    {
-        var columnList = string.Join(", ", columns.Select(c => $"\"{c}\""));
-
-        using var command = connection.CreateCommand();
-        command.Transaction = transaction;
-        command.CommandText =
-            $"INSERT INTO main.\"{table}\" ({columnList}) SELECT {columnList} FROM src.\"{table}\"";
-        return command.ExecuteNonQuery();
-    }
-
-    /// <summary>
-    /// 合并模式：逐行插入并重新编号，同时记录 旧Id → 新Id 供子表改外键。
-    /// </summary>
-    private static int CopyTableRemappingIds(
-        DbConnection connection,
-        DbTransaction transaction,
-        TableSpec spec,
-        List<string> columns,
-        Dictionary<string, Dictionary<long, long>> idMaps,
-        Dictionary<string, HashSet<long>> skippedIds)
-    {
-        var rowMap = new Dictionary<long, long>();
-        idMaps[spec.Name] = rowMap;
-
-        var skipped = new HashSet<long>();
-        skippedIds[spec.Name] = skipped;
-
-        // 父表的映射（TodoId / StudyRoomId 要用）
-        Dictionary<long, long>? parentMap = null;
-        HashSet<long>? skippedParentIds = null;
-        if (spec.ParentTable is not null)
-        {
-            idMaps.TryGetValue(spec.ParentTable, out parentMap);
-            skippedIds.TryGetValue(spec.ParentTable, out skippedParentIds);
-        }
-
-        // 唯一列在哪一列，查重用
-        var uniqueIndex = spec.UniqueColumn is null
-            ? -1
-            : columns.FindIndex(c => string.Equals(c, spec.UniqueColumn, StringComparison.OrdinalIgnoreCase));
-
-        var rows = ReadRows(connection, transaction, spec.Name, columns);
-        var inserted = 0;
-
-        foreach (var row in rows)
-        {
-            var oldId = row.TryGetValue("Id", out var idValue) && idValue is not null
-                ? Convert.ToInt64(idValue, CultureInfo.InvariantCulture)
-                : 0L;
-
-            // 父记录已经在库里（同一个房间码），这一行就没必要再搬一遍
-            if (spec.ForeignKey is not null
-                && skippedParentIds is { Count: > 0 }
-                && row.TryGetValue(spec.ForeignKey, out var parentValue)
-                && parentValue is not null
-                && skippedParentIds.Contains(Convert.ToInt64(parentValue, CultureInfo.InvariantCulture)))
-            {
-                continue;
-            }
-
-            // 唯一列上已经有同一条了就跳过 —— 合并不能把唯一约束撞崩
-            if (uniqueIndex >= 0)
-            {
-                var uniqueValue = row.TryGetValue(columns[uniqueIndex], out var raw) ? raw : null;
-
-                if (uniqueValue is not null
-                    && UniqueValueExists(connection, transaction, spec.Name, columns[uniqueIndex], uniqueValue))
-                {
-                    if (oldId != 0) skipped.Add(oldId);
-                    continue;
-                }
-            }
-
-            var names = new List<string>();
-            var values = new List<object?>();
-
-            foreach (var column in columns)
-            {
-                // Id 交给 SQLite 自己发号
-                if (string.Equals(column, "Id", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                var value = row.TryGetValue(column, out var raw) ? raw : null;
-
-                if (spec.ForeignKey is not null
-                    && string.Equals(column, spec.ForeignKey, StringComparison.OrdinalIgnoreCase)
-                    && value is not null)
-                {
-                    var oldReference = Convert.ToInt64(value, CultureInfo.InvariantCulture);
-
-                    // 父记录搬过来了就换成新号；没搬过来就断开引用（别指向别人家的记录）
-                    value = parentMap is not null && parentMap.TryGetValue(oldReference, out var newReference)
-                        ? newReference
-                        : null;
-                }
-
-                names.Add(column);
-                values.Add(value);
-            }
-
-            var newId = InsertRow(connection, transaction, spec.Name, names, values);
-            inserted++;
-
-            if (oldId != 0)
-            {
-                rowMap[oldId] = newId;
-            }
-        }
-
-        return inserted;
-    }
-
-    /// <summary>这张表里是不是已经有这个值了（只用于唯一列）。</summary>
-    private static bool UniqueValueExists(
-        DbConnection connection,
-        DbTransaction transaction,
-        string table,
-        string column,
-        object value)
-    {
-        using var command = connection.CreateCommand();
-        command.Transaction = transaction;
-        command.CommandText = $"SELECT 1 FROM main.\"{table}\" WHERE \"{column}\" = $v LIMIT 1";
-
-        var parameter = command.CreateParameter();
-        parameter.ParameterName = "$v";
-        parameter.Value = value;
-        command.Parameters.Add(parameter);
-
-        return command.ExecuteScalar() is not null;
-    }
-
-    private static long InsertRow(
-        DbConnection connection,
-        DbTransaction transaction,
-        string table,
-        List<string> names,
-        List<object?> values)
-    {
-        using var command = connection.CreateCommand();
-        command.Transaction = transaction;
-
-        if (names.Count == 0)
-        {
-            // 极端情况：表里只有 Id 一列
-            command.CommandText = $"INSERT INTO main.\"{table}\" DEFAULT VALUES; SELECT last_insert_rowid();";
-            return Convert.ToInt64(command.ExecuteScalar(), CultureInfo.InvariantCulture);
-        }
-
-        var parameters = new List<string>();
-        for (var i = 0; i < names.Count; i++)
-        {
-            var name = "$v" + i.ToString(CultureInfo.InvariantCulture);
-            var parameter = command.CreateParameter();
-            parameter.ParameterName = name;
-            parameter.Value = values[i] ?? DBNull.Value;
-            command.Parameters.Add(parameter);
-            parameters.Add(name);
-        }
-
-        command.CommandText =
-            $"INSERT INTO main.\"{table}\" ({string.Join(", ", names.Select(n => $"\"{n}\""))}) " +
-            $"VALUES ({string.Join(", ", parameters)}); SELECT last_insert_rowid();";
-
-        return Convert.ToInt64(command.ExecuteScalar(), CultureInfo.InvariantCulture);
-    }
-
-    /// <summary>读出一张表的所有行（列名 → 值）。</summary>
-    private static List<Dictionary<string, object?>> ReadRows(
-        DbConnection connection,
-        DbTransaction transaction,
-        string table,
-        List<string> columns)
-    {
-        var rows = new List<Dictionary<string, object?>>();
-
-        using var command = connection.CreateCommand();
-        command.Transaction = transaction;
-        command.CommandText = $"SELECT * FROM src.\"{table}\"";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            var row = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-            for (var i = 0; i < reader.FieldCount; i++)
-            {
-                var value = reader.IsDBNull(i) ? null : reader.GetValue(i);
-                row[reader.GetName(i)] = value;
-            }
-
-            rows.Add(row);
-        }
-
-        return rows;
-    }
-
-    /// <summary>用 PRAGMA table_info 拿列名（顺带拿到顺序）。</summary>
-    private static List<string> GetColumns(
-        DbConnection connection,
-        DbTransaction? transaction,
-        string schema,
-        string table)
-    {
-        var columns = new List<string>();
-
-        using var command = connection.CreateCommand();
-        command.Transaction = transaction;
-        command.CommandText = $"PRAGMA {schema}.table_info(\"{table}\")";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            // cid, name, type, notnull, dflt_value, pk
-            columns.Add(reader.GetString(1));
-        }
-
-        return columns;
-    }
-
-    private static void AssignCount(BackupCounts counts, string table, int value)
-    {
-        switch (table)
-        {
-            case "Schedules": counts.Schedules = value; break;
-            case "Todos": counts.Todos = value; break;
-            case "FocusSessions": counts.FocusSessions = value; break;
-            case "StudyRooms": counts.StudyRooms = value; break;
-            case "StudyRoomMembers": counts.StudyRoomMembers = value; break;
-            case "StudyRoomMessages": counts.StudyRoomMessages = value; break;
-        }
-    }
-
     // ════════════════════════════ 内部：杂项 ════════════════════════════
 
-    private string? BuildWarning(BackupManifest manifest)
+    private static string? BuildWarning(BackupManifest manifest)
     {
         var warnings = new List<string>();
 
@@ -923,18 +669,6 @@ public sealed class DataBackupService
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[DataBackupService] 清理旧备份失败：{ex.Message}");
-        }
-    }
-
-    private static void TryDelete(string path)
-    {
-        try
-        {
-            if (File.Exists(path)) File.Delete(path);
-        }
-        catch
-        {
-            // 临时文件删不掉不影响正确性，系统重启也会清
         }
     }
 }

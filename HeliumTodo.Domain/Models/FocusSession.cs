@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Helium Todo contributors
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Text.Json.Serialization;
+
 namespace HeliumTodo.Domain.Models;
 
 /// <summary>
@@ -27,6 +29,8 @@ public class FocusSession
     public int? TodoId { get; set; }
 
     /// <summary>导航属性：关联的待办对象。</summary>
+    /// <remarks>备份序列化时跳过导航属性，避免把整条待办再写一遍（更避免环）。</remarks>
+    [JsonIgnore]
     public TodoItem? Todo { get; set; }
 
     /// <summary>

@@ -4425,3 +4425,71 @@ P0 的「保留 FluentAvalonia + SQLite」不再是不可抗力，P2 起按规�
 
 - 构建 **0 警告 0 错误**；`SelfTest` **196/196**（190 + 3 条架构 + 3 条 `Result`）。
 - 十五项 `--check`、SPDX、文件指纹在提交前复跑。
+
+---
+
+## 2026-11-09 · 0.5.0-alpha P2：主存储换成 PostgreSQL 17
+
+**目标**：把 P0 遗留的「SQLite 临时方案」解除，数据层按规格 §7 落到 PostgreSQL，
+同时把备份格式升到 v2，并把「能连上、能迁移、能回滚」变成可自动验证的检查。
+
+### 存储与连接
+
+- `Directory.Packages.props`：EF Core **10.0.14**、`Npgsql.EntityFrameworkCore.PostgreSQL` **10.0.3**、
+  EF Design 10.0.14、`Microsoft.Extensions.*` 10.0.14；移除 SQLite 包。
+- `Application/Configuration/AppConfig.cs` 新增 `StorageSettings`：
+  `Provider/Host/Port/Database/Username/Password/SslMode/CommandTimeoutSeconds`，
+  默认 `postgres / localhost / 5432 / helium_todo / helium`。
+- `ConfigService.GetStorageSettings()` 支持环境变量覆盖：`HELIUM_DB`（整条连接串，优先级最高）、
+  `HELIUM_DB_PASSWORD`（只覆盖密码）。
+- `Infrastructure/Persistence/PostgresConnection.cs`：`Resolve` 只认 `postgres`，
+  写错 provider 直接抛「0.5.0 只支持 postgres」，**不静默回退 SQLite**；
+  连接池 20/2、`NoResetOnClose=false`，日志里用 `Mask()` 把密码换成 `***`。
+- `AddHeliumData(connectionString)` 改为 `UseNpgsql` + 命令超时 30s + 失败重试 3 次。
+
+### 模型与迁移
+
+- `HeliumDbContext` 不再手工建表/补列，只 `ApplyConfigurationsFromAssembly`。
+- 六个 `IEntityTypeConfiguration`：
+  - 业务时间列一律 `timestamp without time zone`（墙上时钟，换时区不改语义）；
+  - `Todos.CreatedAt` / `StudyRooms.CreatedAt` 用 `timestamptz`，写入前转 UTC、读出转本地；
+  - 枚举存 int，`TimeSpan` 存 `interval`；
+  - 规格要求的索引全部显式声明，房间码 `Code` 唯一。
+- 首个迁移 `20261109143605_InitialPostgres`（Persistence/Migrations）。
+- `DatabaseInitializer.Initialize` 只做三件事：`Migrate()` → 拒绝「库比程序新」→ 空库灌示例数据。
+- 加了 `HeliumDbContextFactory`（`IDesignTimeDbContextFactory`），
+  `dotnet ef migrations add` 不再依赖启动项目。
+- `infra/docker-compose.yml` 提供 `postgres:17-alpine`，给没装数据库的机器一条捷径。
+
+### 备份格式 v2
+
+- `BackupFormat.CurrentVersion = 2`；包内是 `manifest.json` + `data/<Table>.jsonl`（六张表各一份），
+  时间写成 ISO-8601 本地无偏移，`TimeSpan` 写成字符串。
+- 清单记录 `provider`、`createdAtUtc`、每张表的 SHA256 与字节数；读取时逐表复核。
+- v1（SQLite `data/helium.db`）仍能**识别**，但导入时明确拒绝并提示用 0.4 重新导出——
+  跨存储引擎直接搬字节是不负责任的，宁可让用户多一步。
+- Replace：一个事务内 `ExecuteDelete` 子表→父表，再按原 Id 插回，最后 `setval` 修序列。
+- Merge：同 Id 更新、缺 Id 追加；TodoId 指向不存在的待办时置空；房间按唯一 `Code` 归一，
+  重复成员/消息跳过。Merge 不生成安全备份（可反复执行）。
+- 事务交给 `CreateExecutionStrategy()`：连接开了失败重试后，用户自己 `BeginTransaction`
+  会被 Npgsql 拒绝（本次踩到并修正）。
+
+### 自检与测试
+
+- `BackupTests` / `StudyRoomRepositoryTests` 改为连**真 PostgreSQL**：
+  `PostgresTestDatabase` 每个测试类建一个临时库、跑迁移、结束时 `DROP DATABASE ... WITH (FORCE)`；
+  未设置 `HELIUM_TEST_POSTGRES` 时返回「跳过」而不是红。
+- 新增 `--db-check`：直接查 `information_schema` / `pg_indexes`，核对
+  「十一列的时间类型、Todos.Id 是否 identity、六个索引、房间码唯一、六张表齐全」，
+  不信 EF 的模型元数据，只信数据库里真实建出来的东西。
+- `SelfTest` **196/196**（含真库用例），十五项 `--check` + `--db-check` 全绿，构建 0 警告。
+
+### 与规格的差异（写清楚，不假装做到了）
+
+- **v1 备份不做自动转换**：规格要求保留只读导入通道；当前只识别并提示，
+  自动转换需要额外引入 SQLite 驱动并处理列差异，留到 P6 一起做。
+- 规格 §7.4 写的 `Schedules(Start, End)` 复合索引没有建：`End` 是计算属性、不是列；
+  实际建的是 `Schedules(Start)`（查询总是从 Start 起算）。
+- `Schedules(PlannedStart)` 在模型里叫 `Start`，索引名 `IX_Schedules_Start`。
+
+---

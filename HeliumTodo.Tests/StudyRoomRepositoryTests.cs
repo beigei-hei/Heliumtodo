@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2025 Helium Todo contributors
 // SPDX-License-Identifier: GPL-3.0-only
 
-using HeliumTodo.Application.Configuration;
 using HeliumTodo.Domain.Models;
 using HeliumTodo.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -14,31 +13,40 @@ namespace HeliumTodo.Tests;
 /// 自习室「离开 / 重进」的测试。
 ///
 /// 背景：用户报告"退出后重进仍显示在房间内部"。
-/// 原因不在界面绑定，而在数据层 —— 房间存在 SQLite 里，
+/// 原因不在界面绑定，而在数据层 —— 房间存在库里，
 /// 离开时只清了内存里的 CurrentRoom，数据库那行还在，
 /// 于是下次打开页面「载入最近的房间」又把它拉回来了。
 ///
 /// 所以这里测的就是数据层的约定：
 ///   · 离开 = 记下 ClosedAt，之后 GetOpenAsync 不再返回它；
-///   · 主动回到这个房间 = 清掉 ClosedAt；
-///   · 老数据库（没有 ClosedAt 这一列）要能自动补列，不能直接崩。
+///   · 主动回到这个房间 = 清掉 ClosedAt。
+///
+/// 0.5.0 起数据层换成 PostgreSQL，「老库自动补列」那条 SQLite 时代的测试
+/// 随 PRAGMA 逻辑一起删除：结构变更只走 EF Migration，不再有运行期补列。
 /// </summary>
 public sealed class StudyRoomRepositoryTests : IDisposable
 {
-    private readonly string _root;
+    private readonly PostgresTestDatabase _pg;
+    private readonly string? _skip;
     private readonly ServiceProvider _provider;
     private readonly IDbContextFactory<HeliumDbContext> _factory;
     private readonly StudyRoomRepository _rooms;
 
     public StudyRoomRepositoryTests()
     {
-        _root = TestWorkspace.Create("room");
+        _pg = new PostgresTestDatabase("room");
+        _skip = _pg.SkipReason;
 
-        var config = new ConfigService(_root);
-        config.Load();
+        if (_skip is not null)
+        {
+            _provider = null!;
+            _factory = null!;
+            _rooms = null!;
+            return;
+        }
 
         var services = new ServiceCollection();
-        services.AddHeliumData(config.ResolveDatabasePath());
+        services.AddHeliumData(_pg.ConnectionString);
         _provider = services.BuildServiceProvider();
 
         _factory = _provider.GetRequiredService<IDbContextFactory<HeliumDbContext>>();
@@ -53,8 +61,12 @@ public sealed class StudyRoomRepositoryTests : IDisposable
 
     public void Dispose()
     {
-        _provider.Dispose();
-        TestWorkspace.Delete(_root);
+        if (_skip is null)
+        {
+            _provider.Dispose();
+        }
+
+        _pg.Dispose();
     }
 
     // 辅助：造一个房间并存进库
@@ -84,6 +96,8 @@ public sealed class StudyRoomRepositoryTests : IDisposable
     [Fact]
     public async Task 离开房间之后重新载入不会回到房间里()
     {
+        if (_skip is not null) return;
+
         var room = await AddRoomAsync("ROOM01");
 
         // 打开页面会载入它
@@ -108,6 +122,8 @@ public sealed class StudyRoomRepositoryTests : IDisposable
     [Fact]
     public async Task 离开过的房间可以重新回去()
     {
+        if (_skip is not null) return;
+
         var room = await AddRoomAsync("ROOM02");
         room.ClosedAt = DateTime.Now;
         await _rooms.SaveAsync(room);
@@ -126,64 +142,15 @@ public sealed class StudyRoomRepositoryTests : IDisposable
         Assert.Equal("ROOM02", reopened[0].Code);
     }
 
-    // 老数据库（没有 ClosedAt 这一列）要能自动补列，
-    // 而且补完之后旧房间一律算「已经离开」——
-    // 升级前根本没有离开的概念，那些房间都是点了离开没能记住的残留。
+    // 成员要跟着房间一起存：外键和级联在 PostgreSQL 上也得对
     [Fact]
-    public async Task 老数据库会自动补上离开时间这一列()
+    public async Task 保存房间时成员一起落库()
     {
+        if (_skip is not null) return;
+
         await AddRoomAsync("ROOM03");
 
-        // 模拟"升级前建的库"：把新列删掉
-        await using (var db = await _factory.CreateDbContextAsync())
-        {
-            await db.Database.ExecuteSqlRawAsync("ALTER TABLE \"StudyRooms\" DROP COLUMN \"ClosedAt\"");
-        }
-
-        // 再初始化一次应当把列补回来，而不是抛"没有这一列"
-        await using (var db = await _factory.CreateDbContextAsync())
-        {
-            db.EnsureDatabaseReady();
-        }
-
-        Assert.True(await ColumnExistsAsync("StudyRooms", "ClosedAt"));
-
-        // 补完之后照常能读能写，而且旧房间被标记成已离开
-        var rooms = await _rooms.GetAllAsync();
-        Assert.Single(rooms);
-        Assert.NotNull(rooms[0].ClosedAt);
-
-        // 标成已离开之后，下次进页面就不会被载回房间里
-        Assert.Empty(await _rooms.GetOpenAsync());
-    }
-
-    private async Task<bool> ColumnExistsAsync(string table, string column)
-    {
         await using var db = await _factory.CreateDbContextAsync();
-        var connection = db.Database.GetDbConnection();
-
-        await connection.OpenAsync();
-
-        try
-        {
-            await using var command = connection.CreateCommand();
-            command.CommandText = $"PRAGMA table_info(\"{table}\")";
-
-            await using var reader = await command.ExecuteReaderAsync();
-
-            while (await reader.ReadAsync())
-            {
-                if (string.Equals(reader.GetString(1), column, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-        finally
-        {
-            await connection.CloseAsync();
-        }
+        Assert.Equal(1, await db.StudyRoomMembers.CountAsync());
     }
 }

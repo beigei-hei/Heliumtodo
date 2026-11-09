@@ -3,8 +3,8 @@
 
 using System.IO.Compression;
 using System.Text;
-using HeliumTodo.Domain.Backup;
 using HeliumTodo.Application.Configuration;
+using HeliumTodo.Domain.Backup;
 using HeliumTodo.Domain.Models;
 using HeliumTodo.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -16,13 +16,16 @@ namespace HeliumTodo.Tests;
 /// <summary>
 /// 备份导入导出的测试。
 ///
-/// 这些测试都在临时目录里建一个**真的 SQLite 库**，然后真的导出成 zip、真的再导回来，
-/// 不是打桩。因为备份这件事最容易出错的地方恰好是"文件层面"：
-/// WAL 里还没落盘的数据、zip 里的路径、SHA256、ATTACH 之后的表结构。
-/// 只有真跑一遍才知道对不对。
+/// 这些测试连一个**真的 PostgreSQL 库**（每个测试类一个临时库），然后真的导出成 zip、
+/// 真的再导回来，不是打桩。因为备份最容易出错的地方恰好是数据本身：
+/// 时间列的时区、自增序列、外键指向、zip 里的路径和 SHA256。
+/// 没有设置 `HELIUM_TEST_POSTGRES` 时整类跳过（返回而不是失败）。
 /// </summary>
 public sealed class BackupTests : IDisposable
 {
+    private readonly PostgresTestDatabase _pg;
+    private readonly string? _skip;
+
     private readonly string _root;
     private readonly ServiceProvider _provider;
     private readonly IDbContextFactory<HeliumDbContext> _factory;
@@ -33,14 +36,28 @@ public sealed class BackupTests : IDisposable
 
     public BackupTests()
     {
-        // 每个测试一个独立目录，避免互相看到对方的库
+        _pg = new PostgresTestDatabase("backup");
+        _skip = _pg.SkipReason;
+        if (_skip is not null)
+        {
+            _root = string.Empty;
+            _provider = null!;
+            _factory = null!;
+            _config = null!;
+            _backup = null!;
+            _todos = null!;
+            _focus = null!;
+            return;
+        }
+
+        // 每个测试一个独立目录，避免配置/备份文件互相看到
         _root = TestWorkspace.Create("backup");
 
         _config = new ConfigService(_root);
         _config.Load();
 
         var services = new ServiceCollection();
-        services.AddHeliumData(_config.ResolveDatabasePath());
+        services.AddHeliumData(_pg.ConnectionString);
         _provider = services.BuildServiceProvider();
 
         _factory = _provider.GetRequiredService<IDbContextFactory<HeliumDbContext>>();
@@ -58,8 +75,13 @@ public sealed class BackupTests : IDisposable
 
     public void Dispose()
     {
-        _provider.Dispose();
-        TestWorkspace.Delete(_root);
+        if (_skip is null)
+        {
+            _provider.Dispose();
+            TestWorkspace.Delete(_root);
+        }
+
+        _pg.Dispose();
     }
 
     // ────────────── 导出 ──────────────
@@ -67,6 +89,8 @@ public sealed class BackupTests : IDisposable
     [Fact]
     public void 导出的压缩包带清单和数据()
     {
+        if (_skip is not null) return;
+
         AddTodo("写实验报告");
         AddTodo("复习线代");
 
@@ -76,17 +100,20 @@ public sealed class BackupTests : IDisposable
         Assert.Equal(2, result.Manifest.Counts.Todos);
         Assert.Equal(BackupFormat.FormatId, result.Manifest.Format);
         Assert.Equal(BackupFormat.CurrentVersion, result.Manifest.FormatVersion);
+        Assert.Equal("postgres", result.Manifest.Provider);
 
         // 包里的清单能再读出来，且内容一致
         using var reader = BackupPackageReader.Open(result.Path);
         Assert.Equal(2, reader.Manifest.Counts.Todos);
-        Assert.Contains(BackupFormat.DatabaseEntry, reader.EntryNames);
+        Assert.Contains(BackupFormat.TableEntry("Todos"), reader.EntryNames);
         Assert.Contains(BackupFormat.ConfigEntry, reader.EntryNames);
     }
 
     [Fact]
     public void 导出包的校验和能通过复核()
     {
+        if (_skip is not null) return;
+
         AddTodo("随便一条");
 
         var result = _backup.Export(ZipPath("checksum"));
@@ -99,6 +126,8 @@ public sealed class BackupTests : IDisposable
     [Fact]
     public void 备份里能看到条数摘要()
     {
+        if (_skip is not null) return;
+
         AddTodo("一");
         AddTodo("二");
         AddTodo("三");
@@ -117,6 +146,8 @@ public sealed class BackupTests : IDisposable
     [Fact]
     public void 缺少清单的zip会被拒绝()
     {
+        if (_skip is not null) return;
+
         var path = ZipPath("no-manifest");
         using (var stream = File.Create(path))
         using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
@@ -136,6 +167,8 @@ public sealed class BackupTests : IDisposable
     [Fact]
     public void 不是zip的文件会被拒绝()
     {
+        if (_skip is not null) return;
+
         var path = ZipPath("not-a-zip");
         File.WriteAllText(path, "我其实是一个文本文件");
 
@@ -148,6 +181,8 @@ public sealed class BackupTests : IDisposable
     [Fact]
     public void 格式版本更高的备份会被拒绝()
     {
+        if (_skip is not null) return;
+
         AddTodo("未来的数据");
         var zip = _backup.Export(ZipPath("future")).Path;
 
@@ -163,11 +198,13 @@ public sealed class BackupTests : IDisposable
     [Fact]
     public void 数据库被篡改后校验不通过()
     {
+        if (_skip is not null) return;
+
         AddTodo("原始数据");
         var zip = _backup.Export(ZipPath("tampered")).Path;
 
-        // 用垃圾字节替换包里的数据库：清单里的 SHA256 立刻对不上
-        RewriteEntry(zip, BackupFormat.DatabaseEntry, Encoding.UTF8.GetBytes("坏掉的数据库"));
+        // 用垃圾字节替换包里的表数据：清单里的 SHA256 立刻对不上
+        RewriteEntry(zip, BackupFormat.TableEntry("Todos"), Encoding.UTF8.GetBytes("坏掉的数据"));
 
         using var reader = BackupPackageReader.Open(zip);
         Assert.False(reader.TryVerifyChecksums(out var error));
@@ -182,6 +219,8 @@ public sealed class BackupTests : IDisposable
     [Fact]
     public void 替换导入后只剩备份里的数据()
     {
+        if (_skip is not null) return;
+
         AddTodo("甲");
         AddTodo("乙");
         var zip = _backup.Export(ZipPath("replace")).Path;
@@ -200,43 +239,44 @@ public sealed class BackupTests : IDisposable
     }
 
     [Fact]
-    public void 合并导入会追加数据并重新编号()
+    public void 合并导入会追加不存在的记录并更新同Id记录()
     {
+        if (_skip is not null) return;
+
         var first = AddTodo("甲");
         AddFocus(first.Id, "甲 的专注");
 
         var zip = _backup.Export(ZipPath("merge")).Path;
 
-        var second = AddTodo("乙");
-        AddFocus(second.Id, "乙 的专注");
+        // 清空当前库：备份里的 Id 在库里都不存在，合并应该追加
+        using (var db = _factory.CreateDbContext())
+        {
+            db.FocusSessions.ExecuteDelete();
+            db.Todos.ExecuteDelete();
+        }
 
         var result = _backup.Import(zip, BackupImportMode.Merge);
 
         Assert.True(result.Success);
         Assert.Equal(1, result.Counts.Todos);
         Assert.Equal(1, result.Counts.FocusSessions);
+        Assert.Single(AllTodos());
+        Assert.Single(AllSessions());
 
-        // 原有的两条 + 备份里那一条
-        var todos = AllTodos();
-        Assert.Equal(3, todos.Count);
+        // 再合并一次：同一个 Id 已存在，应该"更新"而不是再叠一份
+        var again = _backup.Import(zip, BackupImportMode.Merge);
+        Assert.True(again.Success);
+        Assert.Single(AllTodos());
 
-        var sessions = AllSessions();
-        Assert.Equal(3, sessions.Count);
-
-        // 关键：导入进来的专注记录指向的是**新编号**的待办，而且这个待办真的存在
-        var todoIds = todos.Select(t => t.Id).ToHashSet();
-        foreach (var session in sessions.Where(s => s.TodoId.HasValue))
-        {
-            Assert.Contains(session.TodoId!.Value, todoIds);
-        }
-
-        // 合并模式不动现有数据，所以不该有安全备份
-        Assert.Null(result.SafetyBackupPath);
+        // 合并模式不动配置之外的东西，也不该有安全备份
+        Assert.Null(again.SafetyBackupPath);
     }
 
     [Fact]
     public void 替换导入前会自动备份当前数据()
     {
+        if (_skip is not null) return;
+
         AddTodo("旧的甲");
         var zip = _backup.Export(ZipPath("safety")).Path;
 
@@ -255,12 +295,14 @@ public sealed class BackupTests : IDisposable
     }
 
     [Fact]
-    public void 导入不会覆盖本机的数据库路径()
+    public void 导入不会覆盖本机的数据库连接()
     {
+        if (_skip is not null) return;
+
         AddTodo("甲");
         var zip = _backup.Export(ZipPath("config")).Path;
 
-        // 模拟"别人的备份"：配置里带着一台不存在的电脑上的数据库路径，主题也换一个
+        // 模拟"别人的备份"：配置里带着别人电脑上的数据库路径，主题也换一个
         var importedConfig = new AppConfig
         {
             ThemeId = "imported-theme",
@@ -294,15 +336,17 @@ public sealed class BackupTests : IDisposable
 
         Assert.True(result.ConfigApplied);
 
-        // 主题跟着备份走，数据库路径必须还是本机的
+        // 主题跟着备份走；数据库连接必须还是本机的（PostgreSQL 不走 DatabasePath）
         Assert.Equal("imported-theme", _config.Current.ThemeId);
         Assert.NotEqual(@"Z:\别人的电脑\helium.db", _config.Current.DatabasePath);
-        Assert.Equal(_config.ConfigDirectory, Path.GetDirectoryName(_backup.DatabasePath));
+        Assert.Contains("Database=", _backup.DatabasePath, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     public void 合并导入不会因为房间码重复而失败()
     {
+        if (_skip is not null) return;
+
         // 自习室的房间码是唯一列。把自己的备份合并回自己时，
         // 同一个房间码会撞唯一约束 —— 这种情况应该"跳过"，而不是让整次导入失败。
         using (var db = _factory.CreateDbContext())
@@ -327,12 +371,9 @@ public sealed class BackupTests : IDisposable
         Assert.True(first.Success);
         Assert.True(second.Success);
 
-        // 房间还有成员之类都只应该有一份，不许叠起来
+        // 房间还是只有一份
         using var verify = _factory.CreateDbContext();
         Assert.Equal(1, verify.StudyRooms.Count(r => r.Code == "ROOM01"));
-
-        // 待办是"追加"语义，合并两次就该有两份（没有唯一约束，这是预期行为）
-        Assert.Equal(3, verify.Todos.Count());
     }
 
     // ────────────── 辅助 ──────────────
@@ -340,6 +381,8 @@ public sealed class BackupTests : IDisposable
     [Fact(DisplayName = "原位置写不进去时改存到备份文件夹")]
     public void ExportFallsBackWhenTargetIsNotWritable()
     {
+        if (_skip is not null) return;
+
         AddTodo("导出目标不可写");
 
         // 拿一个"目录"当目标路径：FileStream 对已存在的目录会抛 UnauthorizedAccessException，
@@ -360,6 +403,8 @@ public sealed class BackupTests : IDisposable
     [Fact(DisplayName = "降级保存重名时不会覆盖旧文件")]
     public void FallbackExportDoesNotOverwriteExistingFile()
     {
+        if (_skip is not null) return;
+
         AddTodo("重名测试");
 
         var target = Path.Combine(_root, "占位目录2");

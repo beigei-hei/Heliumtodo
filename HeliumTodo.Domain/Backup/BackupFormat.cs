@@ -10,11 +10,13 @@ namespace HeliumTodo.Domain.Backup;
 ///   因为导出和导入必须是同一套规则 —— 分开写两遍迟早会不一致。
 ///   这里集中定义，导出时按它打包，导入时按它校验，改格式只改这一处。
 ///
-/// 包内结构（v1）：
+/// 包内结构（v2，0.5.0 起）：
 ///   manifest.json          清单：版本、时间、每个文件的 SHA256、各表行数
-///   data/helium.db         SQLite 数据库快照
+///   data/&lt;Table&gt;.jsonl    每张表一个 JSONL 文件（一行一条记录，本地时间不带时区）
 ///   data/config.json       配置
 ///   assets/wallpaper.&lt;ext&gt;  可选：当前壁纸原图
+///
+/// v1（0.4 及以前）的 data/helium.db 是 SQLite 快照；`DatabaseEntry` 只为识别旧包保留。
 /// </summary>
 public static class BackupFormat
 {
@@ -26,7 +28,7 @@ public static class BackupFormat
     /// 规则：只加字段 → 升 minor（这里用小整数递增，不做 major.minor）；
     /// 删字段或改语义 → 必须 +1，并让旧版本拒绝导入。
     /// </summary>
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
 
     /// <summary>备份文件扩展名（统一用 .zip）。</summary>
     public const string FileExtension = ".zip";
@@ -37,11 +39,17 @@ public static class BackupFormat
     /// <summary>清单文件名。</summary>
     public const string ManifestEntry = "manifest.json";
 
-    /// <summary>数据库在包内的路径。</summary>
+    /// <summary>旧版（v1）SQLite 快照在包内的路径，只为识别旧备份保留。</summary>
     public const string DatabaseEntry = "data/helium.db";
 
     /// <summary>配置在包内的路径。</summary>
     public const string ConfigEntry = "data/config.json";
+
+    /// <summary>表数据所在目录。</summary>
+    public const string DataDirectory = "data";
+
+    /// <summary>某张表的 JSONL 在包内的路径。</summary>
+    public static string TableEntry(string table) => $"{DataDirectory}/{table}.jsonl";
 
     /// <summary>壁纸在包内的路径前缀（后面接扩展名）。</summary>
     public const string WallpaperEntryPrefix = "assets/wallpaper";

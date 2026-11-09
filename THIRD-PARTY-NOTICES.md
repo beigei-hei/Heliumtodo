@@ -23,10 +23,9 @@ MIT 是模板文本（`<year>` / `<copyright holders>` 为占位符）；各组�
 | SkiaSharp（含原生 libSkiaSharp） | 3.119.4 | MIT | © Microsoft Corporation. All rights reserved. |
 | HarfBuzzSharp（含原生 libHarfBuzzSharp） | 8.3.1.3 | MIT | © Microsoft Corporation. All rights reserved. |
 | CommunityToolkit.Mvvm | 8.4.0 | MIT | (c) .NET Foundation and Contributors. All rights reserved. |
-| Microsoft.EntityFrameworkCore、Microsoft.EntityFrameworkCore.Sqlite、Microsoft.EntityFrameworkCore.Design | 8.0.11 | MIT | © Microsoft Corporation. All rights reserved. |
-| Microsoft.Extensions.DependencyInjection、DependencyInjection.Abstractions、Logging、Logging.Debug | 8.0.1 / 8.0.2 | MIT | © Microsoft Corporation. All rights reserved. |
-| SQLitePCLRaw.bundle_e_sqlite3、SQLitePCLRaw.core、SQLitePCLRaw.provider.e_sqlite3 | 2.1.6 | Apache-2.0 | Copyright 2014-2023 SourceGear, LLC |
-| SQLite（原生库 e_sqlite3） | 随 SQLitePCLRaw 打包 | Public Domain | SQLite 作者已声明其进入公有领域 |
+| Microsoft.EntityFrameworkCore、Microsoft.EntityFrameworkCore.Relational、Microsoft.EntityFrameworkCore.Design | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| Npgsql、Npgsql.EntityFrameworkCore.PostgreSQL | 10.0.3 | PostgreSQL License | Copyright (c) 2002-2026, Npgsql |
+| Microsoft.Extensions.DependencyInjection、DependencyInjection.Abstractions、Logging、Logging.Debug | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
 | .NET 运行时（自包含发布时） | 10.0.x | MIT | © .NET Foundation and Contributors |
 
 ## 仅用于测试、不随产品分发
@@ -39,15 +38,14 @@ MIT 是模板文本（`<year>` / `<copyright holders>` 为占位符）；各组�
 
 ## 0.5.0 计划引入、当前快照尚未引用
 
-以下组件写在 `DEVELOPMENT_SPEC.md` 的目标技术栈里，但因为离线环境无法安装，
-本快照（0.5.0-alpha P0）**还没有**形成依赖。等 P2/P3/P4 真正加入引用时，
-必须把它们并入上表，并确认 `LICENSES/` 中对应原文已就位：
+以下组件写在 `DEVELOPMENT_SPEC.md` 的目标技术栈里，但当前快照（0.5.0-alpha P2）
+**还没有**形成依赖。等 P3/P4 真正加入引用时，必须把它们并入上表，
+并确认 `LICENSES/` 中对应原文已就位：
 
 | 组件 | 计划许可证 | 备注 |
 | --- | --- | --- |
 | Material.Avalonia / Material.Avalonia.Dialogs | MIT | P3 主题骨架 |
 | Material.Icons.Avalonia | MIT（图标本身 Apache-2.0） | 分发图标时需保留 NOTICE |
-| Npgsql / Npgsql.EntityFrameworkCore.PostgreSQL | PostgreSQL License | P2 数据库迁移；届时 PostgreSQL 版权行以其发布包为准 |
 | Avalonia.Xaml.Behaviors（自建 12.1.5 构建） | MIT | P4 控件替换 |
 
 ## 字体

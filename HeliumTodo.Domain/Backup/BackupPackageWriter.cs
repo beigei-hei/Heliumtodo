@@ -12,8 +12,14 @@ namespace HeliumTodo.Domain.Backup;
 /// </summary>
 public sealed class BackupPackageContent
 {
-    /// <summary>数据库快照的字节内容（必须已做过 WAL checkpoint）。</summary>
-    public byte[] Database { get; init; } = Array.Empty<byte>();
+    /// <summary>每张表的 JSONL 内容：表名 → UTF-8 字节。</summary>
+    public Dictionary<string, byte[]> Tables { get; init; } = new(StringComparer.Ordinal);
+
+    /// <summary>旧版（v1）数据库快照；v2 导出不再使用。</summary>
+    public byte[]? Database { get; init; }
+
+    /// <summary>存储提供程序。</summary>
+    public string Provider { get; init; } = "postgres";
 
     /// <summary>配置文件内容（UTF-8 JSON）。</summary>
     public byte[]? Config { get; init; }
@@ -73,9 +79,9 @@ public static class BackupPackageWriter
     /// <param name="content">要打包的内容。</param>
     public static BackupManifest Write(string targetPath, BackupPackageContent content)
     {
-        if (content.Database.Length == 0)
+        if (content.Tables.Count == 0)
         {
-            throw new ArgumentException("数据库内容是空的，不能导出。", nameof(content));
+            throw new ArgumentException("没有任何表数据，不能导出。", nameof(content));
         }
 
         var manifest = new BackupManifest
@@ -83,12 +89,18 @@ public static class BackupPackageWriter
             Format = BackupFormat.FormatId,
             FormatVersion = BackupFormat.CurrentVersion,
             AppVersion = content.AppVersion,
+            Provider = content.Provider,
             ExportedAt = content.ExportedAt,
+            CreatedAtUtc = content.ExportedAt.ToUniversalTime(),
             Counts = content.Counts,
-            Database = BuildEntry(BackupFormat.DatabaseEntry, content.Database),
             WallpaperFileName = content.WallpaperFileName,
             WallpaperSkippedReason = content.WallpaperSkippedReason,
         };
+
+        foreach (var (table, bytes) in content.Tables)
+        {
+            manifest.Tables.Add(BuildEntry(BackupFormat.TableEntry(table), bytes));
+        }
 
         if (content.Config is { Length: > 0 })
         {
@@ -126,7 +138,16 @@ public static class BackupPackageWriter
             {
                 // 清单放第一个：用压缩软件打开时一眼能看到这是什么
                 AddEntry(zip, BackupFormat.ManifestEntry, manifest.ToJsonBytes());
-                AddEntry(zip, BackupFormat.DatabaseEntry, content.Database);
+
+                foreach (var (table, bytes) in content.Tables)
+                {
+                    AddEntry(zip, BackupFormat.TableEntry(table), bytes);
+                }
+
+                if (content.Database is { Length: > 0 } legacyDatabase)
+                {
+                    AddEntry(zip, BackupFormat.DatabaseEntry, legacyDatabase);
+                }
 
                 if (content.Config is { Length: > 0 } configBytes)
                 {

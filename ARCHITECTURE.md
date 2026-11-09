@@ -1939,7 +1939,7 @@ Desktop ──► Application ──► Domain
 - `Domain`：纯 BCL，没有 `PackageReference`，不许出现 `using Avalonia` / EF / Npgsql。
 - `Application`：用例与接口层：配置（`Configuration`）、进程间通信（`Ipc`）、通知接口
   （`Abstractions`）、`Result` 契约（`Contracts`）、跨仓储用例（`Services`）。
-- `Infrastructure`：EF Core + SQLite + 备份 + 联机传输。
+- `Infrastructure`：EF Core + PostgreSQL + 备份 v2 + 联机传输。
 - `Desktop`：Avalonia 界面与组合根（`App.axaml.cs` 是唯一允许同时看到三层的文件）。
 - `Verification`：无头渲染、十五项 `--check`、探针入口。
 
@@ -1984,3 +1984,19 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
 - 分层不是靠自觉：`HeliumTodo.Tests/ArchitectureTests.cs` 用程序集引用断言锁住
   `Domain` 不引用 Avalonia / EF / Npgsql，也不反向引用 Application / Infrastructure。
 
+
+### 20.6 数据层（P2 起）
+
+- **唯一主存储是 PostgreSQL 17**，连接信息在 `AppConfig.Storage`；环境变量
+  `HELIUM_DB`（整条串）和 `HELIUM_DB_PASSWORD`（只覆盖密码）优先于 `config.json`。
+  连接串在日志里必须经过 `PostgresConnection.Mask()`。
+- **结构变更只走 EF Migration**：`DatabaseInitializer` 只做 `Migrate()`、拒绝"库比程序新"、
+  空库灌种子。禁止 `EnsureCreated()`、禁止运行期 `ALTER TABLE`、禁止按列名探测后补列。
+- **时间列语义**：业务时间（开始/截止/计划）是墙上时钟，映射 `timestamp without time zone`；
+  审计时间（`CreatedAt`）是绝对时刻，映射 `timestamptz`，写入转 UTC、读出转本地。
+  新增实体时先问一句"这个时间换时区该不该变"。
+- **备份 v2** 是 `manifest.json` + 每表一份 JSONL。读取端逐表校验 SHA256；
+  Replace 在一个重试策略包裹的事务里清空再插回并修序列；Merge 按 Id 覆盖/追加，
+  房间按唯一 `Code` 归一。v1（SQLite）只识别、不自动转换。
+- 真库测试靠 `HELIUM_TEST_POSTGRES`（指向管理库）；没设置就跳过，不要改成"假绿"。
+  `--db-check` 直接查 `information_schema` 与 `pg_indexes`，核对列类型与索引。

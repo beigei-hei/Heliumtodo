@@ -74,6 +74,11 @@ public static class Program
                     failed.Add(($"{group.Key}.{method.Name}", real));
                     Console.WriteLine($"  [失败] {displayName}");
                     Console.WriteLine($"         {real.GetType().Name}: {real.Message}");
+                    // DbUpdateException 这类包装异常，真正有用的信息在 InnerException 里
+                    for (var inner = real.InnerException; inner is not null; inner = inner.InnerException)
+                    {
+                        Console.WriteLine($"          ↳ {inner.GetType().Name}: {inner.Message}");
+                    }
                 }
             }
 
@@ -97,6 +102,10 @@ public static class Program
                 Console.WriteLine();
                 Console.WriteLine($"▸ {name}");
                 Console.WriteLine($"  {error.GetType().Name}: {error.Message}");
+                for (var inner = error.InnerException; inner is not null; inner = inner.InnerException)
+                {
+                    Console.WriteLine($"  ↳ {inner.GetType().Name}: {inner.Message}");
+                }
                 if (!string.IsNullOrWhiteSpace(error.StackTrace))
                 {
                     var firstLine = error.StackTrace!

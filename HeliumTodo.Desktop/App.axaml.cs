@@ -16,6 +16,7 @@ using HeliumTodo.Domain.Networking;
 using HeliumTodo.Domain.Services;
 using HeliumTodo.Domain.Theming;
 using HeliumTodo.Infrastructure;
+using HeliumTodo.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using HeliumTodo.Application.Abstractions;
@@ -584,9 +585,9 @@ public partial class App : Avalonia.Application
         });
         services.AddSingleton<StudyRoomService>();
 
-        // ── 数据库 ──
-        var databasePath = configService.ResolveDatabasePath();
-        services.AddHeliumData(databasePath, enableSensitiveDataLogging: false);
+        // ── 数据库（PostgreSQL）──
+        var connectionString = PostgresConnection.Resolve(configService.GetStorageSettings());
+        services.AddHeliumData(connectionString, enableSensitiveDataLogging: false);
 
         // ── 仓储 ──
         services.AddSingleton<ScheduleRepository>();
@@ -615,19 +616,24 @@ public partial class App : Avalonia.Application
         return services.BuildServiceProvider();
     }
 
-    /// <summary>建表、灌示例数据、启动时自动备份（.zip）。</summary>
+    /// <summary>迁移到最新、灌示例数据、启动时自动备份（.zip）。</summary>
     private static void InitializeDatabase(ConfigService configService)
     {
         try
         {
-            var databasePath = configService.ResolveDatabasePath();
+            var factory = Services.GetRequiredService<Microsoft.EntityFrameworkCore.IDbContextFactory<HeliumDbContext>>();
+            using var db = factory.CreateDbContext();
 
-            // 启动时先备份一份（.zip，保留最近 7 份），万一数据结构改坏了还能找回来。
-            // 用的就是设置页里「导出」那套逻辑 —— 备份格式只有一种。
-            //
-            // 备份单独 try 起来：备份失败（磁盘满、临时目录不让写……）
-            // 不该连带把后面的建表和补列也一起跳过 ——
-            // 那样程序会带着一个"结构没升级"的老库跑起来，问题更难查。
+            // 先迁移再备份：旧结构下用新模型读表会直接报「列不存在」，
+            // 备份放在迁移后至少能拿到一份结构正确的快照。
+            var seeded = DatabaseInitializer.Initialize(db, seedIfEmpty: true);
+
+            System.Diagnostics.Debug.WriteLine(seeded
+                ? "[启动] 首次运行，已写入示例数据"
+                : "[启动] 数据库就绪");
+
+            // 启动时备份一份（.zip，保留最近 7 份），万一数据被改坏还能找回来。
+            // 备份失败（磁盘满、临时目录不让写……）不该影响使用。
             if (configService.Current.AutoBackup)
             {
                 try
@@ -643,23 +649,15 @@ public partial class App : Avalonia.Application
                     System.Diagnostics.Debug.WriteLine($"[启动] 自动备份失败（不影响使用）：{backupException.Message}");
                 }
             }
-
-            var factory = Services.GetRequiredService<Microsoft.EntityFrameworkCore.IDbContextFactory<HeliumDbContext>>();
-            using var db = factory.CreateDbContext();
-
-            var seeded = DatabaseInitializer.Initialize(db, seedIfEmpty: true);
-
-            System.Diagnostics.Debug.WriteLine(seeded
-                ? $"[启动] 首次运行，已写入示例数据：{databasePath}"
-                : $"[启动] 数据库就绪：{databasePath}");
         }
         catch (Exception ex)
         {
-            // 数据库坏了也要让程序能启动，界面会显示空数据
+            // 数据库连不上也要让程序能启动，界面会显示空数据
             System.Diagnostics.Debug.WriteLine($"[启动] 数据库初始化失败：{ex}");
-            // 控制台里带上"库到底在哪"这一句：
-            // 排查"unable to open database file"时，路径本身就是最关键的证据。
-            Console.Error.WriteLine($"[启动] 数据库初始化失败：{ex.Message}（库路径：{configService.ResolveDatabasePath()}）");
+
+            var masked = PostgresConnection.Mask(
+                PostgresConnection.Resolve(configService.GetStorageSettings()));
+            Console.Error.WriteLine($"[启动] 数据库初始化失败：{ex.Message}（连接：{masked}）");
         }
     }
 

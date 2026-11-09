@@ -2,7 +2,7 @@
 
 > 版本 **0.5.0-alpha（P0）** ｜ 本文对标的是仓库当前代码，不是计划。
 > 项目已按 `DEVELOPMENT_SPEC.md` 改名为 Domain / Application / Infrastructure / Desktop / Verification；
-> Material.Avalonia 与 PostgreSQL 目标栈因离线环境尚未切换（见规格 §20 偏差说明）。
+> Material.Avalonia 主题包尚未切换（P3/P4）；PostgreSQL 17 已在 P2 落地，见规格 §20 偏差说明。
 > 所有数字都是在开发机上实测出来的（命令写在每节末尾，可以自己复现）。
 
 ---
@@ -18,9 +18,9 @@
 | 控件库 | **FluentAvaloniaUI 3.1.0** | Fluent 2 风格；FA 3 给 224/252 个类型加了 `FA` 前缀 |
 | 绘图 | **SkiaSharp 3.119.4** | 必须与 Avalonia 的传递依赖同版，否则会加载两个 `libSkiaSharp` 直接崩 |
 | MVVM | **CommunityToolkit.Mvvm 8.4.0** | `[ObservableProperty]` / `[RelayCommand]` 源生成器 |
-| 数据访问 | **EF Core 8.0.11** + `Microsoft.EntityFrameworkCore.Sqlite` | `net10.0` 上跑 8.0.x 没问题，没升 9/10 是为了少折腾 |
-| 依赖注入 | `Microsoft.Extensions.DependencyInjection 8.0.1` | `App.axaml.cs` 里手工注册 20 处 |
-| 测试 | **xunit 2.9.2** + `Microsoft.NET.Test.Sdk 17.11.1` | 190 个测试 |
+| 数据访问 | **EF Core 10.0.14** + `Npgsql.EntityFrameworkCore.PostgreSQL 10.0.3` | 主存储是 **PostgreSQL 17**（P2 起）；连接串见 `StorageSettings` / `HELIUM_DB` |
+| 依赖注入 | `Microsoft.Extensions.DependencyInjection 10.0.14` | `App.axaml.cs` 里手工注册 20 处 |
+| 测试 | **xunit 2.9.2** + `Microsoft.NET.Test.Sdk 17.11.1` | 196 个测试（数据库相关用例未设置 `HELIUM_TEST_POSTGRES` 时跳过） |
 | 视频解码 | **Windows Media Foundation**（系统组件，`mfplat.dll` / `mfreadwrite.dll`） | 零额外打包体积；`MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING` 请求 RGB32，缩放自己用 Skia 做 |
 | 渲染后端 | `Win32RenderingMode`：Software（默认）/ AngleEgl / Wgl / Vulkan | 设置页「底层设置」或 `HELIUM_RENDER` 切换，重启生效 |
 
@@ -38,7 +38,7 @@
 | 托盘图标 | WinForms `NotifyIcon` | `HeliumTodo.Desktop/Services/TrayService.cs`（纯 P/Invoke） | WinForms 会把 TFM 变成 `net10.0-windows`，而项目被无头渲染工具引用 |
 | 系统通知 | WinRT `ToastNotificationManager` | `WindowsToastNotifier` → 托盘气泡 | WinRT 通知需要注册 AppUserModelID + 开始菜单快捷方式 + 额外互操作包 |
 | 窗口圆角 / 最大化动画 | DWM | 圆角用 `Win32Properties.WindowCornerPreference`；动画自己写 180 ms | 无边框窗口（`WindowDecorations="None"`）下 DWM 不给动画，实测确认过 |
-| 数据库迁移 | EF Migrations | `EnsureCreated()` + `EnsureColumns()` 手工补列 | 单机小应用，迁移文件比补列更难维护 |
+| 数据库迁移 | EF Migrations | ~~`EnsureCreated()` + `EnsureColumns()` 手工补列~~ 0.5.0 起只用 Migration，禁止运行期补列 | 「能自动补列」听起来省事，实际会把模型和库悄悄分叉 |
 | 测试运行器 | `dotnet test` | `HeliumTodo.SelfTest`（反射跑 `[Fact]`） | 本机沙箱里 testhost 起不来 |
 
 ---
@@ -48,10 +48,10 @@
 ```
 HeliumTodo.slnx
 ├─ HeliumTodo.Domain          领域模型 + 纯算法（不依赖 UI，也不依赖 EF）
-├─ HeliumTodo.Application     用例与接口层（P0 仅标记类，P1 搬服务）
-├─ HeliumTodo.Infrastructure  EF Core + SQLite + 备份 + 联机传输
+├─ HeliumTodo.Application     用例与接口层（配置 / IPC / 通知契约 / Result<T>） 
+├─ HeliumTodo.Infrastructure  EF Core + PostgreSQL + 备份 v2 + 联机传输
 ├─ HeliumTodo.Desktop         Avalonia 界面（Views / ViewModels / Controls / Services / Windowing）
-├─ HeliumTodo.Tests           xunit 测试（190 个）
+├─ HeliumTodo.Tests           xunit 测试（196 个）
 ├─ HeliumTodo.SelfTest        反射运行器（沙箱里替代 dotnet test）
 └─ HeliumTodo.Verification    无头渲染 + 15 个专项自检 + 后台探针入口
 ```
@@ -272,13 +272,13 @@ dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll
 3. **`dotnet test` 在本机沙箱起不来**（testhost 被拦），替代品是 `HeliumTodo.SelfTest`。
 4. **.NET 进程写 `%TEMP%` 会被拒**（`UnauthorizedAccessException`），所以测试与自检的临时目录都放在程序目录或项目目录内。
 5. **联机不做 NAT 穿透 / 加密 / TUN**，只在同一局域网内用，且默认关闭。
-6. **数据库升级靠手工补列**（`EnsureColumns()`），加字段时要同步改那里。
+6. **数据库结构只走 EF Migration**：加字段要 `dotnet ef migrations add`，不再有 `EnsureColumns()` 兜底；导入 v1（SQLite）备份只给提示、不自动转换。
 
 ---
 
 ## 七、一句话总结
 
 > 它是一套 **.NET 10 + Avalonia 12 的本地优先桌面应用**：Domain 层零依赖、可被任何宿主复用；
-> Data 层把 SQLite、`.zip` 备份、局域网传输收在一起；App 层用自绘外壳做出三列卡片工作台。
+> Infrastructure 层把 PostgreSQL、`.zip` 备份 v2、局域网传输收在一起；Desktop 层用自绘外壳做出三列卡片工作台。
 > 渲染走 Skia 软件光栅化（换来 −178 MB 私有内存、−65 个线程），动态壁纸按 1280 / 96 MB 限额，
 > 所以空配置下稳定在 **178 MB 工作集 / 47.7 MB 私有工作集**。

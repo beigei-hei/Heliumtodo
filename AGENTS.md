@@ -1,6 +1,6 @@
 # AGENTS.md · 给 AI 的硬规则
 
-> 这是一个 **C# 14 / .NET 10 + Avalonia 12 + FluentAvalonia 3.1 + SQLite** 的本地优先桌面应用（0.5.0-alpha P0）。
+> 这是一个 **C# 14 / .NET 10 + Avalonia 12 + FluentAvalonia 3.1 + PostgreSQL 17** 的本地优先桌面应用（0.5.0-alpha P2）。
 > 改代码之前先读 [`DEVELOPMENT_PLAYBOOK.md`](DEVELOPMENT_PLAYBOOK.md)（流程）与 [`ARCHITECTURE.md`](ARCHITECTURE.md)（约定）。
 > 本文件只列**不许破**的规则，不解释为什么——解释在 playbook 里。
 
@@ -8,7 +8,7 @@
 
 1. **先给验收标准**：把用户的话拆成 3–6 条可验证的行为，再说怎么改。
 2. **先想怎么证明**：能写单测就写单测；界面改动必须准备无头渲染 + 像素统计的验证方式（Agent 不能看图，"看着挺好"不算证据）。
-3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（190/190）、`--shell`、十五项 `--check`、指纹基线，全绿才交付。
+3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（196/196，含真库用例）、`--shell`、十六项 `--check`、指纹基线，全绿才交付。
 4. **收尾同步文档**：`PROGRESS.md`（这一轮）、`ARCHITECTURE.md`（新约定）、`UI_TEXT_MAP.md`（改了界面文案时）、指纹基线（`-Update` 后复查）。
 
 ## 分层铁律
@@ -85,9 +85,12 @@
 ## 常用命令
 
 ```powershell
+# 主存储是 PostgreSQL 17（便携版也认）；连不上时先看 HELIUM_DB
+$env:HELIUM_DB = "Host=127.0.0.1;Port=55432;Database=helium_todo;Username=postgres"
 dotnet build HeliumTodo.slnx -c Debug
 dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll
 dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --shell
+dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --db-check
 dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --layout-check
 dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --perf-check
 git status --short          # 交付前这里必须是空的
@@ -96,4 +99,6 @@ pwsh tools\check-file-integrity.ps1
 python tools\gen_ui_text_map.py
 ```
 
-调试用的环境变量（都是"只在自检/截图时开"）：`HELIUM_CONFIG_DIR`（沙盒目录）、`HELIUM_APP_ID`（换单实例名字，让两份探针互不干扰）、`HELIUM_RENDER`（渲染后端）、`HELIUM_DARK`、`HELIUM_CARD_OPACITY`、`HELIUM_SHELL_PAGE`、`HELIUM_NO_RESTART`、`HELIUM_FAKE_DEBUGGER`、`HELIUM_*_DIALOG=1`（拍弹窗截图）、`HELIUM_ANIM_TRACE`（窗口动画逐帧帧间隔）、`HELIUM_NO_INTERACTION_QUALITY`（关掉动效降质做 A/B）。
+数据库相关测试要另设 `HELIUM_TEST_POSTGRES`（指向管理库 `postgres`，测试会在里面建临时库）；不设则这些用例跳过。
+
+调试用的环境变量（都是"只在自检/截图时开"）：`HELIUM_CONFIG_DIR`（沙盒目录）、`HELIUM_APP_ID`（换单实例名字，让两份探针互不干扰）、`HELIUM_DB` / `HELIUM_DB_PASSWORD`（数据库连接）、`HELIUM_RENDER`（渲染后端）、`HELIUM_DARK`、`HELIUM_CARD_OPACITY`、`HELIUM_SHELL_PAGE`、`HELIUM_NO_RESTART`、`HELIUM_FAKE_DEBUGGER`、`HELIUM_*_DIALOG=1`（拍弹窗截图）、`HELIUM_ANIM_TRACE`（窗口动画逐帧帧间隔）、`HELIUM_NO_INTERACTION_QUALITY`（关掉动效降质做 A/B）。

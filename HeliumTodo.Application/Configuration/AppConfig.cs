@@ -225,6 +225,49 @@ public sealed class AppConfig
     /// 想联机就到「设置 → 自习室」打开。
     /// </summary>
     public bool EnableNetworkStudyRoom { get; set; } = false;
+
+    // ── 存储（PostgreSQL）────────────────────────────
+
+    /// <summary>
+    /// 数据库连接设置。0.5.0 起主存储是 PostgreSQL，不再是本机 SQLite 文件。
+    /// 见 <see cref="StorageSettings"/>。
+    /// </summary>
+    public StorageSettings Storage { get; set; } = new();
+}
+
+/// <summary>
+/// PostgreSQL 连接设置。
+///
+/// 【为什么把密码单独拎出来？】
+///   配置文件是给人看、给手改的，把生产密码写死在里面迟早会被同步到网盘或仓库。
+///   密码可以用环境变量 <c>HELIUM_DB_PASSWORD</c> 覆盖；
+///   整个连接串也可以用 <c>HELIUM_DB</c> 覆盖（优先级最高），方便临时连别的库排障。
+/// </summary>
+public sealed class StorageSettings
+{
+    /// <summary>固定为 "postgres"；留这个字段是为了将来能明确报错，而不是悄悄回退 SQLite。</summary>
+    public string Provider { get; set; } = "postgres";
+
+    /// <summary>数据库主机。</summary>
+    public string Host { get; set; } = "localhost";
+
+    /// <summary>端口。</summary>
+    public int Port { get; set; } = 5432;
+
+    /// <summary>库名。</summary>
+    public string Database { get; set; } = "helium_todo";
+
+    /// <summary>用户名。</summary>
+    public string Username { get; set; } = "helium";
+
+    /// <summary>密码；生产环境建议用 <c>HELIUM_DB_PASSWORD</c> 覆盖。</summary>
+    public string Password { get; set; } = string.Empty;
+
+    /// <summary>SSL 模式：Disable / Allow / Prefer / Require / VerifyCA / VerifyFull。</summary>
+    public string SslMode { get; set; } = "Prefer";
+
+    /// <summary>单条命令超时（秒）。</summary>
+    public int CommandTimeoutSeconds { get; set; } = 30;
 }
 
 /// <summary>
@@ -435,6 +478,25 @@ public sealed class ConfigService
         Current = new AppConfig();
         Save();
         return Current;
+    }
+
+    /// <summary>
+    /// 返回实际生效的存储设置：配置文件为底，环境变量 <c>HELIUM_DB_PASSWORD</c> 覆盖密码。
+    ///
+    /// 注意：连接串本身（<c>HELIUM_DB</c>）由 Infrastructure 组装，
+    /// Application 层不认识 Npgsql，免得把驱动类型带进用例层。
+    /// </summary>
+    public StorageSettings GetStorageSettings()
+    {
+        var storage = Current.Storage ?? new StorageSettings();
+
+        var envPassword = Environment.GetEnvironmentVariable("HELIUM_DB_PASSWORD");
+        if (!string.IsNullOrEmpty(envPassword))
+        {
+            storage.Password = envPassword;
+        }
+
+        return storage;
     }
 
     /// <summary>
