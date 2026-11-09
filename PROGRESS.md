@@ -4197,3 +4197,115 @@ GC 或别的进程抢一下就会打出孤立的一帧。于是拆成两条：
    所以只改 XAML 只在设计器里看得见。以后加默认值，先找"谁最后赋值"。
 2. **系统不一定替你收窗口**。Windows 只把宽度收进屏幕、高度照给；"开箱 1080p"这种需求
    必须自己判断一次工作区，否则用户第一眼看到的是探出屏幕的窗口。
+
+## 2026-11-09 · 退出码 `0xFFFFFFFF` 是怎么来的，以及它顺手带出的一个真崩溃
+
+`User said (m14453)`，附 Visual Studio 输出窗口两行：
+
+```
+线程 '.NET TP Worker' (7104) 已退出，返回值为 0 (0x0)。
+程序 "[28796] HeliumTodo.App.exe" 已退出，返回值为 4294967295 (0xffffffff)。
+```
+
+### 先回答：`0xFFFFFFFF` 不是我们返回的
+
+`-1`/`0xFFFFFFFF` 是 Windows 对"进程被外部终止"给出的退出码。三种最常见来源：
+
+| 来源 | 表现 |
+| --- | --- |
+| Visual Studio 里点「停止调试」 | 调试器直接结束它管的子进程，输出窗口就是这两行 |
+| 任务管理器「结束任务」 | 同上 |
+| 探测脚本 / `Process.Kill()` | 我们自己写的 `probe-*.ps1` 结尾也会 Kill |
+
+依据：全项目 `grep` 过 **没有任何** `Environment.Exit`、`ExitCode =`、`Exit(-1)`；
+`App.axaml.cs` 里只有三处 `desktop.Shutdown()`（单实例、托盘退出、改后端重启），
+它们的默认退出码都是 `0`。所以看到 `0xFFFFFFFF` 时应该先问"是谁把它干掉的"，
+而不是找我们的 `return`。
+
+为了让这件事以后一眼能查，`App.axaml.cs` 补了一行退出日志：
+
+```csharp
+desktop.Exit += (_, e) =>
+    LogBackground($"[退出] 进程正常结束，退出码 {e.ApplicationExitCode}");
+```
+
+有这行就分得清：日志里有 → 我们自己正常收尾；没有 → 被外面杀了。
+
+### 顺手抓到的真 bug：第二个实例以 `0xE0434352` 崩溃
+
+按"再双击一次图标"这个最常见的操作路径复现（python 起两份，同一个 `HELIUM_CONFIG_DIR`），
+第二份的 stderr：
+
+```
+Unhandled exception. System.InvalidOperationException: Cannot perform requested operation
+because the Dispatcher shut down
+   at Avalonia.Threading.Dispatcher.PushFrame(DispatcherFrame frame)
+   at Avalonia.Threading.Dispatcher.MainLoop(CancellationToken cancellationToken)
+   at Avalonia.Controls.ApplicationLifetimes.ClassicDesktopStyleApplicationLifetime.StartCore(String[] args)
+   at HeliumTodo.App.Program.Main(String[] args)
+```
+
+退出码 `3762504530` = `0xE0434352`（未处理异常）。根因是时序：
+
+```
+OnFrameworkInitializationCompleted  ← 这里直接 desktop.Shutdown()，Dispatcher 当场关
+        ↓ 返回
+StartCore → Dispatcher.MainLoop     ← 进循环时抛
+```
+
+也就是说：**我们抢在消息循环起来之前把它关了**。修法只有一行，但必须理解为什么：
+
+```csharp
+// 不能当场 Shutdown：此时 MainLoop 还没起来，关了 Dispatcher 会让 StartCore 抛
+Avalonia.Threading.Dispatcher.UIThread.Post(() => desktop.Shutdown());
+```
+
+复测：第二份实例退出码 **`0 (0x00000000)`**、stderr 空、日志有
+`[单实例] 已经有一份在跑，已请它把窗口显示出来，本进程退出`；第一份仍在跑（被唤到前台）。
+
+### 顺带把单实例名字变成可配置的
+
+写验证脚本时踩到第二个坑：探针自己拉起的两份实例、用户自己开着的程序、上一次没清干净的
+残留进程，**共用同一个互斥量**。于是探针的"第一份"发现自己不是第一个 → 不建窗口 →
+脚本卡在"等窗口"那一步，现象完全不像"名字撞了"。
+
+所以新增 `HeliumTodo.Core/Lifecycle/AppIdentity.cs`（纯托管、可单测）：
+
+- `DefaultAppId = "HeliumTodo"`、`AppIdVariable = "HELIUM_APP_ID"`；
+- `Resolve(string? configured)`：空/全空白回落默认值，其余 `Trim()`；
+- `ResolveFromEnvironment()`。
+- `App.axaml.cs` 改用它建 `SingleInstanceGuard`。
+
+它同时是"绿色版并存"的基础：解压两份、各设一个 `HELIUM_APP_ID`，就能同时跑、各用一份数据。
+
+### 新增的自检与探针
+
+- `HeliumTodo.Tests/AppIdentityTests.cs`：3 个用例（没设 → 默认名；设了 → 原样且去空白；不篡改其他字符）。
+- `tools/probe-single-instance.ps1`（真机）：起第一份 → 等窗口 → 起第二份 →
+  `WaitForExit` 断言**退出码 0** → 断言第一份仍活着 → 日志里有 `[单实例]`。
+  每次跑用一个独立 `HELIUM_APP_ID`，跑完 Kill + 删沙盒。
+
+```
+  第二份实例退出码 0（0x00000000）
+  ✔ 第二份实例干净退出（退出码 0）
+  ✔ 第一份实例仍在运行（窗口被唤到前面）
+  日志：2026-11-09 13:58:45  [单实例] 已经有一份在跑，已请它把窗口显示出来，本进程退出
+```
+
+### 门禁
+
+- `dotnet build HeliumTodo.slnx -c Debug` → 0 警告 0 错误
+- `SelfTest` → **190/190**（新增 3 个）
+- 十五项 `--check` 全部 `exit=0`、失败 0（`--perf-check` 的九条断言全绿）；`--shell` → 7/7
+- 真机 `probe-single-instance.ps1`、`probe-defaults.ps1` 均 ✔
+
+### 三条经验
+
+1. **先分清"谁结束的进程"，再查代码**。`0xFFFFFFFF` 是外部终止的签名，
+   而 `0xE0434352` 才是"我们抛了没接住的异常"。这两种要走的排查路线完全不同。
+2. **关东西要看"它准备好了没有"**。`Shutdown()` 写在 `OnFrameworkInitializationCompleted`
+   里看着合法，实际是"在消息循环出生前把它掐死"。这类时序 bug 只在真机 + 特定路径下出现
+   （无头自检碰不到，因为它压根不起消息循环）。
+3. **PowerShell 的单元素数组会咬人**。`$hit[-1]` 在只有一个匹配时是**字符串的最后一个字符**，
+   于是 `.Trim()` 报 `[System.Char] 不包含名为 Trim 的方法` —— 这个项目里第二次踩同一类坑，
+   取索引前一律 `@($hit)[-1]`。

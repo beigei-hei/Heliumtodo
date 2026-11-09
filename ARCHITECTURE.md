@@ -21,9 +21,9 @@
 | 数据 | EF Core 8.0.11 + SQLite |
 | 图像 | SkiaSharp 3.119.4（Avalonia 传递依赖，必须版本一致） |
 | 联机 | 原生 `System.Net.Sockets`，TCP + UDP 广播，无中心服务器 |
-| 渲染 | 默认 **Software**（Skia CPU 光栅化）；设置页「底层设置」或 `HELIUM_RENDER` 可切 OpenGL / Avalonia 自带（ANGLE）/ Vulkan（见 §18） |
-| 规模 | **32 657 行** · 135 个源文件（`.cs` + `.axaml`，不含 `bin`/`obj`） |
-| 测试 | **187** 个单元测试 + 7 项渲染自检 + 15 个 `--check` 专项自检 |
+| 渲染 | 默认 **Auto**（Avalonia 自带，走 ANGLE→D3D11）；设置页「底层设置」或 `HELIUM_RENDER` 可切软件渲染 / OpenGL / Vulkan（见 §18.2） |
+| 规模 | **33 631 行** · 137 个源文件（`.cs` + `.axaml`，不含 `bin`/`obj`） |
+| 测试 | **190** 个单元测试 + 7 项渲染自检 + 15 个 `--check` 专项自检 |
 | 窗口动画 | 打开时遮罩淡出（自己做）；最小化 / 最大化 / 还原交给 DWM（见 §5.2） |
 
 ### 各项目规模
@@ -32,12 +32,12 @@
 
 | 项目 | 文件 | 行数 | 职责 |
 | --- | ---: | ---: | --- |
-| `HeliumTodo.Core` | 41 | 5 951 | 领域模型 + 纯算法 + 备份格式 + 提醒调度 + 窗口过渡规则（零 UI 依赖、零数据库依赖、零包引用） |
+| `HeliumTodo.Core` | 42 | 6 063 | 领域模型 + 纯算法 + 备份格式 + 提醒调度 + 窗口过渡规则（零 UI 依赖、零数据库依赖、零包引用） |
 | `HeliumTodo.Data` | 13 | 3 588 | EF Core 上下文、仓储、种子数据、网络传输、备份服务 |
-| `HeliumTodo.App` | 58 | 15 385 | Avalonia 界面、ViewModel、自绘控件、应用服务、窗口封装 |
-| `HeliumTodo.Tests` | 20 | 3 459 | **186** 个 xunit 测试 |
+| `HeliumTodo.App` | 59 | 16 543 | Avalonia 界面、ViewModel、自绘控件、应用服务、窗口封装 |
+| `HeliumTodo.Tests` | 21 | 3 520 | **190** 个 xunit 测试 |
 | `HeliumTodo.SelfTest` | 1 | 160 | 反射式测试运行器（绕过被拦的 `dotnet test`） |
-| `HeliumTodo.RenderCheck` | 1 | 3 584 | 无头渲染自检 + 15 个 `--check` 专项断言 |
+| `HeliumTodo.RenderCheck` | 1 | 3 753 | 无头渲染自检 + 15 个 `--check` 专项断言 |
 
 ---
 
@@ -304,12 +304,38 @@ Closing += OnClosing;
 `PlayShowAnimation()`（首次显示、从托盘唤醒）。
 
 相关的另一件基础设施是 `HeliumTodo.App/Services/SingleInstanceGuard.cs`：
-`Mutex "Local\HeliumTodo.lock"` + `EventWaitHandle "Local\HeliumTodo.show"`，
+`Mutex "Local\<appId>.lock"` + `EventWaitHandle "Local\<appId>.show"`，
 非首实例只负责 `RequestShow()` 然后自己退出。它有两个作用：
 
 * 正常情况：防止开两份程序同时写同一个数据库；
 * **托盘失效时的退路**：即使托盘图标加不上（例如开机自启时资源管理器还没起好），
   用户再双击一次程序也能把窗口叫回来 —— 这条退路不依赖任何平台特性。
+
+`<appId>` 默认是 `HeliumTodo`，可以用 `HELIUM_APP_ID` 换掉（规则在
+`HeliumTodo.Core/Lifecycle/AppIdentity.cs`）。留这个口子是因为**自检与探针需要在同一台
+机器上拉起两份互不相干的实例**：共用一个名字时，第二份会以为"已经有人在跑"、
+不建窗口，测试就卡在"等窗口"那一步 —— 现象完全不像"名字撞了"，本项目为此白花过一次时间。
+它顺带也是绿色版并存的实现基础。
+
+#### 第二个实例退出（这里曾经崩过一次）
+
+非首实例的收尾**不能**在 `OnFrameworkInitializationCompleted` 里直接 `desktop.Shutdown()`：
+
+```
+OnFrameworkInitializationCompleted  ← 在这里 Shutdown，Dispatcher 当场就关了
+        ↓ 返回
+StartCore → Dispatcher.MainLoop     ← 进循环时抛
+InvalidOperationException: Cannot perform requested operation because the Dispatcher shut down
+```
+
+进程以 `0xE0434352`（未处理异常）退出，用 Visual Studio 跑就是"程序是异常结束的"。
+正确写法是把关闭**排进消息循环**：`Dispatcher.UIThread.Post(() => desktop.Shutdown());`，
+让 `MainLoop` 先起来、再正常退出，退出码 `0`。验证脚本：`tools/probe-single-instance.ps1`。
+
+另外，`desktop.Exit` 里会记一行 `[退出] 进程正常结束，退出码 0`。
+排查"程序是被谁结束的"时这行很关键：**`0xFFFFFFFF` 不是我们返回的**
+（全部退出路径都是 0），它是被外部终止（VS 停止调试、任务管理器结束任务、
+探测脚本 `Kill()`）时系统给的值。
 
 ### 5.2 窗口装饰与「壁纸为什么不铺满」
 

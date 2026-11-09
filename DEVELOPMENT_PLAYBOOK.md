@@ -185,6 +185,7 @@ pwsh tools\check-file-integrity.ps1
 | `tools/probe-native-anim.ps1` | 真机：最小化/最大化由 DWM 播过渡（采可见像素面积序列） |
 | `tools/probe-rail-anim.ps1` | 真机：图标轨展开的帧间隔（帧数 ≥ 10、P50 ≤ 16.7 ms、P95 ≤ 33.3 ms） |
 | `tools/probe-minimize-restore.ps1` | 真机：最小化立刻收尾、从任务栏回来补播出现动画 |
+| `tools/probe-single-instance.ps1` | 真机：第二个实例退出码 0（不是 `0xE0434352`）、第一个仍然活着 |
 | `--notice-check` | 提示条占一行、不压内容（5 项） |
 | `--appearance-check` | 明暗模式、卡片玻璃浓度、壁纸灰蒙版（14 项） |
 | `--layout-check` | 六页分区一致：左 12 / 顶 64 / 卡片间无漏底色 / 标题 24px（6 页 × 6 项） |
@@ -217,7 +218,7 @@ pwsh tools\check-file-integrity.ps1
 **跑（约 3 分钟）**
 ```powershell
 dotnet build HeliumTodo.slnx -c Debug                                  # 应为 0 警告 0 错误
-dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll   # 应为 187/187
+dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll   # 应为 190/190
 dotnet HeliumTodo.RenderCheck\bin\Debug\net10.0\HeliumTodo.RenderCheck.dll --shell
 pwsh tools\check-file-integrity.ps1                                    # 应为 158 文件一致
 ```

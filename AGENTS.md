@@ -8,7 +8,7 @@
 
 1. **先给验收标准**：把用户的话拆成 3–6 条可验证的行为，再说怎么改。
 2. **先想怎么证明**：能写单测就写单测；界面改动必须准备无头渲染 + 像素统计的验证方式（Agent 不能看图，"看着挺好"不算证据）。
-3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（187/187）、`--shell`、十五项 `--check`、指纹基线，全绿才交付。
+3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（190/190）、`--shell`、十五项 `--check`、指纹基线，全绿才交付。
 4. **收尾同步文档**：`PROGRESS.md`（这一轮）、`ARCHITECTURE.md`（新约定）、`UI_TEXT_MAP.md`（改了界面文案时）、指纹基线（`-Update` 后复查）。
 
 ## 分层铁律
@@ -69,6 +69,9 @@
 - 不把默认渲染后端改回 `Software`：默认是 `Auto`（显卡），理由是动效帧率（见 `ARCHITECTURE.md` §18.2 与 §19.9）。想省内存是**用户**在设置页里选，不是我们替他选。
 - 不在写法里引入 `unsafe`（项目未开 `AllowUnsafeBlocks`）。
 - 不为了省事关掉自检项（`--layout-check` 这类是为了防回归，红了要修根因）。
+- 不在 `OnFrameworkInitializationCompleted` 里直接 `desktop.Shutdown()`：此时消息循环还没起来，
+  关了 Dispatcher 会让 `StartCore` 抛 `InvalidOperationException`，进程以 `0xE0434352` 退出。
+  要关就 `Dispatcher.UIThread.Post(() => desktop.Shutdown())`。
 
 ## 版本管理（2026-11-02 起）
 
@@ -92,4 +95,4 @@ pwsh tools\check-file-integrity.ps1
 python tools\gen_ui_text_map.py
 ```
 
-调试用的环境变量（都是"只在自检/截图时开"）：`HELIUM_CONFIG_DIR`（沙盒目录）、`HELIUM_RENDER`（渲染后端）、`HELIUM_DARK`、`HELIUM_CARD_OPACITY`、`HELIUM_SHELL_PAGE`、`HELIUM_NO_RESTART`、`HELIUM_FAKE_DEBUGGER`、`HELIUM_*_DIALOG=1`（拍弹窗截图）、`HELIUM_ANIM_TRACE`（窗口动画逐帧帧间隔）、`HELIUM_NO_INTERACTION_QUALITY`（关掉动效降质做 A/B）。
+调试用的环境变量（都是"只在自检/截图时开"）：`HELIUM_CONFIG_DIR`（沙盒目录）、`HELIUM_APP_ID`（换单实例名字，让两份探针互不干扰）、`HELIUM_RENDER`（渲染后端）、`HELIUM_DARK`、`HELIUM_CARD_OPACITY`、`HELIUM_SHELL_PAGE`、`HELIUM_NO_RESTART`、`HELIUM_FAKE_DEBUGGER`、`HELIUM_*_DIALOG=1`（拍弹窗截图）、`HELIUM_ANIM_TRACE`（窗口动画逐帧帧间隔）、`HELIUM_NO_INTERACTION_QUALITY`（关掉动效降质做 A/B）。

@@ -18,7 +18,7 @@
 | MVVM | **CommunityToolkit.Mvvm 8.4.0** | `[ObservableProperty]` / `[RelayCommand]` 源生成器 |
 | 数据访问 | **EF Core 8.0.11** + `Microsoft.EntityFrameworkCore.Sqlite` | `net10.0` 上跑 8.0.x 没问题，没升 9/10 是为了少折腾 |
 | 依赖注入 | `Microsoft.Extensions.DependencyInjection 8.0.1` | `App.axaml.cs` 里手工注册 20 处 |
-| 测试 | **xunit 2.9.2** + `Microsoft.NET.Test.Sdk 17.11.1` | 187 个测试 |
+| 测试 | **xunit 2.9.2** + `Microsoft.NET.Test.Sdk 17.11.1` | 190 个测试 |
 | 视频解码 | **Windows Media Foundation**（系统组件，`mfplat.dll` / `mfreadwrite.dll`） | 零额外打包体积；`MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING` 请求 RGB32，缩放自己用 Skia 做 |
 | 渲染后端 | `Win32RenderingMode`：Software（默认）/ AngleEgl / Wgl / Vulkan | 设置页「底层设置」或 `HELIUM_RENDER` 切换，重启生效 |
 
@@ -75,7 +75,7 @@ RenderCheck ──► App
 | `Core` | 41 | 5 951 | 模型、重复规则、时间轴构建（并查集分列 + 冲突检测）、专注计时状态机、备份格式、提醒调度、IPC 契约、壁纸取色、窗口过渡规则 |
 | `Data` | 13 | 3 588 | `HeliumDbContext`、5 个仓储、种子数据、`.zip` 备份服务、局域网传输 |
 | `App` | 58 | 15 385 | 6 个页面 + 外壳、9 个 ViewModel、自绘控件、壁纸服务、托盘、提醒、窗口封装 |
-| `Tests` | 20 | 3 484 | 187 个测试 |
+| `Tests` | 21 | 3 620 | 190 个测试 |
 | `SelfTest` | 1 | 160 | 反射跑 `[Fact]`，支持 `async Task` |
 | `RenderCheck` | 1 | 3 584 | 7 页渲染截图 + 15 个 `--check` |
 
