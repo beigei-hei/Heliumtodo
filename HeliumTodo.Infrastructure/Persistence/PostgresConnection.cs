@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Helium Todo contributors
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Net.Sockets;
 using HeliumTodo.Application.Configuration;
 using Npgsql;
 
@@ -53,6 +54,54 @@ public static class PostgresConnection
         };
 
         return builder.ConnectionString;
+    }
+
+    /// <summary>
+    /// 启动/设置页用的 TCP 预检：只验证「主机 + 端口能不能连」，不建库、不登录。
+    ///
+    /// 为什么不在启动时直接让 EF 去 Migrate：Npgsql 的重试策略会把「连接被拒绝」
+    /// 也当成可重试，用户要等 3 次退避（约 6 秒）才看到第一条错误。先探测一次，
+    /// 不通就立刻给一句能照做的中文提示。
+    /// </summary>
+    /// <param name="storage">存储配置。</param>
+    /// <param name="timeoutMs">单次连接超时，默认 1.5 秒。</param>
+    /// <returns>null 表示端口可连；否则是一句失败原因。</returns>
+    public static string? Probe(StorageSettings storage, int timeoutMs = 1500)
+    {
+        ArgumentNullException.ThrowIfNull(storage);
+
+        string host;
+        int port;
+        try
+        {
+            var builder = new NpgsqlConnectionStringBuilder(Resolve(storage));
+            host = string.IsNullOrWhiteSpace(builder.Host) ? "127.0.0.1" : builder.Host;
+            port = builder.Port;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        {
+            return $"连接参数无效：{ex.Message}";
+        }
+
+        try
+        {
+            using var client = new TcpClient();
+            using var timeout = new CancellationTokenSource(timeoutMs);
+            client.ConnectAsync(host, port, timeout.Token).GetAwaiter().GetResult();
+            return null;
+        }
+        catch (OperationCanceledException)
+        {
+            return $"连接 {host}:{port} 超时";
+        }
+        catch (SocketException ex)
+        {
+            return $"连接 {host}:{port} 失败（{ex.SocketErrorCode}）";
+        }
+        catch (Exception ex)
+        {
+            return $"连接 {host}:{port} 失败（{ex.Message}）";
+        }
     }
 
     /// <summary>

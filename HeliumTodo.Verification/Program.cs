@@ -1791,6 +1791,13 @@ public static class Program
         Check("双击标题栏最大化", window.WindowState == WindowState.Maximized,
             $"WindowState={window.WindowState}");
 
+        // 窗口状态变了，右上角按钮字形必须跟着变；画死一个字形就会出现「UI 不同步」。
+        var maximizeGlyph = window.GetVisualDescendants().OfType<TextBlock>()
+            .FirstOrDefault(t => t.Name == "MaximizeGlyph");
+        Check("最大化后按钮显示还原字形",
+            maximizeGlyph?.Text == WindowStateGlyphBehavior.RestoreGlyph,
+            $"字形=U+{(int)(maximizeGlyph?.Text?[0] ?? ' '):X4}");
+
         // ── 窗口按钮（最大化按钮再点一次还原）──
         var maximize = windowButtons.FirstOrDefault(b => Interaction.GetBehaviors(b)
             .OfType<WindowStateBehavior>().Any(x => x.Action == WindowAction.Maximize));
@@ -1798,6 +1805,9 @@ public static class Program
         PumpDispatcher(TimeSpan.FromMilliseconds(250));
         var restored = window.WindowState == WindowState.Normal;
         Check("最大化按钮点一次还原", restored, $"WindowState={window.WindowState}");
+        Check("还原后按钮显示最大化字形",
+            maximizeGlyph?.Text == WindowStateGlyphBehavior.MaximizeGlyph,
+            $"字形=U+{(int)(maximizeGlyph?.Text?[0] ?? ' '):X4}");
 
         // ── 拖动标题栏：无头平台没有真的窗口移动，验证"确实调用了 BeginMoveDrag 这条路径" ──
         if (titleBar?.TranslatePoint(new Point(40, 20), window) is { } dragPoint)
@@ -2671,7 +2681,7 @@ public static class Program
 
         // P4 自绘分组：数据结构（Items 集合）必须完整，不能只渲染出屏幕里那几行。
         var rowTotal = expanders.Sum(e => e.Items?.Count ?? 0);
-        Check("设置页十组共 27 行都在数据里", rowTotal == 27, $"实际 {rowTotal} 行");
+        Check("设置页十组共 28 行都在数据里", rowTotal == 28, $"实际 {rowTotal} 行");
         var combos = window.GetVisualDescendants().OfType<ComboBox>().Count();
         Check("行内 Footer 控件真的挂出来了", combos >= 2, $"可见 ComboBox {combos} 个");
 

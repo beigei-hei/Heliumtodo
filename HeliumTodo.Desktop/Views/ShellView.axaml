@@ -134,7 +134,11 @@
             <i:Interaction.Behaviors>
               <b:WindowStateBehavior Action="Maximize" />
             </i:Interaction.Behaviors>
-            <TextBlock Text="&#xE922;" FontFamily="{DynamicResource IconFont}" FontSize="10" />
+            <TextBlock x:Name="MaximizeGlyph" Text="&#xE922;" FontFamily="{DynamicResource IconFont}" FontSize="10">
+              <i:Interaction.Behaviors>
+                <b:WindowStateGlyphBehavior />
+              </i:Interaction.Behaviors>
+            </TextBlock>
           </Button>
           <Button Classes="windowButton close" ToolTip.Tip="关闭">
             <i:Interaction.Behaviors>

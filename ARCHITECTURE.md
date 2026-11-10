@@ -2129,3 +2129,22 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
   `0xc0000142`。脚本从 `System32` 复制这三个 DLL 到包根目录。
 - **单文件自解压目录**：默认解压到 `%TEMP%\.net`，受策略限制时（错误码 5）会启动失败；
   文档要求把 `DOTNET_BUNDLE_EXTRACT_BASE_DIR` 指到可写目录。这是单文件模式的系统行为，不是应用 bug。
+
+### 20.15 窗口状态字形与数据库连接自愈（2026-11-10 热修 3）
+
+- **标题栏字形必须跟随 `WindowState`**：最大化按钮的字形不许在 XAML 里写死。用
+  `WindowStateGlyphBehavior` 订阅 `Window.WindowStateProperty`，最大化/全屏 → `\uE923`，
+  其它 → `\uE922`。双击标题栏、窗口按钮、DWM 系统菜单/键盘都会改同一个属性，所以三处天然一致；
+  `--behavior-check` 会分别断言最大化后与还原后的字形。
+- **数据库不可用不许把英文异常甩给用户**：启动先 `PostgresConnection.Probe`（TCP 1.5 s），
+  失败则跳过 Migrate 并把 `DatabaseErrorText.DescribeProbeFailure` 的结果交给壳层提示条。
+  运行期异常统一走 `DatabaseErrorText.Describe`：`SocketException` → 检查服务/端口；
+  `28P01` → 用户名密码；`3D000` → 库不存在；`42P01` → 迁移未应用；`57P03` → 启动中；
+  超时 → 防火墙/主机。原始异常只进日志，连接串打码。
+- **连接参数的编辑面**：设置页「数据与文件 → 数据库连接」提供主机/端口/库名/用户名/密码与
+  「测试连接」。连接串在 DI 容器构建时读取一次，所以保存后必须重启；界面用「保存并重启」
+  明确这一点，不假装热生效。
+- **为什么 `DatabaseErrorText` 在 Infrastructure**：它翻译的是 Npgsql/EF 的异常类型，
+  且 `HeliumTodo.Tests` 不引用 Desktop（架构测试要求分层单向），放 Desktop 会让这组单测无处安放。
+- **`--rail-check` 的行数基线是 28**：新增数据库连接行后，设置页十组共 28 行；改设置页结构
+  必须同步这个数字，否则门禁红。

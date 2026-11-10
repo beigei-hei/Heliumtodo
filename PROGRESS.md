@@ -5,7 +5,7 @@
 
 当前版本：**v0.5.0-alpha**
 状态：**0.5.0-alpha 已完成 P0–P7（七项目分层、Application 层、PostgreSQL 17 + EF10、FluentAvaloniaUI 3.1 主题、Xaml.Behaviors 12.1.5、单文件发布）；
-自绘设置控件与提示条；197 个测试全绿（含真库用例），十九项 `--check` 全绿。**
+自绘设置控件与提示条；202 个测试全绿（含真库用例），十九项 `--check` 全绿。**
 
 ---
 
@@ -4775,3 +4775,49 @@ FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规�
 ### 已知未做
 
 - 截图中暴露的数据库启动错误 UX（英文原文、3 次重试 6 秒、提示条遮住导航）仍是分析结论，未实现修复。
+
+---
+
+## 2026-11-10 · 0.5.0-alpha 热修 3：窗口按钮字形同步与数据库连接自愈
+
+> 用户反馈两张截图：① 最大化后右上角按钮仍是「最大化」字形；② 启动时红色提示条显示
+> 英文 `The maximum number of retries (3) was exceeded…`，并盖住「今天/前/后」导航。
+
+### 症状与根因
+
+- **字形不同步**：标题栏最大化按钮的 `TextBlock` 写死 `&#xE922;`。双击标题栏、DWM 系统菜单、
+  键盘 Win+↑ 都会改 `WindowState`，但没人去改字形，于是窗口已最大化、按钮还画着「最大化」。
+- **数据库错误原文**：`config.json` 默认 `localhost:5432` / 用户 `helium`，而便携 PostgreSQL 在
+  `55432` / 用户 `postgres`。Npgsql 把「连接被拒绝」当可重试，退避 3 次约 6 秒后才把英文异常
+  丢给状态栏；提示条又不换行，直接压住导航。
+
+### 做了什么
+
+- 新增 `Desktop/Behaviors/WindowStateGlyphBehavior.cs`：挂在 `MaximizeGlyph` 上，订阅
+  `Window.WindowStateProperty`，最大化/全屏显示 `\uE923`（还原），否则 `\uE922`（最大化）。
+  双击、按钮、DWM 菜单走的是同一个 `WindowState`，因此天然同步。
+- `Infrastructure/Persistence/PostgresConnection.Probe`：启动前做 1.5 秒 TCP 预检，只验证
+  主机+端口，不通就立刻返回原因，不再让 EF 的重试策略空等 6 秒。
+- 新增 `Infrastructure/Persistence/DatabaseErrorText`：把 `SocketException` / `28P01` / `3D000` /
+  `42P01` / `57P03` / 超时翻译成可照做的中文，并把打码连接串带进提示；日志仍记完整异常。
+  （放 Infrastructure 而不是 Desktop：测试项目不引用 Desktop，而这里翻译的是提供程序异常。）
+- 启动流程：`App.InitializeDatabase` 先 `Probe`；失败则写入 `DatabaseStartupNotice`，
+  壳层建好后用 `ShowAlert` 显示；页面刷新失败也经 `ShellViewModel` 翻译，不再直接甩英文。
+- 设置页「数据与文件」新增「数据库连接」一行：主机/端口/数据库/用户名/密码 +
+  「测试连接」「保存并重启」。保存后同步落盘再重启——连接串在容器构建时只读一次。
+- `--rail-check` 行数 27 → 28；`--behavior-check` 增加两条断言：
+  最大化后字形 `U+E923`、还原后 `U+E922`。
+
+### 验证
+
+- 构建 0 警告 0 错误；`SelfTest` **202/202**（新增 5 条 `DatabaseErrorText` 用例）；
+  十九项 `--check` 全绿；`--behavior-check` 17 条；`--rail-check` 10 组 28 行。
+- 坏库启动实测（`HELIUM_DB` 指向 59999）：约 1 秒内打出「数据库预检失败」，
+  提示为中文「连不上 PostgreSQL…」，不再等 3 次重试。
+- 文案门禁 `--copy-check` 重新生成 `UI_TEXT_MAP.md` 后通过；SPDX 173/173。
+
+### 已知未做
+
+- 数据库不可用时，切页仍要等各页面自己的查询超时（提示已中文化，但延迟还在）；
+  后续可让仓储层在 `Probe` 失败后直接短路。
+- 设置页改连接参数必须重启，这是连接串生命周期决定的，已用「保存并重启」明确表达。

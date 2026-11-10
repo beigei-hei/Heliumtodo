@@ -416,6 +416,28 @@
               </ctrl:SettingsExpanderItem.Footer>
             </ctrl:SettingsExpanderItem>
 
+            <ctrl:SettingsExpanderItem Content="数据库连接"
+                                       Description="{Binding DatabaseStatusText}">
+              <StackPanel Spacing="8" Margin="0,2,0,2">
+                <Grid ColumnDefinitions="*,110" ColumnSpacing="8">
+                  <TextBox Text="{Binding DatabaseHost}" PlaceholderText="主机" />
+                  <TextBox Grid.Column="1" Text="{Binding DatabasePort}" PlaceholderText="端口" />
+                </Grid>
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                  <TextBox Text="{Binding DatabaseName}" PlaceholderText="数据库" />
+                  <TextBox Grid.Column="1" Text="{Binding DatabaseUser}" PlaceholderText="用户名" />
+                </Grid>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                  <TextBox Text="{Binding DatabasePassword}" PlaceholderText="密码（可空）"
+                           PasswordChar="●" />
+                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button Content="测试连接" Command="{Binding TestDatabaseCommand}" />
+                    <Button Content="保存并重启" Command="{Binding SaveDatabaseAndRestartCommand}" />
+                  </StackPanel>
+                </Grid>
+              </StackPanel>
+            </ctrl:SettingsExpanderItem>
+
          
 
             <ctrl:SettingsExpanderItem Content="启动时自动备份">

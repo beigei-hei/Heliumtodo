@@ -5,7 +5,7 @@
 
 ## 一、界面结构里的文字（.axaml）
 
-共 8 个文件、228 处。
+共 8 个文件、236 处。
 
 ### `HeliumTodo.Desktop\Controls\ReminderPicker.axaml`（3 处）
 
@@ -108,7 +108,7 @@
 - `HeliumTodo.Desktop\Views\ScheduleView.axaml:249` — `<Button FontSize="12" Padding="8,4" ToolTip.Tip="编辑"`
 - `HeliumTodo.Desktop\Views\ScheduleView.axaml:254` — `<Button FontSize="12" Padding="8,4" ToolTip.Tip="删除整条日程"`
 
-### `HeliumTodo.Desktop\Views\SettingsView.axaml`（72 处）
+### `HeliumTodo.Desktop\Views\SettingsView.axaml`（80 处）
 
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:27` — `<TextBlock Text="设置" Classes="pageHeader" />`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:66` — `<ctrl:SettingsExpander Background="Transparent" Header="外观" Description="明暗、强调色（含自定义调色板）、功能区玻璃浓度"`
@@ -151,44 +151,52 @@
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:409` — `<ctrl:SettingsExpander Background="Transparent" Header="数据与文件" Description="配置文件、数据库、备份"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:412` — `<ctrl:SettingsExpanderItem Content="配置文件"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:415` — `<Button Content="打开文件夹" Command="{Binding OpenConfigFolderCommand}" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:421` — `<ctrl:SettingsExpanderItem Content="启动时自动备份">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:423` — `<ToggleSwitch IsChecked="{Binding Config.AutoBackup}" OnContent="开" OffContent="关" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:427` — `<ctrl:SettingsExpanderItem Content="导出 / 导入">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:430` — `<Button Content="导出…" Click="OnExportBackup"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:432` — `<Button Content="导入…" Click="OnImportBackup"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:438` — `<ctrl:SettingsExpanderItem Content="备份文件夹"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:441` — `<Button Content="打开文件夹" Command="{Binding OpenBackupFolderCommand}" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:445` — `<ctrl:SettingsExpanderItem Content="最近一次备份操作"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:460` — `<ctrl:SettingsExpander Background="Transparent" Header="底层设置"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:461` — `Description="如非遇到渲染问题，请勿调整！"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:465` — `<ctrl:SettingsExpanderItem Content="渲染后端"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:479` — `<TextBlock Text="改完需要重启程序才生效。"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:493` — `<ctrl:SettingsExpander Background="Transparent" Header="插件"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:497` — `<ctrl:SettingsExpanderItem Content="状态"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:498` — `Description="插件接口在本版本中暂时关闭。我们正在重新设计插件规范（可暴露的接口类型、权限与版本兼容策略），完成后再开放。已有的插件目录不会被读取，也不会执行。" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:507` — `<ctrl:SettingsExpander Background="Transparent" Header="关于" Description="Helium Todo 日程！ 专注！ 自动化！"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:510` — `<ctrl:SettingsExpanderItem Content="版本">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:515` — `<ctrl:SettingsExpanderItem Content="恢复默认设置">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:517` — `<Button Content="恢复默认" Command="{Binding ResetToDefaultCommand}" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:526` — `<Button Content="保存设置" Classes="accent" MinWidth="120"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:529` — `<TextBlock Text="修改主题会立刻生效，其它设置点「保存设置」后写入文件。"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:544` — `<TextBlock Text="导入这份备份？" Classes="section" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:559` — `Text="注意，选择替换会覆盖原有数据！" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:562` — `<Button Content="取消" Command="{Binding CancelImportCommand}" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:563` — `<Button Content="合并导入" Classes="accent"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:566` — `<Button Content="替换导入"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:621` — `ToolTip.Tip="关闭"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:658` — `<TextBlock Text="更改此项需要重启，是否立即重启"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:664` — `Text="「确认」会保存选择并立刻重新启动 Helium Todo；「取消更改」则保持现在的设置不变。" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:666` — `<Button Content="确认"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:670` — `<Button Content="取消更改"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:419` — `<ctrl:SettingsExpanderItem Content="数据库连接"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:423` — `<TextBox Text="{Binding DatabaseHost}" PlaceholderText="主机" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:424` — `<TextBox Grid.Column="1" Text="{Binding DatabasePort}" PlaceholderText="端口" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:427` — `<TextBox Text="{Binding DatabaseName}" PlaceholderText="数据库" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:428` — `<TextBox Grid.Column="1" Text="{Binding DatabaseUser}" PlaceholderText="用户名" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:431` — `<TextBox Text="{Binding DatabasePassword}" PlaceholderText="密码（可空）"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:434` — `<Button Content="测试连接" Command="{Binding TestDatabaseCommand}" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:435` — `<Button Content="保存并重启" Command="{Binding SaveDatabaseAndRestartCommand}" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:443` — `<ctrl:SettingsExpanderItem Content="启动时自动备份">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:445` — `<ToggleSwitch IsChecked="{Binding Config.AutoBackup}" OnContent="开" OffContent="关" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:449` — `<ctrl:SettingsExpanderItem Content="导出 / 导入">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:452` — `<Button Content="导出…" Click="OnExportBackup"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:454` — `<Button Content="导入…" Click="OnImportBackup"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:460` — `<ctrl:SettingsExpanderItem Content="备份文件夹"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:463` — `<Button Content="打开文件夹" Command="{Binding OpenBackupFolderCommand}" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:467` — `<ctrl:SettingsExpanderItem Content="最近一次备份操作"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:482` — `<ctrl:SettingsExpander Background="Transparent" Header="底层设置"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:483` — `Description="如非遇到渲染问题，请勿调整！"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:487` — `<ctrl:SettingsExpanderItem Content="渲染后端"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:501` — `<TextBlock Text="改完需要重启程序才生效。"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:515` — `<ctrl:SettingsExpander Background="Transparent" Header="插件"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:519` — `<ctrl:SettingsExpanderItem Content="状态"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:520` — `Description="插件接口在本版本中暂时关闭。我们正在重新设计插件规范（可暴露的接口类型、权限与版本兼容策略），完成后再开放。已有的插件目录不会被读取，也不会执行。" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:529` — `<ctrl:SettingsExpander Background="Transparent" Header="关于" Description="Helium Todo 日程！ 专注！ 自动化！"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:532` — `<ctrl:SettingsExpanderItem Content="版本">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:537` — `<ctrl:SettingsExpanderItem Content="恢复默认设置">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:539` — `<Button Content="恢复默认" Command="{Binding ResetToDefaultCommand}" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:548` — `<Button Content="保存设置" Classes="accent" MinWidth="120"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:551` — `<TextBlock Text="修改主题会立刻生效，其它设置点「保存设置」后写入文件。"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:566` — `<TextBlock Text="导入这份备份？" Classes="section" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:581` — `Text="注意，选择替换会覆盖原有数据！" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:584` — `<Button Content="取消" Command="{Binding CancelImportCommand}" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:585` — `<Button Content="合并导入" Classes="accent"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:588` — `<Button Content="替换导入"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:643` — `ToolTip.Tip="关闭"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:680` — `<TextBlock Text="更改此项需要重启，是否立即重启"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:686` — `Text="「确认」会保存选择并立刻重新启动 Helium Todo；「取消更改」则保持现在的设置不变。" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:688` — `<Button Content="确认"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:692` — `<Button Content="取消更改"`
 
 ### `HeliumTodo.Desktop\Views\ShellView.axaml`（4 处）
 
 - `HeliumTodo.Desktop\Views\ShellView.axaml:127` — `<Button Classes="windowButton" ToolTip.Tip="最小化">`
 - `HeliumTodo.Desktop\Views\ShellView.axaml:133` — `<Button Classes="windowButton" ToolTip.Tip="最大化 / 还原">`
-- `HeliumTodo.Desktop\Views\ShellView.axaml:139` — `<Button Classes="windowButton close" ToolTip.Tip="关闭">`
-- `HeliumTodo.Desktop\Views\ShellView.axaml:186` — `ToolTip.Tip="展开 / 收起功能名">`
+- `HeliumTodo.Desktop\Views\ShellView.axaml:143` — `<Button Classes="windowButton close" ToolTip.Tip="关闭">`
+- `HeliumTodo.Desktop\Views\ShellView.axaml:190` — `ToolTip.Tip="展开 / 收起功能名">`
 
 ### `HeliumTodo.Desktop\Views\StudyRoomView.axaml`（31 处）
 
@@ -265,7 +273,7 @@
 
 ## 三、ViewModel 里拼出来的文字（运行时）
 
-共 9 个文件、197 处。
+共 9 个文件、203 处。
 
 ### `HeliumTodo.Desktop\ViewModels\DashboardViewModel.cs`（28 处）
 
@@ -364,71 +372,77 @@
 - `HeliumTodo.Desktop\ViewModels\ScheduleViewModel.cs:469` — `HeaderText = $"{date.Month}月{date.Day}日  {weekday}{suffix}";`
 - `HeliumTodo.Desktop\ViewModels\ScheduleViewModel.cs:482` — `public string CountText => $"{Items.Count} 项";`
 
-### `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs`（53 处）
+### `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs`（59 处）
 
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:245` — `? "已切换到暗色模式：壁纸会自动压暗一档，浓度可以在「背景壁纸」里调。"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:246` — `: "已切换到亮色模式。";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:316` — `AccentSourceDefs.Wallpaper => "强调色改为跟随壁纸：壁纸换一帧，强调色也跟着重新算。",`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:317` — `AccentSourceDefs.Custom => "强调色改为自定义：下面那块调色板现在可以拖了。",`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:318` — `_ => "强调色改回跟随主题。",`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:384` — `[ObservableProperty] private string _wallpaperStatusText = "还没有选壁纸";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:407` — `WallpaperStatusText = "壁纸已关闭";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:415` — `WallpaperStatusText = "请先选一张图片";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:434` — `WallpaperStatusText = "还没有选壁纸";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:485` — `WallpaperStatusText = "正在加载…";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:492` — `: $"打不开这张图：{_wallpaper.Error}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:502` — `WallpaperStatusText = "还没有选壁纸";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:506` — `WallpaperStatusText = "壁纸已关闭";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:514` — `WallpaperStatusText = "还没加载";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:521` — `? $"动图 {_wallpaper.FrameCount}/{_wallpaper.SourceFrameCount} 帧"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:522` — `: "静态图";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:524` — `return $"{_wallpaper.PixelWidth}×{_wallpaper.PixelHeight} · {kind} · 主色调 {_wallpaper.Accent.ToHex()}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:545` — `? "已打开局域网联机：可以去自习室建房，或者填同学的 IP 连过去。"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:546` — `: "已关闭局域网联机：自习室只在本机用，不再监听端口。";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:632` — `new(RenderBackendSettings.Auto, "Avalonia 自带渲染器（默认，最流畅）"),`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:633` — `new(RenderBackendSettings.Software, "软件渲染（省内存，动画会掉帧）"),`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:704` — `NoticeText = $"渲染后端已保存为「{backendName}」。检测到正在调试器里运行，"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:705` — `+ "自动重启会把调试器甩掉、还会占住 exe 让下次编译失败；"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:706` — `+ "请用调试器的「重新启动」(Ctrl+Shift+F5)，或停止调试后重新运行。";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:712` — `NoticeText = $"渲染后端已保存为「{backendName}」，"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:713` — `+ "但自动重启没成功，请手动关闭后重新打开 Helium Todo。";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:749` — `NoticeText = $"已取消更改，渲染后端仍是「{backTo.DisplayText}」。";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:799` — `$"当前生效：{activeText}（由环境变量 HELIUM_RENDER 强制指定，这一项暂时不起作用）";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:805` — `? $"当前生效：{activeText}"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:806` — `: $"当前生效：{activeText}；重启程序后改为 {RenderBackendSettings.DisplayName(selectedKey)}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:844` — `NoticeText = $"配置已保存到：{_configService.ConfigFilePath}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:902` — `NoticeText = "已恢复默认设置。";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:937` — `[ObservableProperty] private string _backupStatusText = "还没有导出或导入过";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:977` — `BackupStatusText = "正在打包…";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:987` — `BackupStatusText = $"原位置不能写入，已改存到备份文件夹：{Path.GetFileName(result.Path)}"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:989` — `NoticeText = "那个文件夹系统不让写（多半是「受控文件夹访问」），备份已经放到「备份文件夹」里了。";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:994` — `BackupStatusText = $"已导出 {Path.GetFileName(result.Path)}"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1001` — `BackupStatusText = $"导出失败：{ex.Message}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1020` — `BackupStatusText = "正在检查这份备份…";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1028` — `BackupStatusText = $"这份文件不能导入：{inspection.Error}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1042` — `BackupStatusText = $"读不了这份备份：{ex.Message}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1074` — `? "正在替换…（会先备份当前数据）"`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1075` — `: "正在合并…";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1090` — `BackupStatusText = $"导入失败：{ex.Message}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1191` — `NoticeText = $"打开文件夹失败：{ex.Message}（{path}）";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1208` — `reasons.Add("Avalonia Launcher：系统没有接受这次打开请求");`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1221` — `("外壳启动资源管理器", new ProcessStartInfo`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1227` — `("系统默认方式", new ProcessStartInfo`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1238` — `("经 cmd start 打开", new ProcessStartInfo`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1261` — `NoticeText = $"打开文件夹失败（{string.Join("；", reasons)}）路径：{path}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1281` — `AccentSourceDefs.Wallpaper => "从壁纸里自动提一个主色调",`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1282` — `AccentSourceDefs.Custom => "用下面的调色板自己调",`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1283` — `_ => "用主题自带的那套颜色",`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:225` — `DatabaseStatusText = $"{DatabaseHost}:{DatabasePort} / {DatabaseName}（用户 {DatabaseUser}）";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:252` — `? $"连接成功：{storage.Host}:{storage.Port}"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:253` — `: $"连接失败：{problem}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:268` — `NoticeText = "主机、端口、数据库、用户名不能为空，端口要在 1–65535 之间。";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:291` — `NoticeText = "数据库连接已保存。检测到正在调试器里运行，请用调试器的「重新启动」(Ctrl+Shift+F5)。";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:296` — `NoticeText = "数据库连接已保存，但自动重启没成功，请手动关闭后重新打开 Helium Todo。";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:354` — `? "已切换到暗色模式：壁纸会自动压暗一档，浓度可以在「背景壁纸」里调。"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:355` — `: "已切换到亮色模式。";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:425` — `AccentSourceDefs.Wallpaper => "强调色改为跟随壁纸：壁纸换一帧，强调色也跟着重新算。",`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:426` — `AccentSourceDefs.Custom => "强调色改为自定义：下面那块调色板现在可以拖了。",`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:427` — `_ => "强调色改回跟随主题。",`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:493` — `[ObservableProperty] private string _wallpaperStatusText = "还没有选壁纸";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:516` — `WallpaperStatusText = "壁纸已关闭";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:524` — `WallpaperStatusText = "请先选一张图片";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:543` — `WallpaperStatusText = "还没有选壁纸";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:594` — `WallpaperStatusText = "正在加载…";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:601` — `: $"打不开这张图：{_wallpaper.Error}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:611` — `WallpaperStatusText = "还没有选壁纸";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:615` — `WallpaperStatusText = "壁纸已关闭";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:623` — `WallpaperStatusText = "还没加载";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:630` — `? $"动图 {_wallpaper.FrameCount}/{_wallpaper.SourceFrameCount} 帧"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:631` — `: "静态图";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:633` — `return $"{_wallpaper.PixelWidth}×{_wallpaper.PixelHeight} · {kind} · 主色调 {_wallpaper.Accent.ToHex()}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:654` — `? "已打开局域网联机：可以去自习室建房，或者填同学的 IP 连过去。"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:655` — `: "已关闭局域网联机：自习室只在本机用，不再监听端口。";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:741` — `new(RenderBackendSettings.Auto, "Avalonia 自带渲染器（默认，最流畅）"),`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:742` — `new(RenderBackendSettings.Software, "软件渲染（省内存，动画会掉帧）"),`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:813` — `NoticeText = $"渲染后端已保存为「{backendName}」。检测到正在调试器里运行，"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:814` — `+ "自动重启会把调试器甩掉、还会占住 exe 让下次编译失败；"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:815` — `+ "请用调试器的「重新启动」(Ctrl+Shift+F5)，或停止调试后重新运行。";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:821` — `NoticeText = $"渲染后端已保存为「{backendName}」，"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:822` — `+ "但自动重启没成功，请手动关闭后重新打开 Helium Todo。";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:858` — `NoticeText = $"已取消更改，渲染后端仍是「{backTo.DisplayText}」。";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:908` — `$"当前生效：{activeText}（由环境变量 HELIUM_RENDER 强制指定，这一项暂时不起作用）";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:914` — `? $"当前生效：{activeText}"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:915` — `: $"当前生效：{activeText}；重启程序后改为 {RenderBackendSettings.DisplayName(selectedKey)}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:953` — `NoticeText = $"配置已保存到：{_configService.ConfigFilePath}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1011` — `NoticeText = "已恢复默认设置。";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1046` — `[ObservableProperty] private string _backupStatusText = "还没有导出或导入过";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1086` — `BackupStatusText = "正在打包…";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1096` — `BackupStatusText = $"原位置不能写入，已改存到备份文件夹：{Path.GetFileName(result.Path)}"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1098` — `NoticeText = "那个文件夹系统不让写（多半是「受控文件夹访问」），备份已经放到「备份文件夹」里了。";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1103` — `BackupStatusText = $"已导出 {Path.GetFileName(result.Path)}"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1110` — `BackupStatusText = $"导出失败：{ex.Message}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1129` — `BackupStatusText = "正在检查这份备份…";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1137` — `BackupStatusText = $"这份文件不能导入：{inspection.Error}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1151` — `BackupStatusText = $"读不了这份备份：{ex.Message}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1183` — `? "正在替换…（会先备份当前数据）"`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1184` — `: "正在合并…";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1199` — `BackupStatusText = $"导入失败：{ex.Message}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1300` — `NoticeText = $"打开文件夹失败：{ex.Message}（{path}）";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1317` — `reasons.Add("Avalonia Launcher：系统没有接受这次打开请求");`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1330` — `("外壳启动资源管理器", new ProcessStartInfo`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1336` — `("系统默认方式", new ProcessStartInfo`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1347` — `("经 cmd start 打开", new ProcessStartInfo`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1370` — `NoticeText = $"打开文件夹失败（{string.Join("；", reasons)}）路径：{path}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1390` — `AccentSourceDefs.Wallpaper => "从壁纸里自动提一个主色调",`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1391` — `AccentSourceDefs.Custom => "用下面的调色板自己调",`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1392` — `_ => "用主题自带的那套颜色",`
 
 ### `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs`（7 处）
 
-- `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:170` — `"今日工作流",`
-- `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:175` — `"日程",`
-- `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:180` — `"待办事项",`
-- `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:185` — `"专注",`
-- `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:190` — `"自习室",`
-- `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:196` — `"设置",`
-- `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:230` — `StatusText = $"{item.Title} 加载失败：{ex.Message}";`
+- `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:171` — `"今日工作流",`
+- `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:176` — `"日程",`
+- `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:181` — `"待办事项",`
+- `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:186` — `"专注",`
+- `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:191` — `"自习室",`
+- `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:197` — `"设置",`
+- `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:231` — `StatusText = $"{item.Title} 加载失败：{DatabaseErrorText.Describe(ex)}";`
 
 ### `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs`（30 处）
 
@@ -493,7 +507,7 @@
 
 ## 四、Core / Data 层拼出来的文字（运行时）
 
-共 42 个文件、255 处。
+共 43 个文件、273 处。
 
 ### `HeliumTodo.Application\Configuration\AccentSources.cs`（3 处）
 
@@ -557,37 +571,38 @@
 - `HeliumTodo.Application\Services\StudyRoomService.cs:367` — `AddSystemMessage($"「{member.DisplayName}」离开了。");`
 - `HeliumTodo.Application\Services\StudyRoomService.cs:384` — `SenderName = string.IsNullOrWhiteSpace(message.DisplayName) ? "同学" : message.DisplayName,`
 
-### `HeliumTodo.Desktop\App.axaml.cs`（29 处）
+### `HeliumTodo.Desktop\App.axaml.cs`（30 处）
 
 - `HeliumTodo.Desktop\App.axaml.cs:151` — `LogBackground("[插件] 检测到 plugins 目录，本版本不加载");`
 - `HeliumTodo.Desktop\App.axaml.cs:175` — `LogBackground("[单实例] 已经有一份在跑，已请它把窗口显示出来，本进程退出");`
-- `HeliumTodo.Desktop\App.axaml.cs:225` — `LogBackground($"[退出] 进程正常结束，退出码 {e.ApplicationExitCode}");`
-- `HeliumTodo.Desktop\App.axaml.cs:251` — `LogBackground("[提醒] 后台扫描已启动（每 30 秒一次）");`
-- `HeliumTodo.Desktop\App.axaml.cs:266` — `LogBackground($"[环境] 会话={System.Diagnostics.Process.GetCurrentProcess().SessionId}"`
-- `HeliumTodo.Desktop\App.axaml.cs:267` — `+ $" 管理员={IsElevated()}"`
-- `HeliumTodo.Desktop\App.axaml.cs:268` — `+ $" 资源管理器={DescribeExplorer()}"`
-- `HeliumTodo.Desktop\App.axaml.cs:269` — `+ $" 渲染后端={Application.Configuration.RenderBackendSettings.DisplayName(HeliumTodo.Desktop.Services.RenderBackendChoice.ActiveKey)}"`
-- `HeliumTodo.Desktop\App.axaml.cs:284` — `LogBackground("[托盘] 启动失败：没有托盘图标，但关闭仍会留在后台"`
-- `HeliumTodo.Desktop\App.axaml.cs:285` — `+ "（再双击一次程序即可唤回窗口）");`
-- `HeliumTodo.Desktop\App.axaml.cs:291` — `? "[托盘] 自检模式：假装托盘已就绪（没有真的图标）"`
-- `HeliumTodo.Desktop\App.axaml.cs:292` — `: "[托盘] 已启动，关闭按钮改为藏窗口");`
-- `HeliumTodo.Desktop\App.axaml.cs:315` — `? "[窗口] 关闭按钮被拦截，已隐藏到托盘（进程继续运行）"`
-- `HeliumTodo.Desktop\App.axaml.cs:316` — `: "[窗口] 关闭按钮被拦截，已隐藏（没有托盘图标，再双击程序可唤回）");`
-- `HeliumTodo.Desktop\App.axaml.cs:361` — `return "没有运行";`
-- `HeliumTodo.Desktop\App.axaml.cs:365` — `return $"PID {string.Join(',', processes.Select(p => p.Id))} 会话 {string.Join(',', sessions)}";`
-- `HeliumTodo.Desktop\App.axaml.cs:369` — `return "查不到";`
-- `HeliumTodo.Desktop\App.axaml.cs:433` — `? "[备份] 这次没做成"`
-- `HeliumTodo.Desktop\App.axaml.cs:434` — `: $"[备份] 已生成 {path}");`
-- `HeliumTodo.Desktop\App.axaml.cs:646` — `? "[启动] 首次运行，已写入示例数据"`
-- `HeliumTodo.Desktop\App.axaml.cs:647` — `: "[启动] 数据库就绪");`
-- `HeliumTodo.Desktop\App.axaml.cs:674` — `Console.Error.WriteLine($"[启动] 数据库初始化失败：{ex.Message}（连接：{masked}）");`
-- `HeliumTodo.Desktop\App.axaml.cs:708` — `LogBackground("[重启] 检测到调试器，放弃自动重启："`
-- `HeliumTodo.Desktop\App.axaml.cs:709` — `+ "请用调试器的「重新启动」(Ctrl+Shift+F5)，"`
-- `HeliumTodo.Desktop\App.axaml.cs:710` — `+ "否则新进程不受调试器管理，还会占住 exe 让下次编译失败");`
-- `HeliumTodo.Desktop\App.axaml.cs:717` — `LogBackground("[重启] 拿不到当前可执行文件路径，放弃自动重启");`
-- `HeliumTodo.Desktop\App.axaml.cs:730` — `LogBackground($"[重启] 释放单实例锁失败（不影响继续重启）：{ex.Message}");`
-- `HeliumTodo.Desktop\App.axaml.cs:744` — `LogBackground($"[重启] 已启动新进程：{exePath}");`
-- `HeliumTodo.Desktop\App.axaml.cs:748` — `LogBackground($"[重启] 启动新进程失败：{ex.Message}");`
+- `HeliumTodo.Desktop\App.axaml.cs:232` — `LogBackground($"[退出] 进程正常结束，退出码 {e.ApplicationExitCode}");`
+- `HeliumTodo.Desktop\App.axaml.cs:258` — `LogBackground("[提醒] 后台扫描已启动（每 30 秒一次）");`
+- `HeliumTodo.Desktop\App.axaml.cs:273` — `LogBackground($"[环境] 会话={System.Diagnostics.Process.GetCurrentProcess().SessionId}"`
+- `HeliumTodo.Desktop\App.axaml.cs:274` — `+ $" 管理员={IsElevated()}"`
+- `HeliumTodo.Desktop\App.axaml.cs:275` — `+ $" 资源管理器={DescribeExplorer()}"`
+- `HeliumTodo.Desktop\App.axaml.cs:276` — `+ $" 渲染后端={Application.Configuration.RenderBackendSettings.DisplayName(HeliumTodo.Desktop.Services.RenderBackendChoice.ActiveKey)}"`
+- `HeliumTodo.Desktop\App.axaml.cs:291` — `LogBackground("[托盘] 启动失败：没有托盘图标，但关闭仍会留在后台"`
+- `HeliumTodo.Desktop\App.axaml.cs:292` — `+ "（再双击一次程序即可唤回窗口）");`
+- `HeliumTodo.Desktop\App.axaml.cs:298` — `? "[托盘] 自检模式：假装托盘已就绪（没有真的图标）"`
+- `HeliumTodo.Desktop\App.axaml.cs:299` — `: "[托盘] 已启动，关闭按钮改为藏窗口");`
+- `HeliumTodo.Desktop\App.axaml.cs:322` — `? "[窗口] 关闭按钮被拦截，已隐藏到托盘（进程继续运行）"`
+- `HeliumTodo.Desktop\App.axaml.cs:323` — `: "[窗口] 关闭按钮被拦截，已隐藏（没有托盘图标，再双击程序可唤回）");`
+- `HeliumTodo.Desktop\App.axaml.cs:368` — `return "没有运行";`
+- `HeliumTodo.Desktop\App.axaml.cs:372` — `return $"PID {string.Join(',', processes.Select(p => p.Id))} 会话 {string.Join(',', sessions)}";`
+- `HeliumTodo.Desktop\App.axaml.cs:376` — `return "查不到";`
+- `HeliumTodo.Desktop\App.axaml.cs:440` — `? "[备份] 这次没做成"`
+- `HeliumTodo.Desktop\App.axaml.cs:441` — `: $"[备份] 已生成 {path}");`
+- `HeliumTodo.Desktop\App.axaml.cs:656` — `Console.Error.WriteLine($"[启动] 数据库预检失败：{probe}（连接：{masked}）");`
+- `HeliumTodo.Desktop\App.axaml.cs:668` — `? "[启动] 首次运行，已写入示例数据"`
+- `HeliumTodo.Desktop\App.axaml.cs:669` — `: "[启动] 数据库就绪");`
+- `HeliumTodo.Desktop\App.axaml.cs:697` — `Console.Error.WriteLine($"[启动] 数据库初始化失败：{ex.Message}（连接：{masked}）");`
+- `HeliumTodo.Desktop\App.axaml.cs:731` — `LogBackground("[重启] 检测到调试器，放弃自动重启："`
+- `HeliumTodo.Desktop\App.axaml.cs:732` — `+ "请用调试器的「重新启动」(Ctrl+Shift+F5)，"`
+- `HeliumTodo.Desktop\App.axaml.cs:733` — `+ "否则新进程不受调试器管理，还会占住 exe 让下次编译失败");`
+- `HeliumTodo.Desktop\App.axaml.cs:740` — `LogBackground("[重启] 拿不到当前可执行文件路径，放弃自动重启");`
+- `HeliumTodo.Desktop\App.axaml.cs:753` — `LogBackground($"[重启] 释放单实例锁失败（不影响继续重启）：{ex.Message}");`
+- `HeliumTodo.Desktop\App.axaml.cs:767` — `LogBackground($"[重启] 已启动新进程：{exePath}");`
+- `HeliumTodo.Desktop\App.axaml.cs:771` — `LogBackground($"[重启] 启动新进程失败：{ex.Message}");`
 
 ### `HeliumTodo.Desktop\Converters\CommonConverters.cs`（13 处）
 
@@ -871,7 +886,27 @@
 
 - `HeliumTodo.Infrastructure\LocalOnlyPeerTransport.cs:67` — `public string LocalAddressText => "（本地模式）";`
 
-### `HeliumTodo.Infrastructure\Persistence\PostgresConnection.cs`（2 处）
+### `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs`（13 处）
 
-- `HeliumTodo.Infrastructure\Persistence\PostgresConnection.cs:36` — `$"不支持的存储提供程序「{storage.Provider}」；0.5.0 只支持 postgres。");`
-- `HeliumTodo.Infrastructure\Persistence\PostgresConnection.cs:80` — `return "<无法解析的连接串>";`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:31` — `return $"连不上 PostgreSQL{where}。请确认数据库服务已启动、端口正确；"`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:32` — `+ "可到「设置 → 数据与文件 → 数据库连接」修改后保存重启。";`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:39` — `"28P01" => $"PostgreSQL 拒绝了用户名或密码{where}。请检查「设置 → 数据与文件 → 数据库连接」。",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:40` — `"3D000" => $"数据库不存在{where}。请先创建它（createdb），或在设置里换一个库名。",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:41` — `"42P01" => "数据库里缺少表结构：迁移没有应用成功。请确认程序有建表权限后重启。",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:42` — `"57P03" => "PostgreSQL 还在启动中，请等几秒再重试。",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:43` — `"53300" => "PostgreSQL 连接数已满，请关闭其它占用连接的程序后重试。",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:44` — `_ => $"PostgreSQL 报错（{pg.SqlState}）：{Trim(pg.MessageText)}",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:51` — `return $"连接 PostgreSQL 超时{where}。请检查主机/端口和防火墙。";`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:56` — `return $"数据库不可用{where}。请到「设置 → 数据与文件 → 数据库连接」检查后重启。";`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:59` — `return $"数据库操作失败：{Trim(ex.Message)}";`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:71` — `return $"连不上 PostgreSQL{where}：{reason}。"`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:72` — `+ "请在「设置 → 数据与文件 → 数据库连接」检查主机、端口、用户名和密码后保存重启。";`
+
+### `HeliumTodo.Infrastructure\Persistence\PostgresConnection.cs`（6 处）
+
+- `HeliumTodo.Infrastructure\Persistence\PostgresConnection.cs:37` — `$"不支持的存储提供程序「{storage.Provider}」；0.5.0 只支持 postgres。");`
+- `HeliumTodo.Infrastructure\Persistence\PostgresConnection.cs:83` — `return $"连接参数无效：{ex.Message}";`
+- `HeliumTodo.Infrastructure\Persistence\PostgresConnection.cs:95` — `return $"连接 {host}:{port} 超时";`
+- `HeliumTodo.Infrastructure\Persistence\PostgresConnection.cs:99` — `return $"连接 {host}:{port} 失败（{ex.SocketErrorCode}）";`
+- `HeliumTodo.Infrastructure\Persistence\PostgresConnection.cs:103` — `return $"连接 {host}:{port} 失败（{ex.Message}）";`
+- `HeliumTodo.Infrastructure\Persistence\PostgresConnection.cs:129` — `return "<无法解析的连接串>";`

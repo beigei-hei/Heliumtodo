@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HeliumTodo.Desktop.Services;
+using HeliumTodo.Infrastructure.Persistence;
 using HeliumTodo.Desktop.Views;
 using HeliumTodo.Domain.Theming;
 
@@ -227,7 +228,7 @@ public sealed partial class ShellViewModel : ViewModelBase
             {
                 // 单个页面刷新失败不能把整个程序带崩
                 System.Diagnostics.Debug.WriteLine($"[Shell] 页面 {item.Title} 刷新失败：{ex}");
-                StatusText = $"{item.Title} 加载失败：{ex.Message}";
+                StatusText = $"{item.Title} 加载失败：{DatabaseErrorText.Describe(ex)}";
             }
         }
     }

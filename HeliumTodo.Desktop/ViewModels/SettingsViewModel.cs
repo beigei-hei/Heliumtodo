@@ -12,6 +12,7 @@ using HeliumTodo.Application.Configuration;
 using HeliumTodo.Domain.Lifecycle;
 using HeliumTodo.Domain.Theming;
 using HeliumTodo.Infrastructure;
+using HeliumTodo.Infrastructure.Persistence;
 using AccentSourceDefs = HeliumTodo.Application.Configuration.AccentSources;
 using ColorSchemeDefs = HeliumTodo.Application.Configuration.ColorSchemes;
 using HeliumTodo.Application.Abstractions;
@@ -181,6 +182,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         // 用 VersionInfo 统一取版本号，这样能显示成 "0.5.0-alpha"，
         // 而不是 Assembly.GetName().Version 那种丢掉 -dev 标记的 "0.5.0.0"
         AppVersion = VersionInfo.Current;
+        LoadStorageFields();
     }
 
     // ─────────────────────────────────────────────────────────
@@ -189,6 +191,113 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     /// <summary>配置对象。改了它再点「保存」就存盘。</summary>
     public AppConfig Config { get; }
+
+    // ─────────────────────────────────────────────────────────
+    // 数据库连接（改了必须重启才生效：连接串在容器构建时就定下了）
+    // ─────────────────────────────────────────────────────────
+
+    [ObservableProperty] private string _databaseHost = "localhost";
+
+    [ObservableProperty] private int _databasePort = 5432;
+
+    [ObservableProperty] private string _databaseName = "helium_todo";
+
+    [ObservableProperty] private string _databaseUser = "helium";
+
+    [ObservableProperty] private string _databasePassword = string.Empty;
+
+    /// <summary>连接状态摘要：当前参数 + 上次测试结果。</summary>
+    [ObservableProperty] private string _databaseStatusText = string.Empty;
+
+    private void LoadStorageFields()
+    {
+        var storage = Config.Storage;
+        DatabaseHost = storage.Host;
+        DatabasePort = storage.Port;
+        DatabaseName = storage.Database;
+        DatabaseUser = storage.Username;
+        DatabasePassword = storage.Password;
+        RefreshDatabaseStatus();
+    }
+
+    private void RefreshDatabaseStatus()
+    {
+        DatabaseStatusText = $"{DatabaseHost}:{DatabasePort} / {DatabaseName}（用户 {DatabaseUser}）";
+    }
+
+    private StorageSettings BuildStorageSettings()
+    {
+        var current = Config.Storage;
+        return new StorageSettings
+        {
+            Provider = "postgres",
+            Host = DatabaseHost.Trim(),
+            Port = DatabasePort,
+            Database = DatabaseName.Trim(),
+            Username = DatabaseUser.Trim(),
+            Password = DatabasePassword,
+            SslMode = current.SslMode,
+            CommandTimeoutSeconds = current.CommandTimeoutSeconds,
+        };
+    }
+
+    /// <summary>「测试连接」：只做 TCP 预检，不登录、不改配置。</summary>
+    [RelayCommand]
+    private async Task TestDatabaseAsync()
+    {
+        var storage = BuildStorageSettings();
+        var problem = await Task.Run(() => PostgresConnection.Probe(storage));
+
+        DatabaseStatusText = problem is null
+            ? $"连接成功：{storage.Host}:{storage.Port}"
+            : $"连接失败：{problem}";
+
+        NoticeText = DatabaseStatusText;
+        IsNoticeVisible = true;
+    }
+
+    /// <summary>保存连接参数并重启（连接串只在启动时读取一次）。</summary>
+    [RelayCommand]
+    private void SaveDatabaseAndRestart()
+    {
+        if (string.IsNullOrWhiteSpace(DatabaseHost)
+            || string.IsNullOrWhiteSpace(DatabaseName)
+            || string.IsNullOrWhiteSpace(DatabaseUser)
+            || DatabasePort is < 1 or > 65535)
+        {
+            NoticeText = "主机、端口、数据库、用户名不能为空，端口要在 1–65535 之间。";
+            IsNoticeVisible = true;
+            return;
+        }
+
+        var storage = BuildStorageSettings();
+        Config.Storage.Host = storage.Host;
+        Config.Storage.Port = storage.Port;
+        Config.Storage.Database = storage.Database;
+        Config.Storage.Username = storage.Username;
+        Config.Storage.Password = storage.Password;
+        Config.Storage.Provider = "postgres";
+
+        // 和渲染后端一样：重启前必须同步落盘，否则新进程读到的还是旧值。
+        SaveConfigNow();
+        RefreshDatabaseStatus();
+
+        switch (RestartApplication())
+        {
+            case RestartOutcome.Started:
+                break;
+
+            case RestartOutcome.BlockedByDebugger:
+                NoticeText = "数据库连接已保存。检测到正在调试器里运行，请用调试器的「重新启动」(Ctrl+Shift+F5)。";
+                IsNoticeVisible = true;
+                break;
+
+            default:
+                NoticeText = "数据库连接已保存，但自动重启没成功，请手动关闭后重新打开 Helium Todo。";
+                IsNoticeVisible = true;
+                break;
+        }
+    }
 
     // ─────────────────────────────────────────────────────────
     // 主题

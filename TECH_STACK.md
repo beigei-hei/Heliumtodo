@@ -22,7 +22,7 @@
 | MVVM | **CommunityToolkit.Mvvm 8.4.0** | `[ObservableProperty]` / `[RelayCommand]` 源生成器 |
 | 数据访问 | **EF Core 10.0.14** + `Npgsql.EntityFrameworkCore.PostgreSQL 10.0.3` | 主存储是 **PostgreSQL 17**（P2 起）；连接串见 `StorageSettings` / `HELIUM_DB` |
 | 依赖注入 | `Microsoft.Extensions.DependencyInjection 10.0.14` | `App.axaml.cs` 里手工注册 20 处 |
-| 测试 | **xunit 2.9.2** + `Microsoft.NET.Test.Sdk 17.11.1` | 197 个测试（数据库相关用例未设置 `HELIUM_TEST_POSTGRES` 时跳过） |
+| 测试 | **xunit 2.9.2** + `Microsoft.NET.Test.Sdk 17.11.1` | 202 个测试（数据库相关用例未设置 `HELIUM_TEST_POSTGRES` 时跳过） |
 | 视频解码 | **Windows Media Foundation**（系统组件，`mfplat.dll` / `mfreadwrite.dll`） | 零额外打包体积；`MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING` 请求 RGB32，缩放自己用 Skia 做 |
 | 渲染后端 | `Win32RenderingMode`：Auto（默认，AngleEgl→Software 回退）/ Wgl / Vulkan | 设置页「底层设置」或 `HELIUM_RENDER` 切换，重启生效 |
 

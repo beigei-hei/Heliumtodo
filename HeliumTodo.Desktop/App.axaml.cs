@@ -207,6 +207,13 @@ public partial class App : Avalonia.Application
 
             desktop.MainWindow = _mainWindow;
 
+            // 数据库没起来时，壳层一进来就把原因说清楚（页面自己也会再报一次）。
+            if (DatabaseStartupNotice is { Length: > 0 } startupNotice &&
+                _mainWindow.DataContext is ShellViewModel startupShell)
+            {
+                startupShell.ShowAlert(startupNotice);
+            }
+
             StartBackgroundServices(desktop);
 
             // 退出时把配置写回磁盘
@@ -631,10 +638,25 @@ public partial class App : Avalonia.Application
     }
 
     /// <summary>迁移到最新、灌示例数据、启动时自动备份（.zip）。</summary>
+    /// <summary>数据库没起来时留给壳层的提示；null 表示一切正常。</summary>
+    internal static string? DatabaseStartupNotice { get; private set; }
+
     private static void InitializeDatabase(ConfigService configService)
     {
         try
         {
+            var storage = configService.GetStorageSettings();
+            var masked = PostgresConnection.Mask(PostgresConnection.Resolve(storage));
+
+            // 先做 TCP 预检：连不上就别让 EF 的重试策略白等 6 秒。
+            var probe = PostgresConnection.Probe(storage);
+            if (probe is not null)
+            {
+                DatabaseStartupNotice = DatabaseErrorText.DescribeProbeFailure(probe, masked);
+                Console.Error.WriteLine($"[启动] 数据库预检失败：{probe}（连接：{masked}）");
+                return;
+            }
+
             var factory = Services.GetRequiredService<Microsoft.EntityFrameworkCore.IDbContextFactory<HeliumDbContext>>();
             using var db = factory.CreateDbContext();
 
@@ -671,6 +693,7 @@ public partial class App : Avalonia.Application
 
             var masked = PostgresConnection.Mask(
                 PostgresConnection.Resolve(configService.GetStorageSettings()));
+            DatabaseStartupNotice = DatabaseErrorText.Describe(ex, masked);
             Console.Error.WriteLine($"[启动] 数据库初始化失败：{ex.Message}（连接：{masked}）");
         }
     }
