@@ -3,6 +3,8 @@
 
 using System.Data;
 using System.Diagnostics;
+using System.Text;
+using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -151,6 +153,12 @@ public static class Program
             return RunBackupCheck(services);
         }
 
+        // 文案自检（P6）：UI_TEXT_MAP.md 里的每条用户可见文字，都必须能在编译产物里
+        // 找到同样的字面量。改了文案却忘了同步，这里最先红。
+        if (args.Any(a => a.Equals("--copy-check", StringComparison.OrdinalIgnoreCase)))
+        {
+            return RunCopyCheck();
+        }
         // 数据库自检：连上真实的 PostgreSQL，确认迁移已应用、时间列的类型没写反、
         // 规格要求的索引都在。这些是"跑起来没事、过两个月才炸"的那类问题。
         if (args.Any(a => a.Equals("--db-check", StringComparison.OrdinalIgnoreCase)))
@@ -1151,6 +1159,27 @@ public static class Program
         Check("只改遮罩 Alpha 与纯重绘同量级",
             veilAlpha.Mean <= pureRender.Mean * 1.5 + 1.0,
             $"纯重绘 {pureRender.Mean:0.0} ms，遮罩 {veilAlpha.Mean:0.0} ms/帧");
+
+        // ── §15.3 性能预算对照 ──
+        // 无头数字只用来比较，绝对值不代表真机（真机由 tools/probe-*.ps1 采）。
+        // 这里能钉的钉住，钉不住的把偏差写清楚。
+        Console.WriteLine();
+        Console.WriteLine("── §15.3 预算对照（无头代理）──");
+        Check("纯重绘 P50 ≤ 33.3 ms（时间轴首屏 ≤ 50 ms 的代理）",
+            pureRender.P50 <= 33.3, $"P50 {pureRender.P50:0.0} ms");
+        if (navRail is not null)
+        {
+            Check("图标轨展开 P50 ≤ 33.3 ms（真机 16.7 ms 由 probe-rail-anim 验）",
+                railExpand.P50 <= 33.3, $"P50 {railExpand.P50:0.0} ms");
+            Check("图标轨降质不慢于原样",
+                railExpandLowQuality.P50 <= railExpand.P50 + 0.5,
+                $"{railExpand.P50:0.0} → {railExpandLowQuality.P50:0.0} ms");
+        }
+
+        var privateMegabytes = Process.GetCurrentProcess().PrivateMemorySize64 / 1024.0 / 1024.0;
+        Check("私有字节 ≤ 300 MB（无头进程；真机预算同值）",
+            privateMegabytes <= 300, $"{privateMegabytes:0} MB");
+        Console.WriteLine("   [偏差] 冷启动 ≤ 1.5 s 与最大化 DWM 帧数不在无头里测，见 probe-* 探针。");
 
         window.Close();
         return failures == 0 ? 0 : 1;
@@ -2343,6 +2372,137 @@ public static class Program
         public int Calls { get; private set; }
 
         protected override void StartDrag(Window window, PointerPressedEventArgs e) => Calls++;
+    }
+    /// <summary>
+    /// 文案自检：把 UI_TEXT_MAP.md 里的条目逐条拆成"用户可见字面量"，
+    /// 再到编译产物（Desktop / Application / Domain / Infrastructure 四个 dll 的
+    /// UTF-16 字符串堆）里找。找不到就说明文案被改写或映射过期。
+    ///
+    /// 为什么查 dll 而不是查 .axaml 源文件：源文件只能证明"写过"，编译后的 dll
+    /// 才能证明"真的进了产物"。字符串字面量在 #US 堆里是整段 UTF-16，插值字符串
+    /// 会被拆成若干段，所以这里对 `{...}` 占位符做了切分再逐段找。
+    /// </summary>
+    private static int RunCopyCheck()
+    {
+        var failures = 0;
+
+        void Check(string name, bool ok, string detail)
+        {
+            if (!ok) failures++;
+            Console.WriteLine($"  {(ok ? "✓" : "✗")} {name} — {detail}");
+        }
+
+        var root = FindRepositoryRoot();
+        var mapPath = Path.Combine(root, "UI_TEXT_MAP.md");
+        Check("文案清单存在", File.Exists(mapPath), mapPath);
+        if (!File.Exists(mapPath)) return 1;
+
+        var assemblies = new[]
+            {
+                "HeliumTodo.Desktop.dll", "HeliumTodo.Application.dll",
+                "HeliumTodo.Domain.dll", "HeliumTodo.Infrastructure.dll",
+            }
+            .Select(name => Path.Combine(AppContext.BaseDirectory, name))
+            .Where(File.Exists)
+            .Select(File.ReadAllBytes)
+            .ToList();
+        Check("编译产物可读", assemblies.Count >= 3, $"{assemblies.Count} 个 dll");
+
+        bool InAnyAssembly(string text)
+        {
+            var needle = Encoding.Unicode.GetBytes(text);
+            return assemblies.Any(bytes => bytes.AsSpan().IndexOf(needle) >= 0);
+        }
+
+        var visibleAttributes = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "Text", "Content", "Header", "ToolTip.Tip", "Watermark",
+            "PlaceholderText", "Description", "Title", "Message", "Footer",
+        };
+
+        var entries = 0;
+        var literals = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var line in File.ReadAllLines(mapPath))
+        {
+            var match = Regex.Match(line, @"^- `(?<loc>[^`]+)` — (?<snippet>.+)$");
+            if (!match.Success) continue;
+            entries++;
+            var location = match.Groups["loc"].Value;
+            var snippet = match.Groups["snippet"].Value;
+            var isXaml = location.Contains(".axaml:", StringComparison.OrdinalIgnoreCase);
+
+            IEnumerable<string> raw;
+            if (isXaml)
+            {
+                var attrs = Regex.Matches(snippet, @"(?<name>[\w.:]+)=""(?<value>[^""]*)""")
+                    .Where(m => visibleAttributes.Contains(m.Groups["name"].Value))
+                    .Select(m => m.Groups["value"].Value);
+                var nodes = Regex.Matches(snippet, @">(?<value>[^<>]+)<")
+                    .Select(m => m.Groups["value"].Value);
+                raw = attrs.Concat(nodes);
+            }
+            else
+            {
+                raw = Regex.Matches(snippet, @"""(?<value>[^""]*)""")
+                    .Select(m => m.Groups["value"].Value);
+            }
+
+            foreach (var text in raw)
+            {
+                // 绑定、资源 URI、XML 实体、纯空白都不是"用户可见字面量"。
+                if (string.IsNullOrWhiteSpace(text)) continue;
+                if (text.StartsWith("{", StringComparison.Ordinal)) continue;
+                if (text.Contains("://", StringComparison.Ordinal)) continue;
+                if (text.Contains("&#", StringComparison.Ordinal)) continue;
+                if (text.Contains("DEVELOPMENT_SPEC.md", StringComparison.Ordinal)) continue;
+
+                // 源码里的 \n / \t 在编译后是真正的换行/制表符。
+                var unescaped = text
+                    .Replace("\\n", "\n", StringComparison.Ordinal)
+                    .Replace("\\t", "\t", StringComparison.Ordinal)
+                    .Replace("\\\"", "\"", StringComparison.Ordinal);
+
+                // 插值字符串（$"…{x}…"）在编译后会被拆成多段，逐段找。
+                // 切完还带 { } 的说明这段源码在清单里被截断了，跳过而不是误报。
+                foreach (var part in Regex.Split(unescaped, @"\{[^{}]*\}"))
+                {
+                    var literal = part.Trim();
+                    if (literal.Length == 0) continue;
+                    if (literal.Contains('{') || literal.Contains('}')) continue;
+                    if (literal.StartsWith("avares:", StringComparison.Ordinal)) continue;
+                    if (Regex.IsMatch(literal, @"^[\d\s,.\-]+$")) continue;
+                    literals.Add(literal);
+                }
+            }
+        }
+
+        Check("清单里有可解析的条目", entries > 0, $"{entries} 条");
+        Check("拆出用户可见字面量", literals.Count > 0, $"{literals.Count} 段");
+
+        var missing = literals.Where(literal => !InAnyAssembly(literal)).OrderBy(x => x).ToList();
+        foreach (var item in missing.Take(12))
+        {
+            Console.WriteLine($"   [缺失] {item}");
+        }
+
+        Check("每条字面量都能在编译产物里找到", missing.Count == 0,
+            missing.Count == 0 ? $"{literals.Count}/{literals.Count}" : $"缺 {missing.Count}/{literals.Count}");
+        return failures == 0 ? 0 : 1;
+    }
+
+    /// <summary>从 bin/Debug/netX 往上找带 UI_TEXT_MAP.md 的目录。</summary>
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "UI_TEXT_MAP.md")))
+            {
+                return directory.FullName;
+            }
+            directory = directory.Parent;
+        }
+        return AppContext.BaseDirectory;
     }
     /// <summary>取某一套主题下提示条底板的颜色。</summary>
     private static Color NoticeSurface(ThemeVariant variant)

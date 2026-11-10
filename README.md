@@ -8,7 +8,7 @@
 
 ## 现在是什么状态
 
-当前是 **0.5.0-alpha 的 P5 Behaviors 接管完成**快照：
+当前是 **0.5.0-alpha 的 P6 文案与性能门禁完成**快照：
 
 - 七个项目已按目标分层改名：`HeliumTodo.Domain` / `Application` / `Infrastructure` /
   `Desktop` / `Tests` / `SelfTest` / `Verification`。
@@ -51,7 +51,7 @@ dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll
 dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --layout-check
 ```
 
-`--check` 共十六项（含 `--db-check`），另有 `--shell` 截图模式；完整命令见 [`AGENTS.md`](AGENTS.md)。
+`--check` 共十九项（含 `--db-check`、`--theme-check`、`--behavior-check`、`--copy-check`），另有 `--shell` 截图模式；完整命令见 [`AGENTS.md`](AGENTS.md)。
 
 ## 文档
 

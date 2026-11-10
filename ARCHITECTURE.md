@@ -1825,7 +1825,7 @@ P4 换成自绘 `SettingsExpander` / `SettingsExpanderItem` 后，模板
 | `--appearance-check` | 14 | 卡片 alpha、暗色底色、蒙版颜色与强度（0.45 / 0.72 / 上限 0.95）、画出来的刷子就是资源那一份、壁纸缩放的尺寸与裁切位置 |
 | `--notice-check` | 13 | 提示条默认收起、与滚动容器**重叠**（证明是叠层）、`ZIndex>=10`、亮暗底板不同、2 秒不消失 / 3.5 秒消失、点 × 立刻收起 |
 | `--rail-check` | 23 | 设置排在自习室下面、收起 56/44（按钮真实 Bounds 44×44）、展开时按钮跟着轨道一起变宽、**导航按钮自己没有宽度过渡**（只有轨道一条在动）、6 个名称靠不透明度淡入淡出（始终留在布局里）、10 个分组标题 + **34 行分组行**的底色全透明、设置卡 8px 内边距、内层圆角与卡片同为 18、内层裁边界 |
-| `--perf-check` | 10 | 改尺寸的固定成本（A–M 十三档）、降质确实更快、内容矩阵比改尺寸快一半、遮罩 Alpha 与纯重绘同量级、**P95 < 2×P50** 且**最慢一帧 < 4×P50**（分两条，避免孤立尖峰让自检随机变红） |
+| `--perf-check` | 14 | 改尺寸的固定成本（A–M 十三档）、降质确实更快、内容矩阵比改尺寸快一半、遮罩 Alpha 与纯重绘同量级、**P95 < 2×P50** 且**最慢一帧 < 4×P50**（分两条，避免孤立尖峰让自检随机变红）、末尾对 §15.3 预算断言（纯重绘 P50 ≤ 33.3 ms、图标轨 P50 ≤ 33.3 ms、降质不倒退、私有字节 ≤ 300 MB） |
 | `--anim-check` | 16 | 政策数值（180ms/10 帧/5 帧下限/250ms 阈值）、动画中途被最小化后不透明度和变换都干净、遮罩被收掉、回来会重播、`Settle()` 干净、抓手不偏 |
 
 截图开关也跟着补齐（都在 `HeliumTodo.Verification`）：
@@ -2032,4 +2032,20 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
   11.3.0.6 在 Avalonia 12 上会 TypeLoadException，必须用新包 id。
 - **能记录就不要真的做**：无头的 Window.BeginMoveDrag 既不移动窗口又会留下指针捕获，
   DragWindowBehavior.StartDrag 抽成 protected virtual，--behavior-check 用子类记录
+  调用次数，而不是真的拖窗口。
+
+### 20.10 文案与性能门禁（P6 起）
+
+- **`--copy-check` 是"文案不许漂"的机器闸门**：`UI_TEXT_MAP.md` 是唯一来源（生成器
+  `tools/gen_ui_text_map.py`），检查把清单里每条记录拆回"位置 + 片段"，从片段里抽用户可见
+  字面量（`.axaml` 只认 `Text/Content/Header/ToolTip.Tip/Watermark/PlaceholderText/
+  Description/Title/Message/Footer` 与文本节点；`.cs` 认所有双引号字符串），再按 UTF-16LE
+  在 `HeliumTodo.Desktop/Application/Domain/Infrastructure.dll` 里逐条搜字节。
+  找不到就是文案被改了却没重新生成清单，或者清单里的字面量根本没进产物。
+- 位置是 `path:line`，判断 XML 要用 `location.Contains(".axaml:")`，不能用
+  `EndsWith(".axaml")`——后者恒为 false，会把属性值当文案抓进 C# 分支。
+- **`--perf-check` 末尾直接对 §15.3 预算断言**：纯重绘 P50 ≤ 33.3 ms（时间轴首屏 ≤ 50 ms
+  的无头代理）、图标轨展开 P50 ≤ 33.3 ms、降质不慢于原样、进程私有字节 ≤ 300 MB。
+  冷启动 ≤ 1.5 s 与 DWM 最大化帧数无头测不了，由真机 `tools/probe-*.ps1` 采，检查里打印
+  偏差行而不是假装测过。
   

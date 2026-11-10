@@ -4621,3 +4621,39 @@ P0 的「保留 FluentAvalonia + SQLite」不再是不可抗力，P2 起按规�
 - `Material.Avalonia.Dialogs` 接入（确认/输入框仍是自绘 Window）；
 - `xmin` 并发令牌（会改数据层契约，单独一轮）；
 - 规格 P6/P7 的收尾项（发布脚本、安装包、最终验收）。
+## 2026-11-10 · 0.5.0-alpha P6：文案与性能门禁
+
+### 做了什么
+
+- 新增 `--copy-check`（`HeliumTodo.Verification/Program.cs` 的 `RunCopyCheck`）：
+  从仓库根找 `UI_TEXT_MAP.md`，按 `- `path:line` — 片段` 拆条目；`.axaml` 只取用户可见属性
+  （`Text/Content/Header/ToolTip.Tip/Watermark/PlaceholderText/Description/Title/Message/Footer`）
+  与文本节点，`.cs` 取全部双引号字面量；去掉空串、绑定表达式、URL、`&#` 实体、纯数字，
+  再把每条按 UTF-16LE 在 Desktop/Application/Domain/Infrastructure 四个 dll 里搜字节。
+  679 条记录拆出 627 段字面量，627/627 命中。
+- `--perf-check` 末尾加 §15.3 预算断言：纯重绘 P50 ≤ 33.3 ms、图标轨展开 P50 ≤ 33.3 ms、
+  降质不慢于原样、进程私有字节 ≤ 300 MB；冷启动与 DWM 帧数以偏差行说明只由真机探针采。
+
+### 为什么
+
+- 文案漂移是"改了一行 XAML、清单没重生成"的静默回归；只有把清单和编译产物对撞才能拦住。
+- 性能预算写在规格里，不落成断言就只是愿望；无头数字虽不等于真机，但慢一半一定看得出来。
+
+### 踩到的坑
+
+- 位置串是 `path:line`，第一版用 `location.EndsWith(".axaml")` 判断 XML，恒为 false，
+  所有条目都走 C# 分支，`Center`/`SemiBold`/`Transparent`/`Margin` 之类属性值全被判"缺失"；
+  改成 `location.Contains(".axaml:")`。
+- 无头进程私有字节只有 117 MB，真机预算 300 MB 仍按真机口径断言，不因无头小而放宽。
+
+### 门禁
+
+- 构建 **0 警告 0 错误**；`SelfTest` **196/196**（真库）；十九项 `--check` 全部通过
+  （新增 `--copy-check`）；`--shell` 七页出图。
+- `--copy-check` 5 项、`--perf-check` 14 项均绿。
+
+### 还没做
+
+- `xmin` 并发令牌（`UseXminAsConcurrencyToken`，冲突翻译成「数据已被其它窗口修改」）；
+- `Material.Avalonia.Dialogs` 接入（确认/输入框仍是自绘 Window）；
+- P7 发布脚本与安装包。

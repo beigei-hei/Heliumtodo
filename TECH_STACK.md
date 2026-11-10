@@ -1,8 +1,9 @@
 # Helium Todo · 技术栈与运行时画像
 
-> 版本 **0.5.0-alpha（P5）** ｜ 本文对标的是仓库当前代码，不是计划。
+> 版本 **0.5.0-alpha（P6）** ｜ 本文对标的是仓库当前代码，不是计划。
 > 项目已按 `DEVELOPMENT_SPEC.md` 改名为 Domain / Application / Infrastructure / Desktop / Verification；
 > Material.Avalonia 3.21.0 已接管全部界面（P3 主题、P4 控件、P5 行为），FluentAvaloniaUI 已删除；
+> P6 起 `--copy-check` 把 `UI_TEXT_MAP.md` 与编译产物对撞，`--perf-check` 直接断言 §15.3 预算；
 > PostgreSQL 17 已在 P2 落地，见规格 §20 偏差说明。
 > 所有数字都是在开发机上实测出来的（命令写在每节末尾，可以自己复现）。
 
@@ -246,12 +247,13 @@ dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll
 | `--restart-prompt-check` | 17 | 改渲染后端 → 重启提示 → 确认/取消/调试器三档 |
 | `--notice-check` | 13 | 提示条叠在功能区上方、跟随明暗、3 秒自动收起、点 × 立刻收起 |
 | `--appearance-check` | 14 | 明暗切换、玻璃浓度 alpha、蒙版合并后的颜色与强度（0.45 / 0.72 / 上限 0.95）、壁纸缩放的尺寸与裁切位置 |
-| `--perf-check` | 10 | A–M 十三档逐档测量；交互降质真的更快（实测快 52~66%）；改尺寸比纯重绘贵；P95 < 2×P50 且最慢一帧 < 4×P50 |
+| `--perf-check` | 14 | A–M 十三档逐档测量；交互降质真的更快（实测快 52~66%）；改尺寸比纯重绘贵；P95 < 2×P50 且最慢一帧 < 4×P50；末尾对 §15.3 预算断言（纯重绘/图标轨 P50、降质不倒退、私有字节） |
 | `--rail-check` | 23 | 设置排在自习室下面、图标轨 56↔188 展开、按钮被动拉伸（自己不挂宽度过渡）、名称靠 Opacity 淡入淡出、设置页 10 个分组标题 + 27 行分组行的背景全透明 |
 | `--layout-check` | 6 页 × 6 项 | 六页分区是否同一套（左/右/顶边缘、缝、标题字号） |
 | `--db-check` | 9 | PostgreSQL 17、迁移已应用、11 个列类型、identity、6 个索引、房间码唯一 |
 | `--theme-check` | 9 | MaterialTheme 存在、明暗 BaseTheme、卡片像素、强调色像素、阴影令牌 |
 | `--behavior-check` | 15 | 6 类行为挂载数量、双击最大化、窗口按钮、拖拽入口、解绑、抓手改宽、滚动同步 |
+| `--copy-check` | 5 | 清单可解析（679 条）、拆出 627 段用户可见字面量、逐条在 4 个编译产物里按 UTF-16LE 命中 |
 | `--shell` | 7 页 | 每页无头渲染出 PNG |
 | `--tree N` | — | 打印可视树（查布局用） |
 
