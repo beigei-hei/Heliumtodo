@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Net.Sockets;
+using System.Text.RegularExpressions;
 using Npgsql;
 
 namespace HeliumTodo.Infrastructure.Persistence;
@@ -36,6 +37,7 @@ public static class DatabaseErrorText
         {
             return pg.SqlState switch
             {
+                "28000" => $"PostgreSQL 里没有用户「{RoleName(pg)}」{where}。请到「设置 → 数据与文件 → 数据库连接」改成已存在的用户名（本机常见 postgres）后保存重启。",
                 "28P01" => $"PostgreSQL 拒绝了用户名或密码{where}。请检查「设置 → 数据与文件 → 数据库连接」。",
                 "3D000" => $"数据库不存在{where}。请先创建它（createdb），或在设置里换一个库名。",
                 "42P01" => "数据库里缺少表结构：迁移没有应用成功。请确认程序有建表权限后重启。",
@@ -70,6 +72,35 @@ public static class DatabaseErrorText
 
         return $"连不上 PostgreSQL{where}：{reason}。"
                + "请在「设置 → 数据与文件 → 数据库连接」检查主机、端口、用户名和密码后保存重启。";
+    }
+
+    /// <summary>
+    /// 状态栏用的一句话：只保留「哪类问题」，细节留给提示条和设置页。
+    /// </summary>
+    public static string Brief(Exception? ex)
+    {
+        if (Find<SocketException>(ex) is not null) return "连不上数据库";
+        if (Find<PostgresException>(ex) is { } pg)
+        {
+            return pg.SqlState switch
+            {
+                "28000" => $"用户名「{RoleName(pg)}」不存在",
+                "28P01" => "用户名或密码不正确",
+                "3D000" => "数据库不存在",
+                "42P01" => "表结构缺失（迁移未应用）",
+                "57P03" => "数据库正在启动",
+                _ => $"数据库报错（{pg.SqlState}）",
+            };
+        }
+        if (Find<TimeoutException>(ex) is not null) return "连接超时";
+        return Trim(ex?.Message ?? "未知错误", 60);
+    }
+
+    /// <summary>从 "role \"helium\" does not exist" 里取出角色名。</summary>
+    private static string RoleName(PostgresException pg)
+    {
+        var match = Regex.Match(pg.MessageText ?? string.Empty, "role \"([^\"]+)\"");
+        return match.Success ? match.Groups[1].Value : "（未知）";
     }
 
     private static T? Find<T>(Exception? ex) where T : Exception

@@ -2148,3 +2148,14 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
   且 `HeliumTodo.Tests` 不引用 Desktop（架构测试要求分层单向），放 Desktop 会让这组单测无处安放。
 - **`--rail-check` 的行数基线是 28**：新增数据库连接行后，设置页十组共 28 行；改设置页结构
   必须同步这个数字，否则门禁红。
+
+### 20.16 本机数据库用户名的自愈边界
+
+`App.TryRepairLocalStorage` 是 0.5.0-alpha 交付后加的一条窄规则，只解决「配置里的用户名在数据库里根本不存在」：
+
+- 只在没有 `HELIUM_DB`、主机是回环地址、原用户名登录被 `28000`/`28P01` 拒绝、`postgres` 免密能登录时生效。
+- 修改发生在 `BuildServiceProvider` 之前并立即落盘，因为连接串在容器构建时读取一次；事后改配置不会重建连接。
+- 改写的是 `config.json` 里的 `Username`/`Password`，绝不建角色、不执行 DDL；密码为空也只在 `postgres` 免密可登录时采用。
+- 日志只写一行「已改用 postgres」，不打印密码；完整异常仍按打码连接串记录。
+
+状态栏用 `DatabaseErrorText.Brief`（一句话），提示条和设置页用 `Describe`（含角色名、主机端口与下一步）；两处文案都由 `UI_TEXT_MAP` 管着。

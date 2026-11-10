@@ -67,4 +67,16 @@ public class DatabaseErrorTextTests
         Assert.DoesNotContain("\r", text);
         Assert.DoesNotContain("\n", text);
     }
+    // 28000 是「角色不存在」，用户最容易撞上；提示必须点名用户并指向设置页。
+    [Fact]
+    public void 角色不存在时提示用户去设置改用户名()
+    {
+        var ex = new PostgresException("role \"helium\" does not exist", "FATAL", "FATAL", "28000");
+        var text = DatabaseErrorText.Describe(ex, null);
+        Assert.Contains("helium", text);
+        Assert.Contains("postgres", text);
+        Assert.Contains("数据库连接", text);
+
+        Assert.Equal("用户名「helium」不存在", DatabaseErrorText.Brief(ex));
+    }
 }

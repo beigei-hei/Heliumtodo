@@ -8,7 +8,7 @@
 
 1. **先给验收标准**：把用户的话拆成 3–6 条可验证的行为，再说怎么改。
 2. **先想怎么证明**：能写单测就写单测；界面改动必须准备无头渲染 + 像素统计的验证方式（Agent 不能看图，"看着挺好"不算证据）。
-3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（202/202，含真库用例）、`--shell`、十九项 `--check`、指纹基线，全绿才交付。
+3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（203/203，含真库用例）、`--shell`、十九项 `--check`、指纹基线，全绿才交付。
 4. **收尾同步文档**：`PROGRESS.md`（这一轮）、`ARCHITECTURE.md`（新约定）、`UI_TEXT_MAP.md`（改了界面文案时）、指纹基线（`-Update` 后复查）。
 
 ## 分层铁律
@@ -71,6 +71,7 @@
 - 不提交/遗留临时物：`output/`、`_probe-*`、`tools/_*.py`、`.tmp-*`。
 - 不改 `PROGRESS.md` 里的历史小节（旧版本号与旧数字是当时的事实）。
 - 不擅自升级 Avalonia / SkiaSharp 版本（SkiaSharp 必须与 Avalonia 传递依赖同版，否则运行期崩）。
+- 本机数据库自愈只允许 `TryRepairLocalStorage` 这一条路径：仅回环地址、无 `HELIUM_DB`、登录被 28000/28P01 拒绝且 postgres 免密可用；只改 `config.json` 的用户名，不建角色、不写密码日志。
 - 不把默认渲染后端改回 `Software`：默认是 `Auto`（显卡），理由是动效帧率（见 `ARCHITECTURE.md` §18.2 与 §19.9）。想省内存是**用户**在设置页里选，不是我们替他选。
 - 不在写法里引入 `unsafe`（项目未开 `AllowUnsafeBlocks`）。
 - 新增 `.cs` / `.axaml` 必须带两行 SPDX 头（`python tools\check-license-headers.py` 会拦），见 `DEVELOPMENT_SPEC.md` §13.3。

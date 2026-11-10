@@ -95,6 +95,10 @@ public partial class App : Avalonia.Application
             : new ConfigService(configDirectoryOverride);
         configService.Load();
 
+        // 本机旧配置里的用户名（helium）在多数 PostgreSQL 上不存在：
+        // 连接得上但登录被拒时，自动退到 postgres 并写回配置，避免用户每次都被挡在门外。
+        TryRepairLocalStorage(configService);
+
         // ── ② 主题注册表（插件稍后还能往里加主题） ──
         var themeRegistry = new ThemeRegistry();
 
@@ -638,6 +642,98 @@ public partial class App : Avalonia.Application
     }
 
     /// <summary>迁移到最新、灌示例数据、启动时自动备份（.zip）。</summary>
+    /// <summary>
+    /// 本机数据库「用户不存在 / 密码错误」时的一次性自愈。
+    ///
+    /// 只在满足三个条件时动手：没有 HELIUM_DB 覆盖、主机是回环地址、
+    /// 现有用户名登录被 28000/28P01 拒绝，而 postgres 账号能登录（便携 PostgreSQL 的 trust 配置）。
+    /// 修复结果写回 config.json，并在日志里留一行，用户下次打开设置就能看到新用户名。
+    /// </summary>
+    private static void TryRepairLocalStorage(ConfigService configService)
+    {
+        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(PostgresConnection.FullConnectionVariable)))
+        {
+            return;
+        }
+
+        var storage = configService.Current.Storage;
+        if (!IsLoopbackHost(storage.Host)
+            || string.Equals(storage.Username, "postgres", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        string connectionString;
+        try
+        {
+            connectionString = PostgresConnection.Resolve(storage);
+        }
+        catch (Exception)
+        {
+            return;
+        }
+
+        var currentFailure = TryOpen(connectionString);
+        if (currentFailure?.SqlState is not ("28000" or "28P01"))
+        {
+            return;
+        }
+
+        var candidate = new StorageSettings
+        {
+            Provider = storage.Provider,
+            Host = storage.Host,
+            Port = storage.Port,
+            Database = storage.Database,
+            Username = "postgres",
+            Password = string.Empty,
+            SslMode = storage.SslMode,
+            CommandTimeoutSeconds = storage.CommandTimeoutSeconds,
+        };
+
+        if (TryOpen(PostgresConnection.Resolve(candidate)) is not null)
+        {
+            return;
+        }
+
+        storage.Username = "postgres";
+        storage.Password = string.Empty;
+        configService.Save();
+
+        System.Diagnostics.Debug.WriteLine(
+            $"[启动] 用户「{currentFailure.MessageText}」不可用，已自动改用 postgres 并写回配置。");
+        Console.Error.WriteLine("[启动] 配置里的数据库用户不可用，已自动改用 postgres（已写回 config.json）。");
+    }
+
+    private static bool IsLoopbackHost(string host)
+    {
+        return string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)
+               || string.Equals(host, "127.0.0.1", StringComparison.Ordinal)
+               || string.Equals(host, "::1", StringComparison.Ordinal);
+    }
+
+    /// <summary>试登录一次；成功返回 null，失败返回 PostgreSQL 的登录错误（非登录错误不返回）。</summary>
+    private static Npgsql.PostgresException? TryOpen(string connectionString)
+    {
+        try
+        {
+            var builder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString)
+            {
+                Timeout = 3,
+            };
+            using var connection = new Npgsql.NpgsqlConnection(builder.ConnectionString);
+            connection.Open();
+            return null;
+        }
+        catch (Npgsql.PostgresException ex)
+        {
+            return ex;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
     /// <summary>数据库没起来时留给壳层的提示；null 表示一切正常。</summary>
     internal static string? DatabaseStartupNotice { get; private set; }
 

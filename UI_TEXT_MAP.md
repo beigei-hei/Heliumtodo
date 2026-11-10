@@ -442,7 +442,7 @@
 - `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:186` — `"专注",`
 - `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:191` — `"自习室",`
 - `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:197` — `"设置",`
-- `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:231` — `StatusText = $"{item.Title} 加载失败：{DatabaseErrorText.Describe(ex)}";`
+- `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs:231` — `StatusText = $"{item.Title} 加载失败：{DatabaseErrorText.Brief(ex)}";`
 
 ### `HeliumTodo.Desktop\ViewModels\StudyRoomViewModel.cs`（30 处）
 
@@ -507,7 +507,7 @@
 
 ## 四、Core / Data 层拼出来的文字（运行时）
 
-共 43 个文件、273 处。
+共 43 个文件、286 处。
 
 ### `HeliumTodo.Application\Configuration\AccentSources.cs`（3 处）
 
@@ -571,38 +571,40 @@
 - `HeliumTodo.Application\Services\StudyRoomService.cs:367` — `AddSystemMessage($"「{member.DisplayName}」离开了。");`
 - `HeliumTodo.Application\Services\StudyRoomService.cs:384` — `SenderName = string.IsNullOrWhiteSpace(message.DisplayName) ? "同学" : message.DisplayName,`
 
-### `HeliumTodo.Desktop\App.axaml.cs`（30 处）
+### `HeliumTodo.Desktop\App.axaml.cs`（32 处）
 
-- `HeliumTodo.Desktop\App.axaml.cs:151` — `LogBackground("[插件] 检测到 plugins 目录，本版本不加载");`
-- `HeliumTodo.Desktop\App.axaml.cs:175` — `LogBackground("[单实例] 已经有一份在跑，已请它把窗口显示出来，本进程退出");`
-- `HeliumTodo.Desktop\App.axaml.cs:232` — `LogBackground($"[退出] 进程正常结束，退出码 {e.ApplicationExitCode}");`
-- `HeliumTodo.Desktop\App.axaml.cs:258` — `LogBackground("[提醒] 后台扫描已启动（每 30 秒一次）");`
-- `HeliumTodo.Desktop\App.axaml.cs:273` — `LogBackground($"[环境] 会话={System.Diagnostics.Process.GetCurrentProcess().SessionId}"`
-- `HeliumTodo.Desktop\App.axaml.cs:274` — `+ $" 管理员={IsElevated()}"`
-- `HeliumTodo.Desktop\App.axaml.cs:275` — `+ $" 资源管理器={DescribeExplorer()}"`
-- `HeliumTodo.Desktop\App.axaml.cs:276` — `+ $" 渲染后端={Application.Configuration.RenderBackendSettings.DisplayName(HeliumTodo.Desktop.Services.RenderBackendChoice.ActiveKey)}"`
-- `HeliumTodo.Desktop\App.axaml.cs:291` — `LogBackground("[托盘] 启动失败：没有托盘图标，但关闭仍会留在后台"`
-- `HeliumTodo.Desktop\App.axaml.cs:292` — `+ "（再双击一次程序即可唤回窗口）");`
-- `HeliumTodo.Desktop\App.axaml.cs:298` — `? "[托盘] 自检模式：假装托盘已就绪（没有真的图标）"`
-- `HeliumTodo.Desktop\App.axaml.cs:299` — `: "[托盘] 已启动，关闭按钮改为藏窗口");`
-- `HeliumTodo.Desktop\App.axaml.cs:322` — `? "[窗口] 关闭按钮被拦截，已隐藏到托盘（进程继续运行）"`
-- `HeliumTodo.Desktop\App.axaml.cs:323` — `: "[窗口] 关闭按钮被拦截，已隐藏（没有托盘图标，再双击程序可唤回）");`
-- `HeliumTodo.Desktop\App.axaml.cs:368` — `return "没有运行";`
-- `HeliumTodo.Desktop\App.axaml.cs:372` — `return $"PID {string.Join(',', processes.Select(p => p.Id))} 会话 {string.Join(',', sessions)}";`
-- `HeliumTodo.Desktop\App.axaml.cs:376` — `return "查不到";`
-- `HeliumTodo.Desktop\App.axaml.cs:440` — `? "[备份] 这次没做成"`
-- `HeliumTodo.Desktop\App.axaml.cs:441` — `: $"[备份] 已生成 {path}");`
-- `HeliumTodo.Desktop\App.axaml.cs:656` — `Console.Error.WriteLine($"[启动] 数据库预检失败：{probe}（连接：{masked}）");`
-- `HeliumTodo.Desktop\App.axaml.cs:668` — `? "[启动] 首次运行，已写入示例数据"`
-- `HeliumTodo.Desktop\App.axaml.cs:669` — `: "[启动] 数据库就绪");`
-- `HeliumTodo.Desktop\App.axaml.cs:697` — `Console.Error.WriteLine($"[启动] 数据库初始化失败：{ex.Message}（连接：{masked}）");`
-- `HeliumTodo.Desktop\App.axaml.cs:731` — `LogBackground("[重启] 检测到调试器，放弃自动重启："`
-- `HeliumTodo.Desktop\App.axaml.cs:732` — `+ "请用调试器的「重新启动」(Ctrl+Shift+F5)，"`
-- `HeliumTodo.Desktop\App.axaml.cs:733` — `+ "否则新进程不受调试器管理，还会占住 exe 让下次编译失败");`
-- `HeliumTodo.Desktop\App.axaml.cs:740` — `LogBackground("[重启] 拿不到当前可执行文件路径，放弃自动重启");`
-- `HeliumTodo.Desktop\App.axaml.cs:753` — `LogBackground($"[重启] 释放单实例锁失败（不影响继续重启）：{ex.Message}");`
-- `HeliumTodo.Desktop\App.axaml.cs:767` — `LogBackground($"[重启] 已启动新进程：{exePath}");`
-- `HeliumTodo.Desktop\App.axaml.cs:771` — `LogBackground($"[重启] 启动新进程失败：{ex.Message}");`
+- `HeliumTodo.Desktop\App.axaml.cs:155` — `LogBackground("[插件] 检测到 plugins 目录，本版本不加载");`
+- `HeliumTodo.Desktop\App.axaml.cs:179` — `LogBackground("[单实例] 已经有一份在跑，已请它把窗口显示出来，本进程退出");`
+- `HeliumTodo.Desktop\App.axaml.cs:236` — `LogBackground($"[退出] 进程正常结束，退出码 {e.ApplicationExitCode}");`
+- `HeliumTodo.Desktop\App.axaml.cs:262` — `LogBackground("[提醒] 后台扫描已启动（每 30 秒一次）");`
+- `HeliumTodo.Desktop\App.axaml.cs:277` — `LogBackground($"[环境] 会话={System.Diagnostics.Process.GetCurrentProcess().SessionId}"`
+- `HeliumTodo.Desktop\App.axaml.cs:278` — `+ $" 管理员={IsElevated()}"`
+- `HeliumTodo.Desktop\App.axaml.cs:279` — `+ $" 资源管理器={DescribeExplorer()}"`
+- `HeliumTodo.Desktop\App.axaml.cs:280` — `+ $" 渲染后端={Application.Configuration.RenderBackendSettings.DisplayName(HeliumTodo.Desktop.Services.RenderBackendChoice.ActiveKey)}"`
+- `HeliumTodo.Desktop\App.axaml.cs:295` — `LogBackground("[托盘] 启动失败：没有托盘图标，但关闭仍会留在后台"`
+- `HeliumTodo.Desktop\App.axaml.cs:296` — `+ "（再双击一次程序即可唤回窗口）");`
+- `HeliumTodo.Desktop\App.axaml.cs:302` — `? "[托盘] 自检模式：假装托盘已就绪（没有真的图标）"`
+- `HeliumTodo.Desktop\App.axaml.cs:303` — `: "[托盘] 已启动，关闭按钮改为藏窗口");`
+- `HeliumTodo.Desktop\App.axaml.cs:326` — `? "[窗口] 关闭按钮被拦截，已隐藏到托盘（进程继续运行）"`
+- `HeliumTodo.Desktop\App.axaml.cs:327` — `: "[窗口] 关闭按钮被拦截，已隐藏（没有托盘图标，再双击程序可唤回）");`
+- `HeliumTodo.Desktop\App.axaml.cs:372` — `return "没有运行";`
+- `HeliumTodo.Desktop\App.axaml.cs:376` — `return $"PID {string.Join(',', processes.Select(p => p.Id))} 会话 {string.Join(',', sessions)}";`
+- `HeliumTodo.Desktop\App.axaml.cs:380` — `return "查不到";`
+- `HeliumTodo.Desktop\App.axaml.cs:444` — `? "[备份] 这次没做成"`
+- `HeliumTodo.Desktop\App.axaml.cs:445` — `: $"[备份] 已生成 {path}");`
+- `HeliumTodo.Desktop\App.axaml.cs:704` — `$"[启动] 用户「{currentFailure.MessageText}」不可用，已自动改用 postgres 并写回配置。");`
+- `HeliumTodo.Desktop\App.axaml.cs:705` — `Console.Error.WriteLine("[启动] 配置里的数据库用户不可用，已自动改用 postgres（已写回 config.json）。");`
+- `HeliumTodo.Desktop\App.axaml.cs:752` — `Console.Error.WriteLine($"[启动] 数据库预检失败：{probe}（连接：{masked}）");`
+- `HeliumTodo.Desktop\App.axaml.cs:764` — `? "[启动] 首次运行，已写入示例数据"`
+- `HeliumTodo.Desktop\App.axaml.cs:765` — `: "[启动] 数据库就绪");`
+- `HeliumTodo.Desktop\App.axaml.cs:793` — `Console.Error.WriteLine($"[启动] 数据库初始化失败：{ex.Message}（连接：{masked}）");`
+- `HeliumTodo.Desktop\App.axaml.cs:827` — `LogBackground("[重启] 检测到调试器，放弃自动重启："`
+- `HeliumTodo.Desktop\App.axaml.cs:828` — `+ "请用调试器的「重新启动」(Ctrl+Shift+F5)，"`
+- `HeliumTodo.Desktop\App.axaml.cs:829` — `+ "否则新进程不受调试器管理，还会占住 exe 让下次编译失败");`
+- `HeliumTodo.Desktop\App.axaml.cs:836` — `LogBackground("[重启] 拿不到当前可执行文件路径，放弃自动重启");`
+- `HeliumTodo.Desktop\App.axaml.cs:849` — `LogBackground($"[重启] 释放单实例锁失败（不影响继续重启）：{ex.Message}");`
+- `HeliumTodo.Desktop\App.axaml.cs:863` — `LogBackground($"[重启] 已启动新进程：{exePath}");`
+- `HeliumTodo.Desktop\App.axaml.cs:867` — `LogBackground($"[重启] 启动新进程失败：{ex.Message}");`
 
 ### `HeliumTodo.Desktop\Converters\CommonConverters.cs`（13 处）
 
@@ -886,21 +888,32 @@
 
 - `HeliumTodo.Infrastructure\LocalOnlyPeerTransport.cs:67` — `public string LocalAddressText => "（本地模式）";`
 
-### `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs`（13 处）
+### `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs`（24 处）
 
-- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:31` — `return $"连不上 PostgreSQL{where}。请确认数据库服务已启动、端口正确；"`
-- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:32` — `+ "可到「设置 → 数据与文件 → 数据库连接」修改后保存重启。";`
-- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:39` — `"28P01" => $"PostgreSQL 拒绝了用户名或密码{where}。请检查「设置 → 数据与文件 → 数据库连接」。",`
-- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:40` — `"3D000" => $"数据库不存在{where}。请先创建它（createdb），或在设置里换一个库名。",`
-- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:41` — `"42P01" => "数据库里缺少表结构：迁移没有应用成功。请确认程序有建表权限后重启。",`
-- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:42` — `"57P03" => "PostgreSQL 还在启动中，请等几秒再重试。",`
-- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:43` — `"53300" => "PostgreSQL 连接数已满，请关闭其它占用连接的程序后重试。",`
-- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:44` — `_ => $"PostgreSQL 报错（{pg.SqlState}）：{Trim(pg.MessageText)}",`
-- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:51` — `return $"连接 PostgreSQL 超时{where}。请检查主机/端口和防火墙。";`
-- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:56` — `return $"数据库不可用{where}。请到「设置 → 数据与文件 → 数据库连接」检查后重启。";`
-- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:59` — `return $"数据库操作失败：{Trim(ex.Message)}";`
-- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:71` — `return $"连不上 PostgreSQL{where}：{reason}。"`
-- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:72` — `+ "请在「设置 → 数据与文件 → 数据库连接」检查主机、端口、用户名和密码后保存重启。";`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:32` — `return $"连不上 PostgreSQL{where}。请确认数据库服务已启动、端口正确；"`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:33` — `+ "可到「设置 → 数据与文件 → 数据库连接」修改后保存重启。";`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:40` — `"28000" => $"PostgreSQL 里没有用户「{RoleName(pg)}」{where}。请到「设置 → 数据与文件 → 数据库连接」改成已存在的用户名（本机常见 postgres）后保存重启。",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:41` — `"28P01" => $"PostgreSQL 拒绝了用户名或密码{where}。请检查「设置 → 数据与文件 → 数据库连接」。",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:42` — `"3D000" => $"数据库不存在{where}。请先创建它（createdb），或在设置里换一个库名。",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:43` — `"42P01" => "数据库里缺少表结构：迁移没有应用成功。请确认程序有建表权限后重启。",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:44` — `"57P03" => "PostgreSQL 还在启动中，请等几秒再重试。",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:45` — `"53300" => "PostgreSQL 连接数已满，请关闭其它占用连接的程序后重试。",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:46` — `_ => $"PostgreSQL 报错（{pg.SqlState}）：{Trim(pg.MessageText)}",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:53` — `return $"连接 PostgreSQL 超时{where}。请检查主机/端口和防火墙。";`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:58` — `return $"数据库不可用{where}。请到「设置 → 数据与文件 → 数据库连接」检查后重启。";`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:61` — `return $"数据库操作失败：{Trim(ex.Message)}";`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:73` — `return $"连不上 PostgreSQL{where}：{reason}。"`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:74` — `+ "请在「设置 → 数据与文件 → 数据库连接」检查主机、端口、用户名和密码后保存重启。";`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:82` — `if (Find<SocketException>(ex) is not null) return "连不上数据库";`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:87` — `"28000" => $"用户名「{RoleName(pg)}」不存在",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:88` — `"28P01" => "用户名或密码不正确",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:89` — `"3D000" => "数据库不存在",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:90` — `"42P01" => "表结构缺失（迁移未应用）",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:91` — `"57P03" => "数据库正在启动",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:92` — `_ => $"数据库报错（{pg.SqlState}）",`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:95` — `if (Find<TimeoutException>(ex) is not null) return "连接超时";`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:96` — `return Trim(ex?.Message ?? "未知错误", 60);`
+- `HeliumTodo.Infrastructure\Persistence\DatabaseErrorText.cs:103` — `return match.Success ? match.Groups[1].Value : "（未知）";`
 
 ### `HeliumTodo.Infrastructure\Persistence\PostgresConnection.cs`（6 处）
 

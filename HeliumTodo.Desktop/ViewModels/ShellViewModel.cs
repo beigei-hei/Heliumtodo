@@ -228,7 +228,7 @@ public sealed partial class ShellViewModel : ViewModelBase
             {
                 // 单个页面刷新失败不能把整个程序带崩
                 System.Diagnostics.Debug.WriteLine($"[Shell] 页面 {item.Title} 刷新失败：{ex}");
-                StatusText = $"{item.Title} 加载失败：{DatabaseErrorText.Describe(ex)}";
+                StatusText = $"{item.Title} 加载失败：{DatabaseErrorText.Brief(ex)}";
             }
         }
     }

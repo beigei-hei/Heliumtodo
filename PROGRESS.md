@@ -4821,3 +4821,39 @@ FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规�
 - 数据库不可用时，切页仍要等各页面自己的查询超时（提示已中文化，但延迟还在）；
   后续可让仓储层在 `Probe` 失败后直接短路。
 - 设置页改连接参数必须重启，这是连接串生命周期决定的，已用「保存并重启」明确表达。
+
+## 2026-11-10 · 0.5.0-alpha 热修 4：用户名不存在时自动改用 postgres
+
+> 用户换到 55432 端口后，启动提示变成 `PostgreSQL 报错（28000）：role "helium" does not exist`，
+> 状态栏还把整句英文 SQL 错误挤到窗口边缘。
+
+### 症状与根因
+
+- 端口对了，TCP 也能连上，但 `config.json` 里的用户名仍是旧默认值 `helium`；
+  便携 PostgreSQL 只建了 `postgres` 一个角色，于是登录阶段被 28000 拒绝。
+- `DatabaseErrorText` 只映射了 28P01，28000 落到兜底分支，把提供程序原文直接展示；
+  状态栏用的又是完整 `Describe`，长句在标题栏里被裁掉。
+
+### 做了什么
+
+- `DatabaseErrorText` 增加 28000：点名不存在的角色，并指向「设置 → 数据与文件 → 数据库连接」，
+  提示改用本机常见用户名 `postgres`。
+- 新增 `DatabaseErrorText.Brief`：状态栏只显示「用户名『helium』不存在」这类一句话，
+  完整排查建议留给提示条和设置页。
+- `App.TryRepairLocalStorage`（在 DI 构建之前执行）：满足「没有 `HELIUM_DB`、主机是回环地址、
+  当前用户名登录被 28000/28P01 拒绝、`postgres` 能免密登录」四个条件时，把用户名改为
+  `postgres` 并写回 `config.json`，同时在 stderr 留一行日志。
+  连接串在容器构建时只读一次，所以自愈必须发生在 `BuildServiceProvider` 之前。
+- 新增 28000 的单元测试（提示包含角色名与设置页指引，`Brief` 为一句话）。
+
+### 验证
+
+- 构建 0 警告 0 错误；`SelfTest` **203/203**；十九项 `--check` 全绿。
+- 自愈实测：沙盒 `config.json` 写 `Username=helium`、`Port=55432`，不带 `HELIUM_DB` 启动
+  `--shell`，7/7 页面正常，退出后配置文件里已是 `Username=postgres`。
+- 真实用户环境（`%APPDATA%\Helium Todo`）下次启动即会走同一条修复路径。
+
+### 已知未做
+
+- 如果本机 `postgres` 也需要密码，自愈会放弃并保留原配置；此时需在设置页手填密码。
+- 自动改写的是用户名而非建角色——不替用户在数据库里执行 `CREATE ROLE`。
