@@ -56,9 +56,12 @@ internal static class RenderBackendChoice
     /// 这里只给一个值：用户明确选了哪个就用哪个，悄悄降级反而让人查不出问题
     /// （真起不来时 Avalonia 会抛异常并写日志，比"默默变成软件渲染"好排查）。
     /// </summary>
+    /// 为什么 Auto 给两个值？"自动"的语义就是"能上显卡就上，上不去也要能开"。
+    /// AngleEgl 在缺驱动/远程桌面/虚拟机上可能初始化失败，此时 Avalonia 会按顺序试下一个；
+    /// 只写一个值会让它在这些机器上直接起不来。Software 只是最后兜底，不是默认选择。
     public static Win32RenderingMode[] ToModes(string key) => RenderBackendSettings.Normalize(key) switch
     {
-        RenderBackendSettings.Auto => [Win32RenderingMode.AngleEgl],
+        RenderBackendSettings.Auto => [Win32RenderingMode.AngleEgl, Win32RenderingMode.Software],
         RenderBackendSettings.OpenGl => [Win32RenderingMode.Wgl],
         RenderBackendSettings.Vulkan => [Win32RenderingMode.Vulkan],
         _ => [Win32RenderingMode.Software],

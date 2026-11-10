@@ -2078,3 +2078,28 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
 - 干净机器验收：解压后 `HeliumTodo.Desktop.exe` 能启动（首次会建配置目录、迁移数据库、
   写自动备份），待办 CRUD 与备份导出走 `SelfTest` 里的真库用例 + 手动点一遍。
   
+
+### 20.13 窗口交互热修（0.5.0-alpha 交付后）
+
+- **设置分组标题不许让 `ToggleButton` 自己画底**：默认主题会在 checked/焦点状态铺一层
+  `#EEEEEE` 方底。标题又是卡片 18px 圆角下的第一层，方底被裁出来就是“上圆下方”。
+  `Styles/SettingsControls.axaml` 里用 `SettingsExpanderHeaderTheme` 把模板换成一个
+  按 `RadiusXL` 裁圆的 `Border`，背景透明，只在悬停/按下给一点半透明色。
+- **设置项 Footer 不占整行**：`SettingsExpanderItem` 模板是 `Grid ColumnDefinitions="*,Auto"`，
+  左列文字、右列 Footer 右对齐；竖向 `StackPanel` 时代 Footer 的 `ContentPresenter`
+  默认 Stretch，按钮会拉满 1358px。
+- **打开文件夹永远不直接 CreateProcess `explorer.exe`**：explorer 属于外壳，绕过外壳启动
+  会得到 `0xc0000142`（`STATUS_DLL_INIT_FAILED`）。现在的链是
+  Avalonia `Launcher.LaunchDirectoryInfoAsync` → 外壳启 `explorer.exe` → 目录交给系统
+  → `cmd /c start`；每级失败原因汇总到提示条。`--folder-check` 端到端等资源管理器窗口出现。
+- **启动居中要自己写 `Position`**：`WindowStartupLocation="CenterScreen"` 只在创建时按初始
+  `Width/Height` 算一次；`OnOpened` 里先按工作区（DIP）判断放不放得下，放不下才收到 94%，
+  然后按最终像素尺寸显式 `Position = 工作区原点 + 居中偏移`。
+- **静态壁纸用 `UniformToFill`，不是 `Fill`**：预缩放位图对应的是“上一次窗口尺寸”，
+  拖拽中位图还没重做，`Fill` 会把它硬拉成新宽高（看起来就是“壁纸突然变形”）。
+  `UniformToFill` 在尺寸一致时逐像素等价，尺寸变化时只等比缩放并裁掉边缘；
+  160ms 防抖在拖拽期间只续期不重建 `RenderTargetBitmap`，松手后再按新尺寸重做。
+- **改窗口尺寸只写真正变化的属性**：`WindowResizeGrips` 每帧只对变化了的
+  `Position` / `Width` / `Height` 赋值，避免一次拖动里重复触发 `WM_WINDOWPOSCHANGED`。
+- **`auto` 渲染后端的回退**：`ToModes(auto)` 现在是 `[AngleEgl, Software]`——优先显卡，
+  但 AngleEgl 在缺驱动/远程桌面/虚拟机里初始化失败时仍能启动。

@@ -265,7 +265,7 @@
 
 ## 三、ViewModel 里拼出来的文字（运行时）
 
-共 9 个文件、198 处。
+共 9 个文件、197 处。
 
 ### `HeliumTodo.Desktop\ViewModels\DashboardViewModel.cs`（28 处）
 
@@ -364,7 +364,7 @@
 - `HeliumTodo.Desktop\ViewModels\ScheduleViewModel.cs:469` — `HeaderText = $"{date.Month}月{date.Day}日  {weekday}{suffix}";`
 - `HeliumTodo.Desktop\ViewModels\ScheduleViewModel.cs:482` — `public string CountText => $"{Items.Count} 项";`
 
-### `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs`（54 处）
+### `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs`（53 处）
 
 - `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:245` — `? "已切换到暗色模式：壁纸会自动压暗一档，浓度可以在「背景壁纸」里调。"`
 - `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:246` — `: "已切换到亮色模式。";`
@@ -414,12 +414,11 @@
 - `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1208` — `reasons.Add("Avalonia Launcher：系统没有接受这次打开请求");`
 - `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1221` — `("外壳启动资源管理器", new ProcessStartInfo`
 - `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1227` — `("系统默认方式", new ProcessStartInfo`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1233` — `("直接启动资源管理器", new ProcessStartInfo`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1245` — `("经 cmd start 打开", new ProcessStartInfo`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1268` — `NoticeText = $"打开文件夹失败（{string.Join("；", reasons)}）路径：{path}";`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1288` — `AccentSourceDefs.Wallpaper => "从壁纸里自动提一个主色调",`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1289` — `AccentSourceDefs.Custom => "用下面的调色板自己调",`
-- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1290` — `_ => "用主题自带的那套颜色",`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1238` — `("经 cmd start 打开", new ProcessStartInfo`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1261` — `NoticeText = $"打开文件夹失败（{string.Join("；", reasons)}）路径：{path}";`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1281` — `AccentSourceDefs.Wallpaper => "从壁纸里自动提一个主色调",`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1282` — `AccentSourceDefs.Custom => "用下面的调色板自己调",`
+- `HeliumTodo.Desktop\ViewModels\SettingsViewModel.cs:1283` — `_ => "用主题自带的那套颜色",`
 
 ### `HeliumTodo.Desktop\ViewModels\ShellViewModel.cs`（7 处）
 
@@ -668,11 +667,11 @@
 
 ### `HeliumTodo.Desktop\Views\MainWindow.axaml.cs`（5 处）
 
-- `HeliumTodo.Desktop\Views\MainWindow.axaml.cs:270` — `App.LogBackground($"[图标轨] 第 {frame} 帧 间隔 {elapsed - last:0.0} ms 已用 {elapsed:0.0} ms");`
-- `HeliumTodo.Desktop\Views\MainWindow.axaml.cs:314` — `App.LogBackground("[窗口] 状态 → 最小化，动画就地收尾");`
-- `HeliumTodo.Desktop\Views\MainWindow.axaml.cs:322` — `App.LogBackground($"[窗口] 状态 → {state}（托盘唤回，出现动画由 App 播）");`
-- `HeliumTodo.Desktop\Views\MainWindow.axaml.cs:329` — `App.LogBackground($"[窗口] 状态 → {state}，从最小化恢复，补播出现动画");`
-- `HeliumTodo.Desktop\Views\MainWindow.axaml.cs:333` — `App.LogBackground($"[窗口] 状态 → {state}");`
+- `HeliumTodo.Desktop\Views\MainWindow.axaml.cs:282` — `App.LogBackground($"[图标轨] 第 {frame} 帧 间隔 {elapsed - last:0.0} ms 已用 {elapsed:0.0} ms");`
+- `HeliumTodo.Desktop\Views\MainWindow.axaml.cs:326` — `App.LogBackground("[窗口] 状态 → 最小化，动画就地收尾");`
+- `HeliumTodo.Desktop\Views\MainWindow.axaml.cs:334` — `App.LogBackground($"[窗口] 状态 → {state}（托盘唤回，出现动画由 App 播）");`
+- `HeliumTodo.Desktop\Views\MainWindow.axaml.cs:341` — `App.LogBackground($"[窗口] 状态 → {state}，从最小化恢复，补播出现动画");`
+- `HeliumTodo.Desktop\Views\MainWindow.axaml.cs:345` — `App.LogBackground($"[窗口] 状态 → {state}");`
 
 ### `HeliumTodo.Desktop\Views\SettingsView.axaml.cs`（8 处）
 

@@ -120,7 +120,7 @@ public partial class MainWindow : Window
     private void OnWindowSizeChanged(object? sender, SizeChangedEventArgs e)
     {
         // 防抖：拖拽改大小的时候每帧都会 SizeChanged，每帧重做一张全窗口位图不合适。
-        // 停下 160 ms 之后再按最终尺寸重做一次（期间旧图会被拉伸，看不清差别）。
+        // 停下 160 ms 之后再按最终尺寸重做一次。
         _wallpaperScaleTimer ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(160) };
         _wallpaperScaleTimer.Stop();
         _wallpaperScaleTimer.Tick -= OnWallpaperScaleTimerTick;
@@ -130,6 +130,14 @@ public partial class MainWindow : Window
 
     private void OnWallpaperScaleTimerTick(object? sender, EventArgs e)
     {
+        // 拖拽还没结束就继续等：缩放要新建一张全窗口 RenderTargetBitmap，
+        // 在拖拽中做这件事正是"越拉越卡"的来源。松手之后 160 ms 会自然再触发一次。
+        if (_grips.IsResizing)
+        {
+            _wallpaperScaleTimer?.Start();
+            return;
+        }
+
         _wallpaperScaleTimer?.Stop();
         RefreshScaledWallpaper();
     }
@@ -177,7 +185,7 @@ public partial class MainWindow : Window
             && ReferenceEquals(_scaledWallpaperSource, source)
             && _scaledWallpaperSize == target)
         {
-            WallpaperImage.Stretch = Avalonia.Media.Stretch.Fill;
+            WallpaperImage.Stretch = Avalonia.Media.Stretch.UniformToFill;
             WallpaperImage.Source = _scaledWallpaper;
             return;
         }
@@ -193,7 +201,11 @@ public partial class MainWindow : Window
         _scaledWallpaperSource = source;
         _scaledWallpaperSize = target;
 
-        WallpaperImage.Stretch = Avalonia.Media.Stretch.Fill;
+        // UniformToFill 而不是 Fill：静态位图是和"上一次的窗口尺寸"1:1 的，
+        // 拖拽过程中窗口比例变了而位图还没重做。Fill 会把旧图硬拉成新宽高（人脸、圆圈全变形），
+        // 用户看到的就是"壁纸突然被拉伸"；UniformToFill 只是等比放大/裁掉一点边缘，
+        // 松手 160 ms 后按新尺寸重做，恢复 1:1。两者在尺寸一致时逐像素等价。
+        WallpaperImage.Stretch = Avalonia.Media.Stretch.UniformToFill;
         WallpaperImage.Source = scaled;
     }
 
@@ -342,31 +354,48 @@ public partial class MainWindow : Window
 
     private void OnOpened(object? sender, EventArgs e)
     {
-        // 恢复上次的窗口大小（做个范围检查，防止配置被改坏导致窗口看不见）
+        // 恢复上次的窗口大小，并把窗口摆到工作区正中。
         if (DataContext is ShellViewModel
             && App.Services.GetService(typeof(Application.Configuration.ConfigService))
                 is Application.Configuration.ConfigService config)
         {
-            // 默认尺寸是 1920×1080（见 AppConfig.WindowWidth）。这里只做"配置被改坏了"的范围检查。
-            Width = Math.Clamp(config.Current.WindowWidth, MinWidth, 4000);
-            Height = Math.Clamp(config.Current.WindowHeight, MinHeight, 4000);
-
-            // 屏幕装不下这个尺寸就最大化。
-            // 为什么必须管：Windows 建窗口只把宽度收进屏幕，高度照给 —— 实测这台
-            // 2560×1600 @150%（工作区 1706×1019 DIP）上请求 1920×1080 会得到
-            // 1724 DIP 宽、1084 DIP 高，底下那一截就探到屏幕外去了。
-            // 最大化之后宽度和高度都由系统按工作区给，正好铺满，比"露出半个窗口"体面。
             var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
-            var fitsOnScreen = true;
+            var scaling = screen is { Scaling: > 0 } s ? s.Scaling : 1.0;
+
             if (screen is { } current)
             {
-                var scaling = current.Scaling > 0 ? current.Scaling : 1.0;
-                var workWidth = current.WorkingArea.Width / scaling;
-                var workHeight = current.WorkingArea.Height / scaling;
-                fitsOnScreen = workWidth >= Width && workHeight >= Height;
+                // 工作区是物理像素；窗口宽高是 DIP。
+                var work = current.WorkingArea;
+                var workWidth = work.Width / scaling;
+                var workHeight = work.Height / scaling;
+
+                // 默认 1920×1080 在 2560×1600 @150% 上（工作区 1706×1019 DIP）放不下；
+                // 旧代码直接最大化，用户看到的不是"居中"。现在只在放不下时收到 94%，
+                // 然后按最终尺寸把窗口摆到工作区正中（WindowStartupLocation=CenterScreen
+                // 是按"创建时的初始尺寸"算的，OnOpened 改了尺寸之后就对不上了）。
+                var desiredWidth = Math.Clamp(config.Current.WindowWidth, MinWidth, 4000);
+                var desiredHeight = Math.Clamp(config.Current.WindowHeight, MinHeight, 4000);
+
+                if (desiredWidth > workWidth || desiredHeight > workHeight)
+                {
+                    desiredWidth = Math.Max(MinWidth, Math.Min(desiredWidth, workWidth * 0.94));
+                    desiredHeight = Math.Max(MinHeight, Math.Min(desiredHeight, workHeight * 0.94));
+                }
+
+                Width = desiredWidth;
+                Height = desiredHeight;
+
+                if (!config.Current.StartMaximized)
+                {
+                    var pixelWidth = (int)Math.Round(Width * scaling);
+                    var pixelHeight = (int)Math.Round(Height * scaling);
+                    Position = new PixelPoint(
+                        work.X + Math.Max(0, (work.Width - pixelWidth) / 2),
+                        work.Y + Math.Max(0, (work.Height - pixelHeight) / 2));
+                }
             }
 
-            if (config.Current.StartMaximized || !fitsOnScreen)
+            if (config.Current.StartMaximized)
             {
                 WindowState = WindowState.Maximized;
             }

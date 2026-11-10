@@ -171,9 +171,23 @@ internal sealed class WindowResizeGrips
             _frameScheduled = false;
             if (_edge is null) return;
 
-            _window.Position = _pendingPosition;
-            _window.Width = _pendingWidth;
-            _window.Height = _pendingHeight;
+            // 拖东/南边时位置没变，别把同一个 Position 再写一遍：
+            // 每一次赋值都会走 SetWindowPos，Windows 会多发一轮 WM_WINDOWPOSCHANGED，
+            // 换来的就是"同样的尺寸被布局/重绘两次"。
+            if (_window.Position != _pendingPosition)
+            {
+                _window.Position = _pendingPosition;
+            }
+
+            if (Math.Abs(_window.Width - _pendingWidth) > 0.01)
+            {
+                _window.Width = _pendingWidth;
+            }
+
+            if (Math.Abs(_window.Height - _pendingHeight) > 0.01)
+            {
+                _window.Height = _pendingHeight;
+            }
         });
     }
 

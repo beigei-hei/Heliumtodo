@@ -26,7 +26,8 @@
 - 提示条**不用** `FAInfoBar`：自绘 `Border Name="NoticeBar"` + `ZIndex="10"`，
   和卡片同格、排在卡片**后面**（叠在功能区上方），底板跟随明暗，3 秒自动收起（`NoticePolicy`）。
   注意 Avalonia 12 里写 `ZIndex="10"`，写 `Panel.ZIndex` 会报 `AVLN3000`。
-- 设置页折叠分组是自绘 `SettingsExpander` / `SettingsExpanderItem`（`Desktop/Controls/SettingsExpander.cs`，模板在 `Styles/SettingsControls.axaml`）：模板里**任何一层都不许给背景**（0.4 的 FA 模板写死 `#B3FFFFFF`，就是"控件下面垫一层"的根因）；`--rail-check` 会数着 10 组 27 行验证。
+- 设置页折叠分组是自绘 `SettingsExpander` / `SettingsExpanderItem`（`Desktop/Controls/SettingsExpander.cs`，模板在 `Styles/SettingsControls.axaml`）：模板里**任何一层都不许给背景**（0.4 的 FA 模板写死 `#B3FFFFFF`，就是"控件下面垫一层"的根因）；`--rail-check` 会数着 10 组 27 行验证。标题**必须**用 `SettingsExpanderHeaderTheme`（默认 `ToggleButton` 主题会画 checked 方底，在卡片圆角下变成"上圆下方"）；`SettingsExpanderItem` 是 `Grid ColumnDefinitions="*,Auto"`，Footer 右对齐、**不许**横向拉伸（按钮会变成整行宽）。
+- 打开文件夹**不许**直接 `CreateProcess explorer.exe`（`UseShellExecute=false`）：绕过外壳启动会得到 `0xc0000142`（`STATUS_DLL_INIT_FAILED`）。只许走 `AvaloniaFolderLauncher` → 外壳启 `explorer.exe` → 目录交给系统 → `cmd /c start`，失败原因汇总进提示条。
 - 外壳交互（标题栏拖拽 / 双击最大化 / 窗口按钮 / 8 个抓手 / 回车发送 / 滚动同步）只许用
   `Desktop/Behaviors/` 下的 `Behavior<T>`，别再往 code-behind 里加 `PointerPressed` / `KeyDown`；
   新增行为必须同时加 `--behavior-check` 断言（挂载数量 + 解绑后不触发）。

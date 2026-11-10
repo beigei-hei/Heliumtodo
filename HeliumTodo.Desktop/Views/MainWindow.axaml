@@ -65,7 +65,7 @@
     <!-- Source 和 Stretch 由窗口代码管：静态壁纸会先被缩放成"窗口像素尺寸"
          再贴上来，这样每帧重绘不用重新采样整张图（见 WallpaperScaler）。 -->
     <Image Name="WallpaperImage"
-           Stretch="Fill"
+           Stretch="UniformToFill"
            IsVisible="{Binding IsWallpaperVisible}"
            RenderOptions.BitmapInterpolationMode="HighQuality"
            HorizontalAlignment="Stretch"

@@ -11,14 +11,46 @@
     ══════════════════════════════════════════════════════════════
       设置页折叠分组（替代 FluentAvalonia 的 FASettingsExpander）
     ══════════════════════════════════════════════════════════════
-    两件东西必须同时成立：
+    三件东西必须同时成立：
       · 分组标题行和每一行都不许自己画底（FA 的模板在行里写死了 #B3FFFFFF，
         之前要用四条 fa| 样式压；现在模板我们自己写，干脆不给底色）；
-      · 行的排列顺序是「标题 → 说明 → 控件」，和 FA 的视觉一致，
-        这样 SettingsView 里十个分组、三十四行不用改文案和布局。
+      · 行的排列顺序是「标题/说明 → 右侧控件」，和电脑上的设置页一致：
+        控件靠右、按内容取宽，不再整行拉满（0.5.1 修）；
+      · 标题行必须自己带圆角：它是卡片里的第一条内容，方角会顶穿卡片圆角，
+        看起来就像「只有上半部分有圆角」（0.5.1 修）。
   -->
 
   <Styles.Resources>
+
+  <!-- 标题行：自绘模板，不用默认 ToggleButton 的主题（那个主题会画选中/焦点底色） -->
+  <ControlTheme x:Key="SettingsExpanderHeaderTheme" TargetType="ToggleButton">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Padding" Value="0,10" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="PART_HeaderBackground"
+                Background="{TemplateBinding Background}"
+                CornerRadius="{DynamicResource RadiusXL}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:pointerover /template/ Border#PART_HeaderBackground">
+      <Setter Property="Background" Value="#0F000000" />
+    </Style>
+    <Style Selector="^:pressed /template/ Border#PART_HeaderBackground">
+      <Setter Property="Background" Value="#18000000" />
+    </Style>
+  </ControlTheme>
+
   <ControlTheme x:Key="{x:Type ctrl:SettingsExpander}" TargetType="ctrl:SettingsExpander">
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     <Setter Property="Template">
@@ -26,12 +58,10 @@
         <Border Background="Transparent">
           <StackPanel>
             <ToggleButton Name="PART_Header"
+                          Theme="{StaticResource SettingsExpanderHeaderTheme}"
                           IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}"
                           HorizontalAlignment="Stretch"
-                          HorizontalContentAlignment="Left"
-                          Background="Transparent"
-                          BorderThickness="0"
-                          Padding="0,10">
+                          HorizontalContentAlignment="Left">
               <StackPanel Spacing="2">
                 <ContentPresenter Content="{TemplateBinding Header}"
                                   TextElement.FontSize="{DynamicResource FontSubtitle}"
@@ -63,23 +93,30 @@
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     <Setter Property="Template">
       <ControlTemplate>
-        <StackPanel Margin="0,6" Spacing="4">
-          <ContentPresenter Content="{TemplateBinding Content}"
-                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                            TextElement.FontSize="{DynamicResource FontBody}"
-                            TextElement.FontWeight="Medium" />
-          <TextBlock Text="{TemplateBinding Description}"
-                     FontSize="{DynamicResource FontSmall}"
-                     Opacity="0.6"
-                     TextWrapping="Wrap"
-                     IsVisible="{TemplateBinding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-          <ContentPresenter Content="{TemplateBinding Footer}"
-                            Margin="0,4,0,0"
+        <!-- 左：标题 + 说明；右：控件。控件不许拉满整行（打开文件夹这种按钮要贴右） -->
+        <Grid Margin="0,6" ColumnDefinitions="*,Auto">
+          <StackPanel Grid.Column="0" Spacing="4" VerticalAlignment="Center">
+            <ContentPresenter Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              TextElement.FontSize="{DynamicResource FontBody}"
+                              TextElement.FontWeight="Medium" />
+            <TextBlock Text="{TemplateBinding Description}"
+                       FontSize="{DynamicResource FontSmall}"
+                       Opacity="0.6"
+                       TextWrapping="Wrap"
+                       IsVisible="{TemplateBinding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          </StackPanel>
+          <ContentPresenter Grid.Column="1"
+                            Content="{TemplateBinding Footer}"
+                            Margin="16,0,0,0"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Right"
                             IsVisible="{TemplateBinding Footer, Converter={x:Static ObjectConverters.IsNotNull}}" />
-        </StackPanel>
+        </Grid>
       </ControlTemplate>
     </Setter>
   </ControlTheme>
+
   </Styles.Resources>
 
 </Styles>

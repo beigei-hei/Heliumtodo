@@ -1230,18 +1230,11 @@ public sealed partial class SettingsViewModel : ViewModelBase
                 UseShellExecute = true,
                 Verb = "open",
             }),
-            ("直接启动资源管理器", new ProcessStartInfo
-            {
-                FileName = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"),
-                Arguments = quoted,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            }),
-            // 第四条：让 cmd 的 start 去开。
-            // 前三行都失败时通常不是"路径不对"，而是外壳这一层被挡了
-            // （提权进程 + 非提权的资源管理器、或者外壳被安全软件接管）。
-            // cmd 走的是另一条创建进程的路径，值得再试一次。
+            // 只有上面几条都失败才走 cmd：cmd 的 start 也是 ShellExecute，
+            // 但它是独立进程，能绕开"当前进程的外壳上下文被安全软件拦住"这一种情况。
+            // 注意：这里**不能**直接 CreateProcess C:\Windows\explorer.exe ——
+            // explorer 属于外壳，绕过外壳启动会得到 0xc0000142（STATUS_DLL_INIT_FAILED），
+            // 这是 0.1.0 之前踩过一次、0.5.0 又踩回来的坑（见 PROGRESS.md 2026-10-28）。
             ("经 cmd start 打开", new ProcessStartInfo
             {
                 FileName = Path.Combine(

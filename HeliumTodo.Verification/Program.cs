@@ -673,6 +673,8 @@ public static class Program
         {
             "ItemsControl", "Canvas", "ScrollViewer", "TextBlock", "ContentPresenter",
             "WidthObserverPanel", "TimelineGrid", "StackPanel", "Grid",
+            // 交互控件也打出来：设置页「控件是否拉满整行」「圆角对不对」靠它核对。
+            "Button", "ToggleButton", "ComboBox", "TextBox", "NumericUpDown", "ToggleSwitch",
         };
 
         var count = 0;

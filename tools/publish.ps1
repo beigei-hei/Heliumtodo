@@ -1,4 +1,4 @@
-﻿# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-License-Identifier: GPL-3.0-only
 # 发布脚本：自包含 win-x64 包 + 许可证 + SOURCE.txt + zip。
 # 用法：pwsh tools\publish.ps1 [-SkipPublish]
 param(
@@ -33,6 +33,19 @@ try {
     Copy-Item (Join-Path $root 'CONTRIBUTING.md') $staging -Force
     Copy-Item (Join-Path $root 'LICENSES') $staging -Recurse -Force
 
+    # SkiaSharp / HarfBuzzSharp 的 Windows 原生库依赖 MSVC 运行库；自包含发布不带它。
+    # 目标机没装 VC++ Redistributable 时，加载原生库会以 0xc0000142（DLL 初始化失败）退出。
+    # 这些 DLL 是微软允许随应用分发的运行库文件，从本机 System32 取同版本副本。
+    $vcRuntime = @('vcruntime140.dll', 'vcruntime140_1.dll', 'msvcp140.dll')
+    foreach ($dll in $vcRuntime) {
+        $source = Join-Path $env:SystemRoot "System32\$dll"
+        if (Test-Path $source) {
+            Copy-Item $source $staging -Force
+        } else {
+            Write-Warning "未找到 $source，目标机需要自行安装 VC++ Redistributable"
+        }
+    }
+
     $commit = (git rev-parse HEAD).Trim()
     @"
 Helium Todo $version 源码对应关系
@@ -47,6 +60,10 @@ Helium Todo $version 源码对应关系
 
 许可证：GPL-3.0-only，全文见 LICENSE；第三方组件声明见 THIRD-PARTY-NOTICES.md，
 许可全文在 LICENSES/ 目录。
+
+随包附带 vcruntime140.dll / vcruntime140_1.dll / msvcp140.dll（Microsoft Visual C++
+Redistributable，微软允许随应用分发），供 SkiaSharp/HarfBuzzSharp 原生库使用；
+目标机安装过 VC++ Redistributable 时可忽略这几个文件。
 "@ | Set-Content (Join-Path $staging 'SOURCE.txt') -Encoding utf8
 
     if (Test-Path $zip) { Remove-Item $zip -Force }

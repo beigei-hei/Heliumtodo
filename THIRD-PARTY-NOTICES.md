@@ -17,7 +17,7 @@ MIT 是模板文本（`<year>` / `<copyright holders>` 为占位符）；各组�
 
 | 组件 | 版本 | 许可证 | 版权行 |
 | --- | --- | --- | --- |
-| Avalonia、Avalonia.Desktop、Avalonia.Themes.Fluent、Avalonia.HarfBuzz、Avalonia.Headless、Avalonia.Controls.DataGrid、Avalonia.Controls.ColorPicker | 12.1.2 | MIT | Copyright 2013-2026 © The AvaloniaUI Project |
+| Avalonia、Avalonia.Desktop、Avalonia.HarfBuzz、Avalonia.Headless、Avalonia.Controls.ColorPicker | 12.1.5 | MIT | Copyright 2013-2026 © The AvaloniaUI Project |
 | Avalonia.Fonts.Inter（Inter 字体） | 12.1.5 | 包本身 MIT；内嵌字体为 OFL-1.1 | Copyright 2013-2026 © The AvaloniaUI Project；Inter 字体版权归 The Inter Project Authors |
 | SkiaSharp（含原生 libSkiaSharp） | 3.119.4 | MIT | © Microsoft Corporation. All rights reserved. |
 | HarfBuzzSharp（含原生 libHarfBuzzSharp） | 8.3.1.3 | MIT | © Microsoft Corporation. All rights reserved. |
@@ -29,6 +29,7 @@ MIT 是模板文本（`<year>` / `<copyright holders>` 为占位符）；各组�
 | Xaml.Behaviors.Avalonia（及 Interactivity/Interactions/Animations 子包） | 12.1.5 | MIT | Copyright (c) Wiesław Šoltés |
 | Material.Icons.Avalonia | 3.0.2 | MIT（图标本身 Apache-2.0） | Copyright (c) Material.Icons.Avalonia contributors；分发图标时需保留 NOTICE |
 | .NET 运行时（自包含发布时） | 10.0.x | MIT | © .NET Foundation and Contributors |
+| Microsoft Visual C++ Redistributable（随发布包附带 vcruntime140.dll、vcruntime140_1.dll、msvcp140.dll） | 14.x | 微软可再分发运行库（非开源许可） | © Microsoft Corporation. All rights reserved. |
 
 ## 仅用于测试、不随产品分发
 

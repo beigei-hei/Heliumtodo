@@ -3,11 +3,9 @@
 > 这份文件是给「下次打开这个项目的人（或 AI）」看的：
 > 做到哪了、什么状态、下一步干什么、哪些坑已经踩过。
 
-当前版本：**v0.3.5-alpha**
-状态：**已迁移到 Avalonia 12 + FluentAvaloniaUI 3（.NET 10），三大核心功能完整跑通；
-新增「背景壁纸 + 自定义调色板 + 局域网联机自习 + 统一 .zip 备份 + 待办/日程提醒 + 托盘常驻」六块，186 个测试全绿，7 项界面渲染全部通过（含整个外壳）；
-设置页说明文字已精简，「打开文件夹」改为「Avalonia Launcher → 四级进程降级」；
-界面已按 `UI_REDESIGN_BRIEF.md` 改成「三列卡片工作台」（自绘标题栏 + 图标轨 + 卡片 + 右栏）**
+当前版本：**v0.5.0-alpha**
+状态：**0.5.0-alpha 已完成 P0–P7（七项目分层、Application 层、PostgreSQL 17 + EF10、Material.Avalonia 主题、FluentAvaloniaUI 已移除、Xaml.Behaviors 12.1.5、发布脚本）；
+自绘设置控件与提示条；197 个测试全绿（含真库用例），十九项 `--check` 全绿。**
 
 ---
 
@@ -4714,3 +4712,32 @@ P0 的「保留 FluentAvalonia + SQLite」不再是不可抗力，P2 起按规�
 
 - 图形安装包（Inno Setup/MSIX）不在 0.5.0 范围；
 - 公开仓库地址确定后回填 `README.md` 与 `SOURCE.txt`。
+## 2026-11-10 · 0.5.0-alpha 热修：设置页圆角/整行控件、文件夹启动、居中、壁纸拉伸
+
+### 用户报障
+
+> 设置界面里调整项的控件圆角只在上半部分生效（左右顶边）；一些交互控件占了一整行
+> （例如“打开文件夹”）；本地运行（不是 IDE）时打开文件夹又报 `0xc0000142`；
+> 启动位置要屏幕正中；拉伸窗口明显卡顿，壁纸在拉伸中会被硬拉变形，松手后恢复。
+
+### 根因与处理
+
+| 现象 | 根因 | 处理 |
+| --- | --- | --- |
+| 第一组标题上有一条 `#EEEEEE` 底、上圆下方 | 自绘 `SettingsExpander` 的 `PART_Header` 是默认主题的 `ToggleButton`，它自己画 checked/焦点底；这一层正好贴在卡片 18px 圆角下沿，被裁成“上半圆、下半方” | 给 header 新建 `SettingsExpanderHeaderTheme`：`Border` 自己按 `RadiusXL` 裁圆、背景透明，悬停/按下才给 `#0F000000` / `#18000000` |
+| “打开文件夹”按钮拉满整行 | `SettingsExpanderItem` 模板是竖向 `StackPanel`，`Footer` 的 `ContentPresenter` 默认 `Stretch` | 模板改成 `Grid ColumnDefinitions="*,Auto"`，左列文字、右列 `Footer` 右对齐且不拉伸；按钮恢复 102×34 |
+| 打开文件夹报 `0xc0000142` | 降级链最后一层是 `CreateProcess %WINDIR%\explorer.exe`（`UseShellExecute=false`）。explorer 属于外壳，绕过外壳启动就会 `STATUS_DLL_INIT_FAILED`（2026-10-28 已踩过一次，P1 重构时又带回来了） | 删掉这一层；保留 Avalonia Launcher → 外壳 `explorer.exe` → 目录交给系统 → `cmd /c start`，每一级失败原因仍汇总到提示条 |
+| 启动不在屏幕正中 | `WindowStartupLocation="CenterScreen"` 按创建时的 1920×1080 算；`OnOpened` 又改尺寸/最大化，中心就偏了 | `OnOpened` 里按工作区（DIP）重新算：放不下才收到 94%，然后显式写 `Position` 居中；最大化路径不动 |
+| 拉伸时卡顿、壁纸被硬拉变形 | 静态壁纸预缩放成“上一次窗口尺寸”，拖拽中位图没重做却被 `Stretch="Fill"` 硬拉；且 160 ms 防抖计时器在拖拽中途也会做一次全窗口 `RenderTargetBitmap` | 改用 `UniformToFill`（尺寸一致时逐像素等价，尺寸变化时只等比缩放/裁边）；拖拽中计时器只续期不缩放，松手后再重做；`WindowResizeGrips` 只写真正变化的 `Position/Width/Height`，避免一次拖动触发两轮 `WM_WINDOWPOSCHANGED` |
+
+### 附带
+
+- 默认后端 `auto` 从 `[AngleEgl]` 改成 `[AngleEgl, Software]`：显卡初始化失败时仍能启动（仍优先显卡，不是把默认改回软件）。
+- `InteractionQuality` 顶部注释里“默认软件渲染”已过时，改为“默认显卡，驱动退化/远程桌面下才落到软件”。
+- `DumpVisualTree` 的“关心的控件类型”加上 Button/ToggleButton/ComboBox/TextBox/NumericUpDown/ToggleSwitch，方便用 `--tree` 量控件尺寸。
+
+### 验证
+
+- 构建 0 警告 0 错误；`SelfTest` 197/197；十九项 `--check` 全绿。
+- `--shell` 7/7；像素检查：设置页卡片顶部不再有 `(238,238,238)` 色带；
+- `--folder-check` 通过（资源管理器窗口真的出现，走 Launcher）。
