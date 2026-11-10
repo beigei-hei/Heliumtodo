@@ -2064,4 +2064,17 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
   「数据已被其它窗口修改，请刷新后重试。」），`App.axaml.cs` 在
   `Dispatcher.UIThread.UnhandledException` 里接到后写壳层警告条并 `Handled = true`；
   真库用例 `ConcurrencyTests.两个上下文改同一行时后提交的一方拿到冲突` 守着。
+
+### 20.12 发布包（P7 起）
+
+- 发布只用 `pwsh tools\publish.ps1`（`dotnet publish -c Release -r win-x64 --self-contained`），
+  产物在 `dist\HeliumTodo-0.5.0-win-x64.zip`。脚本同时拷 `LICENSE`、`THIRD-PARTY-NOTICES.md`、
+  `LICENSES/`，生成 `SOURCE.txt`（版本 + commit + 构建命令），最后打印 SHA256。
+- `dist/` 在 `.gitignore` 里，**不进仓库**；发布二进制必须能对应到同一 commit 的源码，
+  所以 `SOURCE.txt` 里的 commit 是发布前最后一次提交，打包后不再改工作区。
+- 已发布副本的 SPDX 头不可追认：新 `.cs` / `.axaml` 必须在打包前过
+  `python tools\check-license-headers.py`；EF 重新生成 `HeliumDbContextModelSnapshot.cs` 会丢掉头，
+  生成后要补回两行再打包。
+- 干净机器验收：解压后 `HeliumTodo.Desktop.exe` 能启动（首次会建配置目录、迁移数据库、
+  写自动备份），待办 CRUD 与备份导出走 `SelfTest` 里的真库用例 + 手动点一遍。
   

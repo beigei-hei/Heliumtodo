@@ -53,6 +53,16 @@ dotnet HeliumTodo.Verification\bin\Debug\net10.0\HeliumTodo.Verification.dll --l
 
 `--check` 共十九项（含 `--db-check`、`--theme-check`、`--behavior-check`、`--copy-check`），另有 `--shell` 截图模式；完整命令见 [`AGENTS.md`](AGENTS.md)。
 
+发布包：
+
+```powershell
+pwsh tools\publish.ps1
+```
+
+脚本做自包含 `win-x64` 发布，把 `LICENSE`、`THIRD-PARTY-NOTICES.md`、`LICENSES/` 和
+`SOURCE.txt`（写明 commit）一起塞进 `dist\HeliumTodo-0.5.0-win-x64.zip`，最后打印 SHA256。
+已经 publish 过、只想重打包时加 `-SkipPublish`。
+
 ## 文档
 
 | 文档 | 内容 |

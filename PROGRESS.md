@@ -4690,3 +4690,27 @@ P0 的「保留 FluentAvalonia + SQLite」不再是不可抗力，P2 起按规�
 
 - `Material.Avalonia.Dialogs` 接入（确认/输入框仍是自绘 Window）；
 - P7 发布脚本与安装包。
+## 2026-11-10 · 0.5.0-alpha P7：发布包
+
+### 做了什么
+
+- 新增 `tools/publish.ps1`：`dotnet publish -c Release -r win-x64 --self-contained`，
+  把 `LICENSE`、`THIRD-PARTY-NOTICES.md`、`CONTRIBUTING.md`、`LICENSES/` 和
+  `SOURCE.txt`（版本 + commit + 构建命令）拷进包，用 `ZipFile.CreateFromDirectory` 打成
+  `dist\HeliumTodo-0.5.0-win-x64.zip`，打印大小与 SHA256；`-SkipPublish` 只重打包。
+- `README.md` 加发布命令；`TECH_STACK.md` 顶部改为“冲突时以 DEVELOPMENT_SPEC.md 为准”。
+
+### 验证
+
+- 发布目录自包含运行：`HeliumTodo.Desktop.exe` 启动后创建配置目录，连 PG、迁移、写自动备份，
+  进程保持存活；备份 zip 是 v2 结构（`manifest.json` + `data/{Schedules,Todos,FocusSessions,
+  StudyRooms,StudyRoomMembers,StudyRoomMessages}.jsonl` + `data/config.json`）。
+- 包：约 222 MB 解压 / 78.2 MB zip；SHA256
+  `2153D6B5C177B19526BBD0F9DFEDB549EAE39E40560546342141FE6B129A2862`。
+- 未完成：干净 Windows 机器上的手动 CRUD 验收（本机没有第二台干净环境）；
+- 未完成：干净 Windows 机器上的手动 CRUD 验收（本机没有第二台干净环境）；`SOURCE.txt` 的仓库地址仍是“发布时填写”（本地仓库没有 remote）。
+
+### 还没做
+
+- 图形安装包（Inno Setup/MSIX）不在 0.5.0 范围；
+- 公开仓库地址确定后回填 `README.md` 与 `SOURCE.txt`。

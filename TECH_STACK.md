@@ -1,6 +1,6 @@
 # Helium Todo · 技术栈与运行时画像
 
-> 版本 **0.5.0-alpha（P6）** ｜ 本文对标的是仓库当前代码，不是计划。
+> 版本 **0.5.0-alpha（P7）** ｜ 本文对标的是仓库当前代码，不是计划；与 `DEVELOPMENT_SPEC.md` 冲突时以规格为准。
 > 项目已按 `DEVELOPMENT_SPEC.md` 改名为 Domain / Application / Infrastructure / Desktop / Verification；
 > Material.Avalonia 3.21.0 已接管全部界面（P3 主题、P4 控件、P5 行为），FluentAvaloniaUI 已删除；
 > P6 起 `--copy-check` 把 `UI_TEXT_MAP.md` 与编译产物对撞，`--perf-check` 直接断言 §15.3 预算；

@@ -104,6 +104,7 @@ git status --short          # 交付前这里必须是空的
 git add -A && git commit -m "…"
 pwsh tools\check-file-integrity.ps1
 python tools\gen_ui_text_map.py
+pwsh tools\publish.ps1            # 自包含 win-x64 发布包 + SOURCE.txt + SHA256
 ```
 
 数据库相关测试要另设 `HELIUM_TEST_POSTGRES`（指向管理库 `postgres`，测试会在里面建临时库）；不设则这些用例跳过。
