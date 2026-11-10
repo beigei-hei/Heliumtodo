@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2025 Helium Todo contributors
 // SPDX-License-Identifier: GPL-3.0-only
 
+using FluentAvalonia.Styling;
 using HeliumTodo.Domain.Theming;
-using Material.Styles.Themes;
 
 namespace HeliumTodo.Desktop.Services;
 
@@ -69,7 +69,6 @@ public sealed class ThemeService
         if (string.Equals(key, _lastAppliedKey, StringComparison.OrdinalIgnoreCase)) return;
         _lastAppliedKey = key;
 
-        ApplyMaterialBaseTheme(theme.Kind == ThemeKind.Dark);
         ApplyAccentColor(accent, isDark: theme.Kind == ThemeKind.Dark);
     }
 
@@ -83,12 +82,14 @@ public sealed class ThemeService
     ///   "SystemAccentColor" 等 7 个颜色键。有效，但色阶要自己算，
     ///   容易漏掉某个色阶。
     ///
-    ///   0.4.x：改用 FluentAvaloniaTheme.CustomAccentColor（已随 FA 删除）。
+    ///   0.4.x：改用 FluentAvaloniaTheme.CustomAccentColor。
     ///
-    ///   0.5.0 P3：MaterialTheme 的 PrimaryColor 只接受枚举色板，无法承载
-    ///   设置页里的任意十六进制强调色；PaletteHelper 写出的主题又不会被
-    ///   MaterialTheme 消费。最后定为：直接写 MaterialPrimary* /
-    ///   MaterialSecondary* 资源键（见 <see cref="ApplyMaterialAccent"/>），
+    ///   0.5.0 P3：短暂换成 Material 3，当时发现 MaterialTheme.PrimaryColor
+    ///   只接受枚举色板，只能绕过它直接写 MaterialPrimary* 资源键。
+    ///
+    ///   0.5.0-alpha 热修 2：按用户反馈切回 FluentAvalonia（Material 控件
+    ///   在小尺寸按钮、下拉框上观感明显不如 Fluent）。当前途径回到
+    ///   <see cref="FindFluentAvaloniaTheme"/> 的 CustomAccentColor，
     ///   同时保留 SystemAccentColor 系列给 Avalonia 内建控件兜底。
     ///
     ///   ⚠️ 顺带记一个踩过的假坑：我曾以为"强调色从来没生效过"，
@@ -109,8 +110,8 @@ public sealed class ThemeService
         //    主题换成紫色以后那几处还是蓝的 —— 这就是"主题色不统一"的来源。
         ApplyDerivedAccentTokens(baseColor, isDark);
 
-        // ② 主途径：Material 3 的色阶资源键（0.5.0 P3 起）
-        ApplyMaterialAccent(baseColor);
+        // ② 主途径：FluentAvaloniaTheme 的强调色（0.5.0-alpha 热修 2 起）
+        FindFluentAvaloniaTheme()?.CustomAccentColor = baseColor;
 
         // ③ 兜底：Avalonia 内建控件仍读 SystemAccentColor 系列。
         if (Avalonia.Application.Current?.Resources is not { } resources) return;
@@ -173,98 +174,18 @@ public sealed class ThemeService
 
 
     /// <summary>
-    /// 找到 App.axaml 里声明的 MaterialTheme（0.5.0 P3 起）。
+    /// 找到 App.axaml 里声明的 FluentAvaloniaTheme。
     /// </summary>
-    private static Material.Styles.Themes.MaterialTheme? FindMaterialTheme()
+    private static FluentAvaloniaTheme? FindFluentAvaloniaTheme()
     {
         if (Avalonia.Application.Current is not { } app) return null;
 
         foreach (var style in app.Styles)
         {
-            if (style is Material.Styles.Themes.MaterialTheme material) return material;
+            if (style is FluentAvaloniaTheme fluent) return fluent;
         }
 
         return null;
-    }
-
-
-    /// <summary>
-    /// 让 MaterialTheme 的明暗跟应用主题一致。
-    ///
-    /// 为什么不能只改 <c>RequestedThemeVariant</c>？
-    ///   Material 的 ThemeVariant 是 MaterialLight / MaterialDark 两套资源，
-    ///   MaterialTheme 用它自己的 BaseTheme 决定挂哪一套。只改应用整体变体，
-    ///   Material 控件会停在启动时那一套，出现"界面深色、输入框还是浅色"。
-    ///   （MaterialTheme 内部有 100ms 合并延迟，切换后要等一等才能断言像素。）
-    /// </summary>
-    private static void ApplyMaterialBaseTheme(bool isDark)
-    {
-        if (FindMaterialTheme() is not { } material) return;
-
-        material.BaseTheme = isDark
-            ? Material.Styles.Themes.Base.BaseThemeMode.Dark
-            : Material.Styles.Themes.Base.BaseThemeMode.Light;
-    }
-
-
-    /// <summary>
-    /// 把任意十六进制强调色写进 Material 的资源键。
-    ///
-    /// 为什么不用 MaterialTheme.PrimaryColor：
-    ///   它只接受 PrimaryColor 枚举（19 个固定色板），接不住用户在设置页里
-    ///   手调的 #RRGGBB。为什么不用 PaletteHelper：
-    ///   3.21.0 的 PaletteHelper.GetTheme() 找不到 MaterialTheme 内部的 ITheme，
-    ///   返回的是默认主题，写回去也进不了 Material 的资源字典（已实测：
-    ///   MaterialPrimaryMidBrush 仍是 #00000000）。
-    ///
-    /// 所以这里按 Material 自己的键名算三档色阶，写到 Application.Resources。
-    /// 资源查找时应用级字典优先于样式里的默认值，Material 控件用
-    /// DynamicResource 取色时会先命中这里 —— 这是唯一能保住任意 RGB 的通道。
-    /// </summary>
-    private static void ApplyMaterialAccent(Avalonia.Media.Color color)
-    {
-        if (Avalonia.Application.Current?.Resources is not { } resources) return;
-
-        var light = Lighten(color, 0.20);
-        var mid = color;
-        var dark = Darken(color, 0.18);
-
-        // 三档前景色：保证在对应底色上看得清（亮的用黑字，深的用白字）
-        var lightFg = ReadableForeground(light);
-        var midFg = ReadableForeground(mid);
-        var darkFg = ReadableForeground(dark);
-
-        WriteAccent(resources, "MaterialPrimary", light, mid, dark, lightFg, midFg, darkFg);
-        WriteAccent(resources, "MaterialSecondary", light, mid, dark, lightFg, midFg, darkFg);
-
-        static void WriteAccent(Avalonia.Controls.IResourceDictionary resources, string prefix,
-            Avalonia.Media.Color light, Avalonia.Media.Color mid, Avalonia.Media.Color dark,
-            Avalonia.Media.Color lightFg, Avalonia.Media.Color midFg, Avalonia.Media.Color darkFg)
-        {
-            resources[$"{prefix}Light"] = light;
-            resources[$"{prefix}Mid"] = mid;
-            resources[$"{prefix}Dark"] = dark;
-
-            resources[$"{prefix}LightBrush"] = new Avalonia.Media.SolidColorBrush(light);
-            resources[$"{prefix}MidBrush"] = new Avalonia.Media.SolidColorBrush(mid);
-            resources[$"{prefix}DarkBrush"] = new Avalonia.Media.SolidColorBrush(dark);
-
-            resources[$"{prefix}LightForegroundBrush"] = new Avalonia.Media.SolidColorBrush(lightFg);
-            resources[$"{prefix}MidForegroundBrush"] = new Avalonia.Media.SolidColorBrush(midFg);
-            resources[$"{prefix}DarkForegroundBrush"] = new Avalonia.Media.SolidColorBrush(darkFg);
-        }
-    }
-
-
-    /// <summary>
-    /// 给定底色，返回一个对比度足够的前景色（白或黑）。
-    /// 用相对亮度近似（sRGB 权重 0.2126/0.7152/0.0722），阈值 0.55。
-    /// </summary>
-    private static Avalonia.Media.Color ReadableForeground(Avalonia.Media.Color background)
-    {
-        var luminance = (0.2126 * background.R + 0.7152 * background.G + 0.0722 * background.B) / 255.0;
-
-        return luminance > 0.55 ? Avalonia.Media.Colors.Black : Avalonia.Media.Colors.White;
     }
 
 

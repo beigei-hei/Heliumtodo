@@ -5,7 +5,7 @@
 
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mat="clr-namespace:Material.Styles.Themes;assembly=Material.Styles"
+             xmlns:sty="using:FluentAvalonia.Styling"
              xmlns:conv="using:HeliumTodo.Desktop.Converters"
              xmlns:local="using:HeliumTodo.Desktop"
              x:Class="HeliumTodo.Desktop.App"
@@ -33,11 +33,12 @@
 
   <Application.Styles>
     <!--
-      ① Material 3 设计系统（0.5.0 P3 起，P4 起是唯一设计系统）。
-          0.5.0 之前这里还有 FluentAvaloniaTheme；P4 把最后 71 个 FA 标签
-          （设置页折叠分组与两条提示条）换成自绘控件后一并删除。
+      ① Fluent 设计系统（0.5.0-alpha 热修 2：按用户反馈从 Material 3 切回）。
+         0.5.0 开发期曾短暂换成 MaterialTheme，但 Material 控件在小尺寸按钮、
+         下拉框和设置页上与原有 Fluent 观感差异明显，用户要求以显示效果为准。
+         自绘的 SettingsExpander 与提示条不依赖任何设计系统，保留。
     -->
-    <mat:MaterialTheme BaseTheme="Light" />
+    <sty:FluentAvaloniaTheme PreferSystemTheme="False" />
 
     <!-- ② 我们补充的控件样式（时间轴块、卡片、优先级标签、设置页折叠分组等） -->
     <StyleInclude Source="avares://HeliumTodo.Desktop/Styles/Controls.axaml" />

@@ -2,7 +2,7 @@
 
 > 版本 **0.5.0-alpha（P7）** ｜ 本文对标的是仓库当前代码，不是计划；与 `DEVELOPMENT_SPEC.md` 冲突时以规格为准。
 > 项目已按 `DEVELOPMENT_SPEC.md` 改名为 Domain / Application / Infrastructure / Desktop / Verification；
-> Material.Avalonia 3.21.0 已接管全部界面（P3 主题、P4 控件、P5 行为），FluentAvaloniaUI 已删除；
+> 界面回到 **FluentAvaloniaUI 3.1.0**（0.5.0 的 Material.Avalonia 主题已按用户反馈回退，见 `PROGRESS.md` 2026-11-10 热修 2）；
 > P6 起 `--copy-check` 把 `UI_TEXT_MAP.md` 与编译产物对撞，`--perf-check` 直接断言 §15.3 预算；
 > PostgreSQL 17 已在 P2 落地，见规格 §20 偏差说明。
 > 所有数字都是在开发机上实测出来的（命令写在每节末尾，可以自己复现）。
@@ -17,14 +17,14 @@
 | --- | --- | --- |
 | 目标框架 | `net10.0`（全部项目一致） | `global.json` 把 SDK 锁在 `10.0.401` |
 | UI 框架 | **Avalonia 12.1.5** | 跨平台 XAML；本机只用 Windows 后端 |
-| 控件库 | **Material.Avalonia 3.21.0** + `Material.Avalonia.Dialogs` 3.21.0 / `Material.Icons.Avalonia` 3.0.2 | 唯一设计系统；设置页折叠分组与提示条为自绘控件（`Controls/SettingsExpander.cs`） |
+| 控件库 | **FluentAvaloniaUI 3.1.0** + `Avalonia.Themes.Fluent` 12.1.5 | 设计系统；设置页折叠分组与提示条为自绘控件（`Controls/SettingsExpander.cs`） |
 | 绘图 | **SkiaSharp 3.119.4** | 必须与 Avalonia 的传递依赖同版，否则会加载两个 `libSkiaSharp` 直接崩 |
 | MVVM | **CommunityToolkit.Mvvm 8.4.0** | `[ObservableProperty]` / `[RelayCommand]` 源生成器 |
 | 数据访问 | **EF Core 10.0.14** + `Npgsql.EntityFrameworkCore.PostgreSQL 10.0.3` | 主存储是 **PostgreSQL 17**（P2 起）；连接串见 `StorageSettings` / `HELIUM_DB` |
 | 依赖注入 | `Microsoft.Extensions.DependencyInjection 10.0.14` | `App.axaml.cs` 里手工注册 20 处 |
-| 测试 | **xunit 2.9.2** + `Microsoft.NET.Test.Sdk 17.11.1` | 196 个测试（数据库相关用例未设置 `HELIUM_TEST_POSTGRES` 时跳过） |
+| 测试 | **xunit 2.9.2** + `Microsoft.NET.Test.Sdk 17.11.1` | 197 个测试（数据库相关用例未设置 `HELIUM_TEST_POSTGRES` 时跳过） |
 | 视频解码 | **Windows Media Foundation**（系统组件，`mfplat.dll` / `mfreadwrite.dll`） | 零额外打包体积；`MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING` 请求 RGB32，缩放自己用 Skia 做 |
-| 渲染后端 | `Win32RenderingMode`：Software（默认）/ AngleEgl / Wgl / Vulkan | 设置页「底层设置」或 `HELIUM_RENDER` 切换，重启生效 |
+| 渲染后端 | `Win32RenderingMode`：Auto（默认，AngleEgl→Software 回退）/ Wgl / Vulkan | 设置页「底层设置」或 `HELIUM_RENDER` 切换，重启生效 |
 
 ### 包管理
 
@@ -108,7 +108,7 @@ Verification ──► Desktop / Application / Domain
 ### 3.2 启动曲线（稳定后不再增长）
 
 ```
-1 秒   105 MB   ← 运行时 + Skia + Material 主题加载
+1 秒   105 MB   ← 运行时 + Skia + Fluent 主题加载
 2-3 秒 130 MB
 5 秒   146 MB
 8 秒   178 MB   ← 后台提醒定时器首扫 + 托盘线程 + 主题/壁纸初始化
@@ -251,7 +251,7 @@ dotnet HeliumTodo.SelfTest\bin\Debug\net10.0\HeliumTodo.SelfTest.dll
 | `--rail-check` | 23 | 设置排在自习室下面、图标轨 56↔188 展开、按钮被动拉伸（自己不挂宽度过渡）、名称靠 Opacity 淡入淡出、设置页 10 个分组标题 + 27 行分组行的背景全透明 |
 | `--layout-check` | 6 页 × 6 项 | 六页分区是否同一套（左/右/顶边缘、缝、标题字号） |
 | `--db-check` | 9 | PostgreSQL 17、迁移已应用、11 个列类型、identity、6 个索引、房间码唯一 |
-| `--theme-check` | 9 | MaterialTheme 存在、明暗 BaseTheme、卡片像素、强调色像素、阴影令牌 |
+| `--theme-check` | 9 | FluentAvaloniaTheme 存在、明暗变体、`CustomAccentColor`/`SystemAccentColor`、卡片像素、强调色像素、阴影令牌 |
 | `--behavior-check` | 15 | 6 类行为挂载数量、双击最大化、窗口按钮、拖拽入口、解绑、抓手改宽、滚动同步 |
 | `--copy-check` | 5 | 清单可解析（679 条）、拆出 627 段用户可见字面量、逐条在 4 个编译产物里按 UTF-16LE 命中 |
 | `--shell` | 7 页 | 每页无头渲染出 PNG |

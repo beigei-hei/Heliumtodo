@@ -16,7 +16,7 @@
 | --- | --- |
 | 版本 | `0.5.0-alpha` |
 | 目标框架 | `net10.0`（.NET 10 / C# 14） |
-| UI 框架 | Avalonia **12.1.5** + Material.Avalonia **3.21.0**（Material 3；设置页分组与提示条自绘） |
+| UI 框架 | Avalonia **12.1.5** + FluentAvaloniaUI **3.1.0**（设置页分组与提示条自绘） |
 | MVVM | CommunityToolkit.Mvvm 8.4.0（源生成器） |
 | 数据 | EF Core 10.0.14 + Npgsql 10.0.3 / PostgreSQL 17（只用 Migration） |
 | 图像 | SkiaSharp 3.119.4（Avalonia 传递依赖，必须版本一致） |
@@ -1138,9 +1138,9 @@ EnsureColumns()  自己查 PRAGMA table_info，缺哪列就 ALTER TABLE 补哪�
   DesignTokens.axaml 里 DynamicResource 引用 → 所有强调色一起变
 ```
 
-> 0.5.0 起 MaterialTheme 是唯一主题。`MaterialTheme.PrimaryColor` 只收枚举色板，
-> `PaletteHelper` 又写不进挂进 Styles 的实例，所以按 Material 的公开键名直接写
-> `Application.Resources`（应用级资源优先于样式默认值），同时写 `SystemAccentColor` 兜底。
+> 0.5.0 首版曾把 MaterialTheme 当唯一主题；2026-11-10 按用户反馈回退到 FluentAvalonia
+> （小尺寸按钮/下拉框观感），当前链路是 `FluentAvaloniaTheme.CustomAccentColor` +
+> `SystemAccentColor` 兜底，详见 §20.14。下面这段 Material 键名方案只作历史记录。
 
 ---
 
@@ -1990,6 +1990,9 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
 
 ### 20.7 主题层（P3 起）
 
+> **本节记录 P3–P4 的 Material 时期，已由 §20.14 取代。** 当前实现是 FluentAvaloniaUI 3.1.0；
+> 保留本节是为了解释"为什么当初写 `Application.Resources` 的 Material 键"以及那些坑。
+
 - **P3 时期两套主题并存，P4 起只剩 Material**：P3 时 `App.axaml` 先 `FluentAvaloniaTheme`、
   后 `MaterialTheme`，后加者优先；P4 把设置页折叠分组和两条提示条换成自绘控件后，
   FA 主题、`FluentAvaloniaUI` 包、`DataGrid` 钉版一并删除。现在 `MaterialTheme` 是唯一设计系统。
@@ -2103,3 +2106,26 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
   `Position` / `Width` / `Height` 赋值，避免一次拖动里重复触发 `WM_WINDOWPOSCHANGED`。
 - **`auto` 渲染后端的回退**：`ToModes(auto)` 现在是 `[AngleEgl, Software]`——优先显卡，
   但 AngleEgl 在缺驱动/远程桌面/虚拟机里初始化失败时仍能启动。
+
+### 20.14 设计系统回退与单文件发布（2026-11-10 热修 2）
+
+- **回退原因**：用户实机看 0.5.0 首版后反馈 Material.Avalonia 在小尺寸按钮、下拉框上的观感不如
+  FluentAvalonia，要求换回。按“用户指令优先于规格”处理，`Directory.Packages.props` 恢复
+  `FluentAvaloniaUI 3.1.0` + `Avalonia.Themes.Fluent 12.1.5`，重新钉 `Avalonia.Controls.DataGrid 12.1.2`
+  （FA 3.1.0 的传递依赖，NuGet 上没有 12.1.5）；Material.* 三个包与 `MaterialTheme` 一并删除。
+  这是对 `DEVELOPMENT_SPEC.md` §6 的显式偏差，记录在此与 `PROGRESS.md`，规格其余部分仍严格执行。
+- **主题代码**：`App.axaml` 只挂 `FluentAvaloniaTheme`；`ThemeService.Apply` 只切
+  `RequestedThemeVariant`，强调色走 `FindFluentAvaloniaTheme()?.CustomAccentColor`，再写
+  `SystemAccentColor` / `Light1..3` / `Dark1..3` 兜底。Material 的 `ApplyMaterial*`、
+  `ReadableForeground` 全部删除——不要再把 Material 资源键写回来，它们现在没人消费。
+- **`--theme-check` 断言随之改成 Fluent 口径**：样式里有 `FluentAvaloniaTheme`、明暗变体、
+  `CustomAccentColor == #FF00FF`、`SystemAccentColor == #FF00FF`、强调色像素、亮/暗卡片像素、
+  `CardShadow` 非空。仍然是 9 条，仍然用真实无头渲染，不信任“属性设过了”。
+- **单文件发布**：`tools/publish.ps1` 默认 `PublishSingleFile=true` +
+  `IncludeNativeLibrariesForSelfExtract=true` + `EnableCompressionInSingleFile=true`；打包前删除
+  所有 `*.pdb`（原生 Skia/HarfBuzz 的 pdb 合计 105 MB）。exe 53.8 MB，zip 46.4 MB。
+- **VC++ 运行库必须随包**：self-contained .NET 不带 MSVC 运行库，SkiaSharp/HarfBuzzSharp 依赖它；
+  缺 `vcruntime140.dll` / `vcruntime140_1.dll` / `msvcp140.dll` 时原生初始化失败，表现就是
+  `0xc0000142`。脚本从 `System32` 复制这三个 DLL 到包根目录。
+- **单文件自解压目录**：默认解压到 `%TEMP%\.net`，受策略限制时（错误码 5）会启动失败；
+  文档要求把 `DOTNET_BUNDLE_EXTRACT_BASE_DIR` 指到可写目录。这是单文件模式的系统行为，不是应用 bug。

@@ -215,8 +215,8 @@ public static class Program
             return RunLayoutCheck(services);
         }
 
-        // 主题自检：MaterialTheme 真的挂在样式表里、明暗与强调色真的进了像素
-        // （P3 的验收条件；只看资源字典会被主题字典的优先级骗过去）。
+        // 主题自检：FluentAvaloniaTheme 真的挂在样式表里、明暗与强调色真的进了像素
+        // （只看资源字典会被主题字典的优先级骗过去）。
         if (args.Any(a => a.Equals("--theme-check", StringComparison.OrdinalIgnoreCase)))
         {
             return RunThemeCheck(services);
@@ -3818,7 +3818,7 @@ public static class Program
     }
 
     /// <summary>
-    /// 主题自检（0.5.0 P3）：MaterialTheme 已应用、明暗/强调色/卡片令牌进了像素。
+    /// 主题自检（0.5.0-alpha 热修 2）：FluentAvaloniaTheme 已应用、明暗/强调色/卡片令牌进了像素。
     ///
     /// 【为什么要像素断言而不是查资源字典】
     ///   0.3.x 踩过「代码写得对、画面没变」—— CardSurfaceBrush 被写进
@@ -3828,47 +3828,50 @@ public static class Program
     private static int RunThemeCheck(IServiceProvider services)
     {
         var failures = 0;
+        var total = 0;
 
         void Check(string name, bool ok, string detail)
         {
+            total++;
             Console.WriteLine($"   [{(ok ? "通过" : "失败")}] {name} — {detail}");
             if (!ok) failures++;
         }
 
         var app = Avalonia.Application.Current!;
 
-        var material = app.Styles
-            .OfType<Material.Styles.Themes.MaterialTheme>()
+        var fluent = app.Styles
+            .OfType<FluentAvalonia.Styling.FluentAvaloniaTheme>()
             .FirstOrDefault();
-        Check("App.axaml 里挂着 MaterialTheme", material is not null,
-            material is null ? "没找到（P3 必须把它加进 Application.Styles）" : "找到了");
+        Check("App.axaml 里挂着 FluentAvaloniaTheme", fluent is not null,
+            fluent is null ? "没找到（设计系统必须是 FluentAvalonia）" : "找到了");
 
         var themeService = services.GetRequiredService<ThemeService>();
         var registry = services.GetRequiredService<ThemeRegistry>();
         var light = registry.Find("fluent-light-blue")!;
         var dark = registry.Find("fluent-dark-blue")!;
         const string magenta = "#FF00FF";
+        var magentaColor = Color.Parse(magenta);
 
         // ── 一、亮色 + 品红强调色 ──
         themeService.Apply(light, magenta);
-        // MaterialTheme 内部用 100ms 合并一次主题更新，这里等它落地
-        PumpDispatcher(TimeSpan.FromMilliseconds(500));
+        PumpDispatcher(TimeSpan.FromMilliseconds(300));
 
-        Check("MaterialTheme 的实际明暗 = 亮色",
-            material?.ActualBaseTheme == Material.Styles.Themes.Base.BaseThemeMode.Light,
-            $"ActualBaseTheme={material?.ActualBaseTheme}");
         Check("应用整体变体 = 亮色", app.ActualThemeVariant == ThemeVariant.Light,
             $"ActualThemeVariant={app.ActualThemeVariant}");
+        Check("Fluent 强调色 = 品红",
+            fluent?.CustomAccentColor == magentaColor,
+            $"CustomAccentColor={fluent?.CustomAccentColor}");
 
-        var accentBrush = app.Resources.TryGetResource("MaterialPrimaryMidBrush", null, out var accentValue)
-            ? accentValue as ISolidColorBrush
-            : null;
-        Check("Material 主色画笔存在", accentBrush is not null,
-            accentBrush is null ? "MaterialPrimaryMidBrush 没解析出来" : $"颜色 {accentBrush.Color}");
+        var accentBrush = app.Resources.TryGetResource("SystemAccentColor", null, out var accentValue)
+            && accentValue is Color storedAccent
+            ? storedAccent
+            : (Color?)null;
+        Check("SystemAccentColor 已写入", accentBrush == magentaColor,
+            accentBrush is null ? "取不到 SystemAccentColor" : $"颜色 {accentBrush}");
 
-        if (accentBrush is not null)
+        if (accentBrush is { } accentColor)
         {
-            var pixel = RenderSolid(accentBrush.Color);
+            var pixel = RenderSolid(accentColor);
             Check("强调色真的进了像素（品红）",
                 pixel.R > 180 && pixel.B > 180 && pixel.G < 90,
                 $"渲染像素=({pixel.R},{pixel.G},{pixel.B})");
@@ -3876,19 +3879,15 @@ public static class Program
 
         // ── 二、亮色卡片：不透明时应当是白 ──
         HeliumTodo.Desktop.App.ApplyCardOpacity(100, isDark: false);
-        var lightCard = CardSurface();
-        var lightPixel = RenderSolid(lightCard);
+        var lightPixel = RenderSolid(CardSurface());
         Check("亮色卡片像素是白", lightPixel.R > 240 && lightPixel.G > 240 && lightPixel.B > 240,
             $"渲染像素=({lightPixel.R},{lightPixel.G},{lightPixel.B})");
 
-        // ── 三、暗色：MaterialTheme、应用变体、卡片底色一起变 ──
+        // ── 三、暗色：应用变体、卡片底色一起变 ──
         themeService.Apply(dark, magenta);
-        PumpDispatcher(TimeSpan.FromMilliseconds(600));
+        PumpDispatcher(TimeSpan.FromMilliseconds(400));
         HeliumTodo.Desktop.App.ApplyCardOpacity(100, isDark: true);
 
-        Check("MaterialTheme 的实际明暗 = 暗色",
-            material?.ActualBaseTheme == Material.Styles.Themes.Base.BaseThemeMode.Dark,
-            $"ActualBaseTheme={material?.ActualBaseTheme}");
         Check("应用整体变体 = 暗色", app.ActualThemeVariant == ThemeVariant.Dark,
             $"ActualThemeVariant={app.ActualThemeVariant}");
 
@@ -3906,11 +3905,11 @@ public static class Program
         // 收尾：恢复默认外观，后面的截图和别的自检不受影响
         themeService.Apply(light, accentOverrideHex: null);
         HeliumTodo.Desktop.App.ApplyCardOpacity(100, isDark: false);
-        PumpDispatcher(TimeSpan.FromMilliseconds(400));
+        PumpDispatcher(TimeSpan.FromMilliseconds(300));
 
         Console.WriteLine();
         Console.WriteLine(failures == 0
-            ? $"主题自检全部通过 ✔（共 9 项）"
+            ? $"主题自检全部通过 ✔（共 {total} 项）"
             : $"主题自检有 {failures} 项失败 ✗");
         Console.WriteLine("══════════════════════════════════════════════════════");
 

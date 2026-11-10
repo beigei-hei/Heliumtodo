@@ -1,10 +1,13 @@
-# SPDX-License-Identifier: GPL-3.0-only
+﻿# SPDX-License-Identifier: GPL-3.0-only
 # 发布脚本：自包含 win-x64 包 + 许可证 + SOURCE.txt + zip。
 # 用法：pwsh tools\publish.ps1 [-SkipPublish]
 param(
     [string]$Runtime = 'win-x64',
     [string]$Configuration = 'Release',
-    [switch]$SkipPublish
+    [switch]$SkipPublish,
+    # 单文件发布：把托管程序集与原生库都塞进一个 exe（运行期自解压到临时目录）。
+    # 想回到目录式发布用 -SingleFile:$false。
+    [bool]$SingleFile = $true
 )
 
 $ErrorActionPreference = 'Stop'
@@ -23,10 +26,22 @@ try {
         $env:TMP = Join-Path $root '.tmp-publish'
         $env:TEMP = $env:TMP
         New-Item -ItemType Directory -Force $env:TMP | Out-Null
+        $singleFileArgs = @()
+        if ($SingleFile) {
+            $singleFileArgs = @(
+                '-p:PublishSingleFile=true',
+                '-p:IncludeNativeLibrariesForSelfExtract=true',
+                '-p:EnableCompressionInSingleFile=true'
+            )
+        }
         dotnet publish "HeliumTodo.Desktop\HeliumTodo.Desktop.csproj" -c $Configuration -r $Runtime `
-            --self-contained true -p:UseSharedCompilation=false -p:DebugType=none -o $staging
+            --self-contained true -p:UseSharedCompilation=false -p:DebugType=none @singleFileArgs -o $staging
         if ($LASTEXITCODE -ne 0) { throw "dotnet publish 失败：$LASTEXITCODE" }
     }
+
+    # 原生库的 .pdb（libSkiaSharp / libHarfBuzzSharp）会跟着发布目录走，
+    # 加起来 100 MB 以上，只在调试时有意义，打包前删掉。
+    Get-ChildItem $staging -Filter *.pdb -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force
 
     Copy-Item (Join-Path $root 'LICENSE') $staging -Force
     Copy-Item (Join-Path $root 'THIRD-PARTY-NOTICES.md') $staging -Force

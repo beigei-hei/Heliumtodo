@@ -4,7 +4,7 @@
 > 做到哪了、什么状态、下一步干什么、哪些坑已经踩过。
 
 当前版本：**v0.5.0-alpha**
-状态：**0.5.0-alpha 已完成 P0–P7（七项目分层、Application 层、PostgreSQL 17 + EF10、Material.Avalonia 主题、FluentAvaloniaUI 已移除、Xaml.Behaviors 12.1.5、发布脚本）；
+状态：**0.5.0-alpha 已完成 P0–P7（七项目分层、Application 层、PostgreSQL 17 + EF10、FluentAvaloniaUI 3.1 主题、Xaml.Behaviors 12.1.5、单文件发布）；
 自绘设置控件与提示条；197 个测试全绿（含真库用例），十九项 `--check` 全绿。**
 
 ---
@@ -4741,3 +4741,37 @@ P0 的「保留 FluentAvalonia + SQLite」不再是不可抗力，P2 起按规�
 - 构建 0 警告 0 错误；`SelfTest` 197/197；十九项 `--check` 全绿。
 - `--shell` 7/7；像素检查：设置页卡片顶部不再有 `(238,238,238)` 色带；
 - `--folder-check` 通过（资源管理器窗口真的出现，走 Launcher）。
+
+## 2026-11-10 · 0.5.0-alpha 热修 2：主题回退 FluentAvalonia、单文件发布
+
+用户实机看过 0.5.0 首版后反馈：Material.Avalonia 在小尺寸按钮、下拉框上的观感不好，要求换回
+FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规格，此处记为对
+`DEVELOPMENT_SPEC.md` §6 的显式偏差；其余章节（分层、数据、文案、门禁）仍严格执行。
+
+### 做了什么
+
+- `Directory.Packages.props`：删除 `Material.Avalonia` / `.Dialogs` / `Material.Icons.Avalonia`，
+  恢复 `FluentAvaloniaUI 3.1.0`、`Avalonia.Themes.Fluent 12.1.5`、`Avalonia.Controls.DataGrid 12.1.2`
+  （后者是 FA 3.1.0 的传递依赖；NuGet 上没有 12.1.5 的 DataGrid）。
+- `App.axaml` 只挂 `<sty:FluentAvaloniaTheme PreferSystemTheme="False" />`；
+  `ThemeService` 删掉 `ApplyMaterialBaseTheme` / `ApplyMaterialAccent` / `FindMaterialTheme` /
+  `ReadableForeground`，强调色回到 `CustomAccentColor` + `SystemAccentColor` 兜底。
+- `--theme-check` 改回 Fluent 口径（9 条）：FluentAvaloniaTheme 存在、明暗变体、
+  `CustomAccentColor == #FF00FF`、`SystemAccentColor == #FF00FF`、强调色像素、亮/暗卡片像素、
+  `CardShadow` 非空。
+- `tools/publish.ps1`：默认 `PublishSingleFile=true` + `IncludeNativeLibrariesForSelfExtract=true`
+  + `EnableCompressionInSingleFile=true`；打包前删掉所有 `*.pdb`；保留 VC++ 运行库三件套。
+  单 exe 53.8 MB，zip 46.4 MB。
+- 文档同步：README（主题现状、单文件解压目录注意事项）、TECH_STACK（Fluent 行、197 测试、
+  Auto 渲染默认）、ARCHITECTURE §20.14（回退原因与单文件/VC 运行库规则）、
+  THIRD-PARTY（FA 3.1.0 行、Avalonia 行补 Themes.Fluent/DataGrid、删 Material 行）、AGENTS 头部。
+
+### 验证
+
+- 构建 0 警告 0 错误；`SelfTest` 197/197（真库 33.8 s）；十九项 `--check` 全绿（含 `--theme-check` 9/9）。
+- 单文件包在本会话默认 `%TEMP%\.net` 被策略拒绝（错误码 5），改
+  `DOTNET_BUNDLE_EXTRACT_BASE_DIR` 到可写目录后正常启动、建配置/备份。
+
+### 已知未做
+
+- 截图中暴露的数据库启动错误 UX（英文原文、3 次重试 6 秒、提示条遮住导航）仍是分析结论，未实现修复。

@@ -23,11 +23,12 @@
       Avalonia 11 时代它埋在 Skia 里，所以老代码里看不到这个引用。
     -->
     <PackageReference Include="Avalonia.HarfBuzz" />
-    <!-- 0.5.0 起唯一设计系统：Material 3（P4 已删掉 FluentAvaloniaUI）。 -->
-
-    <PackageReference Include="Material.Avalonia" />
-    <PackageReference Include="Material.Avalonia.Dialogs" />
-    <PackageReference Include="Material.Icons.Avalonia" />
+    <!--
+      设计系统：FluentAvalonia（0.5.0-alpha 热修 2 起）。
+      Material 3 试用后按用户反馈切回；设置页与提示条是自绘的，不依赖设计系统。
+    -->
+    <PackageReference Include="FluentAvaloniaUI" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
     <!-- XAML behaviors（0.5.0 P5）：Interaction.Behaviors 的官方实现。 -->
     <PackageReference Include="Xaml.Behaviors.Avalonia" />
     <PackageReference Include="CommunityToolkit.Mvvm" />

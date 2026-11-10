@@ -41,7 +41,7 @@
     <PackageVersion Include="Avalonia.HarfBuzz" Version="12.1.5" />
 
     <!--
-      我们可以不直接用，但 Material.Avalonia.Dialogs 的颜色选择器需要它；
+      我们可以不直接用，但 FluentAvalonia 的颜色选择器需要它；
       显式钉住避免传递依赖挑到别的版本。升级 Avalonia 时同步改这一行。
     -->
     <PackageVersion Include="Avalonia.Controls.ColorPicker" Version="12.1.5" />
@@ -50,16 +50,16 @@
     <PackageVersion Include="Avalonia.Headless" Version="12.1.5" />
 
     <!--
-      ===== 设计系统：Material 3（0.5.0 P4 起唯一）=====
+      ===== 设计系统：FluentAvalonia（0.5.0-alpha 热修 2 起）=====
 
-      Material.Avalonia 3.21.0 的目标是 Avalonia 12.1.1，12.1.5 下兼容。
-      MaterialTheme 的 PrimaryColor/SecondaryColor 只接受枚举色板，
-      自定义强调色由 ThemeService 直接写 MaterialPrimary*/MaterialSecondary*
-      资源键（见 ARCHITECTURE.md §20.7）。
+      Material.Avalonia 3.21 在 0.5.0 开发期试用过，但小尺寸按钮、下拉框与
+      设置页的观感明显不如原有的 Fluent 主题，用户要求按显示效果切回。
+      FluentAvaloniaUI 3.1.0 依赖 Avalonia 12.1.0，在 12.1.5 下兼容。
+      DataGrid 只发到 12.1.2（FA 的传递依赖），在这里钉住避免混版。
     -->
-    <PackageVersion Include="Material.Avalonia" Version="3.21.0" />
-    <PackageVersion Include="Material.Avalonia.Dialogs" Version="3.21.0" />
-    <PackageVersion Include="Material.Icons.Avalonia" Version="3.0.2" />
+    <PackageVersion Include="FluentAvaloniaUI" Version="3.1.0" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.5" />
+    <PackageVersion Include="Avalonia.Controls.DataGrid" Version="12.1.2" />
 
     <!--
       ===== 交互行为：Xaml.Behaviors（0.5.0 P5）=====

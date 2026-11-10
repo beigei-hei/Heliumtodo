@@ -1,6 +1,6 @@
 # AGENTS.md · 给 AI 的硬规则
 
-> 这是一个 **C# 14 / .NET 10 + Avalonia 12 + Material.Avalonia 3.21 + PostgreSQL 17** 的本地优先桌面应用（0.5.0-alpha P6；FluentAvalonia 已移除，外壳交互走 Behaviors，文案与性能有机器门禁）。
+> 这是一个 **C# 14 / .NET 10 + Avalonia 12 + FluentAvaloniaUI 3.1 + PostgreSQL 17** 的本地优先桌面应用（0.5.0-alpha；设置页分组与提示条自绘，外壳交互走 Behaviors，文案与性能有机器门禁）。
 > 改代码之前先读 [`DEVELOPMENT_PLAYBOOK.md`](DEVELOPMENT_PLAYBOOK.md)（流程）与 [`ARCHITECTURE.md`](ARCHITECTURE.md)（约定）。
 > 本文件只列**不许破**的规则，不解释为什么——解释在 playbook 里。
 
@@ -81,7 +81,7 @@
 
 ## 版本管理（2026-11-02 起）
 
-- `main` = 发布线，`dev` = 开发线，日常在 `dev` 上改；标签打版本（当前 `v0.3.5-alpha`）。
+- `main` = 发布线，`dev` = 开发线，日常在 `dev` 上改；标签打版本（当前 `v0.5.0-alpha`）。
 - **每轮一个提交**，消息写"做了什么 + 为什么"，不写"update"这种空话。
 - 交付前 `git status --short` 必须是**空**的：临时物（`output/`、`_probe-*`、`tools/_*.py`）要么删掉，要么就别生成。
 - `bin/`、`obj/`、`dist/`、`Data/`、`*.db` 由 `.gitignore` 挡着，**不要** `git add -f` 硬塞进去。
