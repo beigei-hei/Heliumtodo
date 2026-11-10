@@ -20,6 +20,7 @@ using HeliumTodo.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using HeliumTodo.Application.Abstractions;
+using HeliumTodo.Application.Exceptions;
 
 namespace HeliumTodo.Desktop;
 
@@ -189,6 +190,19 @@ public partial class App : Avalonia.Application
             _mainWindow = new MainWindow
             {
                 DataContext = Services.GetRequiredService<ShellViewModel>(),
+            };
+
+            // 并发冲突（两个窗口同时改同一行）是正常业务分支，不该把进程带崩：
+            // Infrastructure 把 DbUpdateConcurrencyException 翻译成 ConcurrencyConflictException，
+            // 这里在 UI 线程兜底，用壳层警告条告诉用户，然后继续运行。
+            Avalonia.Threading.Dispatcher.UIThread.UnhandledException += (_, e) =>
+            {
+                if (e.Exception is ConcurrencyConflictException conflict &&
+                    _mainWindow?.DataContext is ShellViewModel shell)
+                {
+                    shell.ShowAlert(conflict.Message);
+                    e.Handled = true;
+                }
             };
 
             desktop.MainWindow = _mainWindow;

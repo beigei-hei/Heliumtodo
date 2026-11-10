@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using HeliumTodo.Domain.Models;
+using HeliumTodo.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace HeliumTodo.Infrastructure;
@@ -58,7 +59,7 @@ public sealed class FocusRepository
     {
         await using var db = await _factory.CreateDbContextAsync(ct);
         db.FocusSessions.Add(session);
-        await db.SaveChangesAsync(ct);
+        await db.SaveGuardedAsync(ct);
         return session;
     }
 
@@ -66,8 +67,18 @@ public sealed class FocusRepository
     public async Task UpdateAsync(FocusSession session, CancellationToken ct = default)
     {
         await using var db = await _factory.CreateDbContextAsync(ct);
-        db.FocusSessions.Update(session);
-        await db.SaveChangesAsync(ct);
+        // 列表查询走 AsNoTracking，对象上没有 xmin；直接 Update 会拼 WHERE xmin = 0。
+        // 先取带 xmin 的实体再覆盖标量，才是真正的"后写覆盖先写"。
+        var existing = await db.FocusSessions.FindAsync(new object?[] { session.Id }, ct);
+        if (existing is null)
+        {
+            db.FocusSessions.Add(session);
+        }
+        else
+        {
+            db.Entry(existing).CurrentValues.SetValues(session);
+        }
+        await db.SaveGuardedAsync(ct);
     }
 
     /// <summary>删除（取消预订时用）。</summary>
@@ -78,7 +89,7 @@ public sealed class FocusRepository
         if (found is null) return;
 
         db.FocusSessions.Remove(found);
-        await db.SaveChangesAsync(ct);
+        await db.SaveGuardedAsync(ct);
     }
 
     /// <summary>

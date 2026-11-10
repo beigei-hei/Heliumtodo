@@ -4657,3 +4657,36 @@ P0 的「保留 FluentAvalonia + SQLite」不再是不可抗力，P2 起按规�
 - `xmin` 并发令牌（`UseXminAsConcurrencyToken`，冲突翻译成「数据已被其它窗口修改」）；
 - `Material.Avalonia.Dialogs` 接入（确认/输入框仍是自绘 Window）；
 - P7 发布脚本与安装包。
+## 2026-11-10 · 0.5.0-alpha P6 补齐：xmin 并发令牌
+
+### 做了什么
+
+- 六张表全部把 PostgreSQL 的 `xmin` 系统列当并发令牌：`HeliumDbContext.OnModelCreating`
+  里 `modelBuilder.Entity<T>().Property<uint>("xmin").IsRowVersion()`（EF Core 10 的 Npgsql
+  提供程序已没有 `UseXminAsConcurrencyToken()` 扩展，必须走 `IsRowVersion`）。
+- 新增 `20261110033913_XminConcurrencyToken` 迁移：EF 会生成 `AddColumn("xmin")`，但 Npgsql
+  的 SQL 生成器按系统列名整条跳过，所以 `Up`/`Down` 显式留空并写清原因。
+- 新增 `HeliumTodo.Application/Exceptions/ConcurrencyConflictException.cs`，Infrastructure 的
+  `ConcurrencyGuard.SaveGuardedAsync` 把 `DbUpdateConcurrencyException` 翻译成它。
+- `App.axaml.cs` 订阅 `Dispatcher.UIThread.UnhandledException`：冲突时用壳层警告条提示
+  「数据已被其它窗口修改，请刷新后重试。」并 `e.Handled = true`，不再让进程崩。
+- 所有"先 AsNoTracking 查询、再 Update"的写入路径改成"先取带 xmin 的实体、再
+  `CurrentValues.SetValues`"：Todo/Schedule/Focus 的 UpdateAsync、StudyRoomRepository.SaveAsync
+  （含成员按 Id 合并）、DataBackupService.MergeInto 的六张表。
+- 新增 `HeliumTodo.Tests/ConcurrencyTests.cs`：两个上下文改同一行，后提交者必须拿到冲突。
+
+### 为什么
+
+- 0.4 的 SQLite 没有行版本，`Update` 是盲写；换 PG 后 `xmin` 免费提供"这行变过没有"。
+  不接它，两个窗口就会互相覆盖，而且没有任何提示。
+- 游离对象上没有 xmin，直接 `Update` 会拼出 `WHERE xmin = 0`，UPDATE 影响 0 行再抛并发异常——
+  这是接入 xmin 后最容易踩的坑（备份合并、离开房间两处都踩了）。
+
+### 门禁
+
+- 构建 **0 警告 0 错误**；`SelfTest` **197/197**（新增并发用例）；十九项 `--check` 全绿。
+
+### 还没做
+
+- `Material.Avalonia.Dialogs` 接入（确认/输入框仍是自绘 Window）；
+- P7 发布脚本与安装包。

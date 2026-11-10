@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using HeliumTodo.Domain.Models;
+using HeliumTodo.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace HeliumTodo.Infrastructure;
@@ -68,10 +69,37 @@ public sealed class StudyRoomRepository
         }
         else
         {
-            db.StudyRooms.Update(room);
+            // 房间通常是从 AsNoTracking 查询里拿到的，游离对象上没有 xmin；
+            // 直接 Update 会拼出 WHERE xmin = 0 而影响 0 行。先取带 xmin 的实体，
+            // 再按标量覆盖、按 Id 合并成员。
+            var existing = await db.StudyRooms
+                .Include(r => r.Members)
+                .FirstOrDefaultAsync(r => r.Id == room.Id, ct);
+
+            if (existing is null)
+            {
+                db.StudyRooms.Add(room);
+            }
+            else
+            {
+                db.Entry(existing).CurrentValues.SetValues(room);
+
+                foreach (var member in room.Members)
+                {
+                    if (member.Id != 0 && existing.Members.FirstOrDefault(m => m.Id == member.Id) is { } target)
+                    {
+                        db.Entry(target).CurrentValues.SetValues(member);
+                    }
+                    else
+                    {
+                        member.StudyRoomId = existing.Id;
+                        existing.Members.Add(member);
+                    }
+                }
+            }
         }
 
-        await db.SaveChangesAsync(ct);
+        await db.SaveGuardedAsync(ct);
         return room;
     }
 
@@ -83,7 +111,7 @@ public sealed class StudyRoomRepository
         if (found is null) return;
 
         db.StudyRooms.Remove(found);
-        await db.SaveChangesAsync(ct);
+        await db.SaveGuardedAsync(ct);
     }
 
     /// <summary>取某个房间的聊天记录，最旧的在前。</summary>
@@ -103,6 +131,6 @@ public sealed class StudyRoomRepository
     {
         await using var db = await _factory.CreateDbContextAsync(ct);
         db.StudyRoomMessages.Add(message);
-        await db.SaveChangesAsync(ct);
+        await db.SaveGuardedAsync(ct);
     }
 }

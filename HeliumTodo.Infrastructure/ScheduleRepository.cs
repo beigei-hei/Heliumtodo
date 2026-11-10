@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using HeliumTodo.Domain.Models;
+using HeliumTodo.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace HeliumTodo.Infrastructure;
@@ -52,7 +53,7 @@ public sealed class ScheduleRepository
     {
         await using var db = await _factory.CreateDbContextAsync(ct);
         db.Schedules.Add(item);
-        await db.SaveChangesAsync(ct);
+        await db.SaveGuardedAsync(ct);
         return item;
     }
 
@@ -60,8 +61,18 @@ public sealed class ScheduleRepository
     public async Task UpdateAsync(ScheduleItem item, CancellationToken ct = default)
     {
         await using var db = await _factory.CreateDbContextAsync(ct);
-        db.Schedules.Update(item);
-        await db.SaveChangesAsync(ct);
+        // 列表查询走 AsNoTracking，对象上没有 xmin；直接 Update 会拼 WHERE xmin = 0。
+        // 先取带 xmin 的实体再覆盖标量，才是真正的"后写覆盖先写"。
+        var existing = await db.Schedules.FindAsync(new object?[] { item.Id }, ct);
+        if (existing is null)
+        {
+            db.Schedules.Add(item);
+        }
+        else
+        {
+            db.Entry(existing).CurrentValues.SetValues(item);
+        }
+        await db.SaveGuardedAsync(ct);
     }
 
     /// <summary>删除一条日程。</summary>
@@ -72,7 +83,7 @@ public sealed class ScheduleRepository
         if (found is null) return;
 
         db.Schedules.Remove(found);
-        await db.SaveChangesAsync(ct);
+        await db.SaveGuardedAsync(ct);
     }
 
     /// <summary>某一天有几条日程（给首页统计用）。</summary>

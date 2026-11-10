@@ -494,7 +494,7 @@
 
 ## 四、Core / Data 层拼出来的文字（运行时）
 
-共 41 个文件、253 处。
+共 42 个文件、255 处。
 
 ### `HeliumTodo.Application\Configuration\AccentSources.cs`（3 处）
 
@@ -517,6 +517,11 @@
 
 - `HeliumTodo.Application\Configuration\RenderBackendSettings.cs:94` — `Auto => "Avalonia 自带渲染器",`
 - `HeliumTodo.Application\Configuration\RenderBackendSettings.cs:97` — `_ => "软件渲染",`
+
+### `HeliumTodo.Application\Exceptions\ConcurrencyConflictException.cs`（2 处）
+
+- `HeliumTodo.Application\Exceptions\ConcurrencyConflictException.cs:15` — `public ConcurrencyConflictException(string message = "数据已被其它窗口修改，请刷新后重试。")`
+- `HeliumTodo.Application\Exceptions\ConcurrencyConflictException.cs:20` — `public ConcurrencyConflictException(Exception inner, string message = "数据已被其它窗口修改，请刷新后重试。")`
 
 ### `HeliumTodo.Application\Ipc\IIpcChannel.cs`（1 处）
 
@@ -555,35 +560,35 @@
 
 ### `HeliumTodo.Desktop\App.axaml.cs`（29 处）
 
-- `HeliumTodo.Desktop\App.axaml.cs:150` — `LogBackground("[插件] 检测到 plugins 目录，本版本不加载");`
-- `HeliumTodo.Desktop\App.axaml.cs:174` — `LogBackground("[单实例] 已经有一份在跑，已请它把窗口显示出来，本进程退出");`
-- `HeliumTodo.Desktop\App.axaml.cs:211` — `LogBackground($"[退出] 进程正常结束，退出码 {e.ApplicationExitCode}");`
-- `HeliumTodo.Desktop\App.axaml.cs:237` — `LogBackground("[提醒] 后台扫描已启动（每 30 秒一次）");`
-- `HeliumTodo.Desktop\App.axaml.cs:252` — `LogBackground($"[环境] 会话={System.Diagnostics.Process.GetCurrentProcess().SessionId}"`
-- `HeliumTodo.Desktop\App.axaml.cs:253` — `+ $" 管理员={IsElevated()}"`
-- `HeliumTodo.Desktop\App.axaml.cs:254` — `+ $" 资源管理器={DescribeExplorer()}"`
-- `HeliumTodo.Desktop\App.axaml.cs:255` — `+ $" 渲染后端={Application.Configuration.RenderBackendSettings.DisplayName(HeliumTodo.Desktop.Services.RenderBackendChoice.ActiveKey)}"`
-- `HeliumTodo.Desktop\App.axaml.cs:270` — `LogBackground("[托盘] 启动失败：没有托盘图标，但关闭仍会留在后台"`
-- `HeliumTodo.Desktop\App.axaml.cs:271` — `+ "（再双击一次程序即可唤回窗口）");`
-- `HeliumTodo.Desktop\App.axaml.cs:277` — `? "[托盘] 自检模式：假装托盘已就绪（没有真的图标）"`
-- `HeliumTodo.Desktop\App.axaml.cs:278` — `: "[托盘] 已启动，关闭按钮改为藏窗口");`
-- `HeliumTodo.Desktop\App.axaml.cs:301` — `? "[窗口] 关闭按钮被拦截，已隐藏到托盘（进程继续运行）"`
-- `HeliumTodo.Desktop\App.axaml.cs:302` — `: "[窗口] 关闭按钮被拦截，已隐藏（没有托盘图标，再双击程序可唤回）");`
-- `HeliumTodo.Desktop\App.axaml.cs:347` — `return "没有运行";`
-- `HeliumTodo.Desktop\App.axaml.cs:351` — `return $"PID {string.Join(',', processes.Select(p => p.Id))} 会话 {string.Join(',', sessions)}";`
-- `HeliumTodo.Desktop\App.axaml.cs:355` — `return "查不到";`
-- `HeliumTodo.Desktop\App.axaml.cs:419` — `? "[备份] 这次没做成"`
-- `HeliumTodo.Desktop\App.axaml.cs:420` — `: $"[备份] 已生成 {path}");`
-- `HeliumTodo.Desktop\App.axaml.cs:632` — `? "[启动] 首次运行，已写入示例数据"`
-- `HeliumTodo.Desktop\App.axaml.cs:633` — `: "[启动] 数据库就绪");`
-- `HeliumTodo.Desktop\App.axaml.cs:660` — `Console.Error.WriteLine($"[启动] 数据库初始化失败：{ex.Message}（连接：{masked}）");`
-- `HeliumTodo.Desktop\App.axaml.cs:694` — `LogBackground("[重启] 检测到调试器，放弃自动重启："`
-- `HeliumTodo.Desktop\App.axaml.cs:695` — `+ "请用调试器的「重新启动」(Ctrl+Shift+F5)，"`
-- `HeliumTodo.Desktop\App.axaml.cs:696` — `+ "否则新进程不受调试器管理，还会占住 exe 让下次编译失败");`
-- `HeliumTodo.Desktop\App.axaml.cs:703` — `LogBackground("[重启] 拿不到当前可执行文件路径，放弃自动重启");`
-- `HeliumTodo.Desktop\App.axaml.cs:716` — `LogBackground($"[重启] 释放单实例锁失败（不影响继续重启）：{ex.Message}");`
-- `HeliumTodo.Desktop\App.axaml.cs:730` — `LogBackground($"[重启] 已启动新进程：{exePath}");`
-- `HeliumTodo.Desktop\App.axaml.cs:734` — `LogBackground($"[重启] 启动新进程失败：{ex.Message}");`
+- `HeliumTodo.Desktop\App.axaml.cs:151` — `LogBackground("[插件] 检测到 plugins 目录，本版本不加载");`
+- `HeliumTodo.Desktop\App.axaml.cs:175` — `LogBackground("[单实例] 已经有一份在跑，已请它把窗口显示出来，本进程退出");`
+- `HeliumTodo.Desktop\App.axaml.cs:225` — `LogBackground($"[退出] 进程正常结束，退出码 {e.ApplicationExitCode}");`
+- `HeliumTodo.Desktop\App.axaml.cs:251` — `LogBackground("[提醒] 后台扫描已启动（每 30 秒一次）");`
+- `HeliumTodo.Desktop\App.axaml.cs:266` — `LogBackground($"[环境] 会话={System.Diagnostics.Process.GetCurrentProcess().SessionId}"`
+- `HeliumTodo.Desktop\App.axaml.cs:267` — `+ $" 管理员={IsElevated()}"`
+- `HeliumTodo.Desktop\App.axaml.cs:268` — `+ $" 资源管理器={DescribeExplorer()}"`
+- `HeliumTodo.Desktop\App.axaml.cs:269` — `+ $" 渲染后端={Application.Configuration.RenderBackendSettings.DisplayName(HeliumTodo.Desktop.Services.RenderBackendChoice.ActiveKey)}"`
+- `HeliumTodo.Desktop\App.axaml.cs:284` — `LogBackground("[托盘] 启动失败：没有托盘图标，但关闭仍会留在后台"`
+- `HeliumTodo.Desktop\App.axaml.cs:285` — `+ "（再双击一次程序即可唤回窗口）");`
+- `HeliumTodo.Desktop\App.axaml.cs:291` — `? "[托盘] 自检模式：假装托盘已就绪（没有真的图标）"`
+- `HeliumTodo.Desktop\App.axaml.cs:292` — `: "[托盘] 已启动，关闭按钮改为藏窗口");`
+- `HeliumTodo.Desktop\App.axaml.cs:315` — `? "[窗口] 关闭按钮被拦截，已隐藏到托盘（进程继续运行）"`
+- `HeliumTodo.Desktop\App.axaml.cs:316` — `: "[窗口] 关闭按钮被拦截，已隐藏（没有托盘图标，再双击程序可唤回）");`
+- `HeliumTodo.Desktop\App.axaml.cs:361` — `return "没有运行";`
+- `HeliumTodo.Desktop\App.axaml.cs:365` — `return $"PID {string.Join(',', processes.Select(p => p.Id))} 会话 {string.Join(',', sessions)}";`
+- `HeliumTodo.Desktop\App.axaml.cs:369` — `return "查不到";`
+- `HeliumTodo.Desktop\App.axaml.cs:433` — `? "[备份] 这次没做成"`
+- `HeliumTodo.Desktop\App.axaml.cs:434` — `: $"[备份] 已生成 {path}");`
+- `HeliumTodo.Desktop\App.axaml.cs:646` — `? "[启动] 首次运行，已写入示例数据"`
+- `HeliumTodo.Desktop\App.axaml.cs:647` — `: "[启动] 数据库就绪");`
+- `HeliumTodo.Desktop\App.axaml.cs:674` — `Console.Error.WriteLine($"[启动] 数据库初始化失败：{ex.Message}（连接：{masked}）");`
+- `HeliumTodo.Desktop\App.axaml.cs:708` — `LogBackground("[重启] 检测到调试器，放弃自动重启："`
+- `HeliumTodo.Desktop\App.axaml.cs:709` — `+ "请用调试器的「重新启动」(Ctrl+Shift+F5)，"`
+- `HeliumTodo.Desktop\App.axaml.cs:710` — `+ "否则新进程不受调试器管理，还会占住 exe 让下次编译失败");`
+- `HeliumTodo.Desktop\App.axaml.cs:717` — `LogBackground("[重启] 拿不到当前可执行文件路径，放弃自动重启");`
+- `HeliumTodo.Desktop\App.axaml.cs:730` — `LogBackground($"[重启] 释放单实例锁失败（不影响继续重启）：{ex.Message}");`
+- `HeliumTodo.Desktop\App.axaml.cs:744` — `LogBackground($"[重启] 已启动新进程：{exePath}");`
+- `HeliumTodo.Desktop\App.axaml.cs:748` — `LogBackground($"[重启] 启动新进程失败：{ex.Message}");`
 
 ### `HeliumTodo.Desktop\Converters\CommonConverters.cs`（13 处）
 
@@ -840,10 +845,10 @@
 - `HeliumTodo.Infrastructure\DataBackupService.cs:241` — `return BackupInspection.Failed(zipPath, $"读取备份时出错：{ex.Message}");`
 - `HeliumTodo.Infrastructure\DataBackupService.cs:268` — `throw new BackupPackageException(checksumError ?? "备份文件校验失败。");`
 - `HeliumTodo.Infrastructure\DataBackupService.cs:289` — `throw new BackupPackageException($"导入失败：{ex.Message}");`
-- `HeliumTodo.Infrastructure\DataBackupService.cs:572` — `return new WallpaperPayload(null, info.Name, $"壁纸超过 {limit} MB，没有打进备份");`
-- `HeliumTodo.Infrastructure\DataBackupService.cs:579` — `return new WallpaperPayload(null, Path.GetFileName(path), $"壁纸读取失败：{ex.Message}");`
-- `HeliumTodo.Infrastructure\DataBackupService.cs:627` — `warnings.Add("这份备份没带配置，导入后界面设置保持本机的");`
-- `HeliumTodo.Infrastructure\DataBackupService.cs:638` — `warnings.Add("这份备份里没有日程/待办/专注记录，导入后本地数据会被清空");`
+- `HeliumTodo.Infrastructure\DataBackupService.cs:607` — `return new WallpaperPayload(null, info.Name, $"壁纸超过 {limit} MB，没有打进备份");`
+- `HeliumTodo.Infrastructure\DataBackupService.cs:614` — `return new WallpaperPayload(null, Path.GetFileName(path), $"壁纸读取失败：{ex.Message}");`
+- `HeliumTodo.Infrastructure\DataBackupService.cs:662` — `warnings.Add("这份备份没带配置，导入后界面设置保持本机的");`
+- `HeliumTodo.Infrastructure\DataBackupService.cs:673` — `warnings.Add("这份备份里没有日程/待办/专注记录，导入后本地数据会被清空");`
 
 ### `HeliumTodo.Infrastructure\DatabaseInitializer.cs`（2 处）
 

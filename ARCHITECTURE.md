@@ -2048,4 +2048,20 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
   的无头代理）、图标轨展开 P50 ≤ 33.3 ms、降质不慢于原样、进程私有字节 ≤ 300 MB。
   冷启动 ≤ 1.5 s 与 DWM 最大化帧数无头测不了，由真机 `tools/probe-*.ps1` 采，检查里打印
   偏差行而不是假装测过。
+
+### 20.11 并发令牌（P6 起）
+
+- 六张表都用 PostgreSQL 的 `xmin` 系统列做乐观并发：`HeliumDbContext.OnModelCreating` 里
+  `Property<uint>("xmin").IsRowVersion()`。EF Core 10 的 Npgsql 提供程序已经删掉
+  `UseXminAsConcurrencyToken()`，别照着旧文档写。
+- **xmin 不建真实列**：`xmin` 是系统列，EF 的迁移会生成 `AddColumn`，但 Npgsql 的 SQL 生成器
+  按 `SystemColumnNames` 整条跳过。迁移里显式留空并注释原因，免得后来人以为要加列。
+- **游离对象不能直接 `Update`**：列表查询全部 `AsNoTracking`，对象上没有 xmin，`Update`
+  会拼 `WHERE xmin = 0`，UPDATE 影响 0 行后抛 `DbUpdateConcurrencyException`。所有更新必须先按 Id
+  取带 xmin 的跟踪实体，再 `CurrentValues.SetValues(incoming)`；备份合并/导入里的
+  房间与成员同理（按 Id 或房间码映射）。
+- 冲突翻译成 `HeliumTodo.Application.Exceptions.ConcurrencyConflictException`（固定文案
+  「数据已被其它窗口修改，请刷新后重试。」），`App.axaml.cs` 在
+  `Dispatcher.UIThread.UnhandledException` 里接到后写壳层警告条并 `Handled = true`；
+  真库用例 `ConcurrencyTests.两个上下文改同一行时后提交的一方拿到冲突` 守着。
   

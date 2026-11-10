@@ -418,14 +418,28 @@ public sealed class DataBackupService
 
         foreach (var row in schedules)
         {
-            if (scheduleIds.Contains(row.Id)) db.Schedules.Update(row);
-            else db.Schedules.Add(row);
+            // 备份里没有 xmin，直接 Update 一个游离对象会拿 xmin=0 当并发条件，
+            // 结果 UPDATE ... WHERE xmin = 0 影响 0 行。先按 Id 取出带 xmin 的实体，再覆盖值。
+            if (scheduleIds.Contains(row.Id) && db.Schedules.Find(row.Id) is { } existing)
+            {
+                db.Entry(existing).CurrentValues.SetValues(row);
+            }
+            else
+            {
+                db.Schedules.Add(row);
+            }
         }
 
         foreach (var row in todos)
         {
-            if (todoIds.Contains(row.Id)) db.Todos.Update(row);
-            else db.Todos.Add(row);
+            if (todoIds.Contains(row.Id) && db.Todos.Find(row.Id) is { } existing)
+            {
+                db.Entry(existing).CurrentValues.SetValues(row);
+            }
+            else
+            {
+                db.Todos.Add(row);
+            }
         }
 
         foreach (var row in sessions)
@@ -435,8 +449,14 @@ public sealed class DataBackupService
                 row.TodoId = null;
             }
 
-            if (sessionIds.Contains(row.Id)) db.FocusSessions.Update(row);
-            else db.FocusSessions.Add(row);
+            if (sessionIds.Contains(row.Id) && db.FocusSessions.Find(row.Id) is { } existingSession)
+            {
+                db.Entry(existingSession).CurrentValues.SetValues(row);
+            }
+            else
+            {
+                db.FocusSessions.Add(row);
+            }
         }
 
         var roomIdMap = new Dictionary<int, int>();
@@ -444,7 +464,10 @@ public sealed class DataBackupService
         {
             if (roomIds.Contains(row.Id))
             {
-                db.StudyRooms.Update(row);
+                if (db.StudyRooms.Find(row.Id) is { } existingRoom)
+                {
+                    db.Entry(existingRoom).CurrentValues.SetValues(row);
+                }
                 roomIdMap[row.Id] = row.Id;
                 continue;
             }
@@ -469,8 +492,14 @@ public sealed class DataBackupService
 
             row.StudyRoomId = roomIdMap.TryGetValue(row.StudyRoomId, out var mapped) ? mapped : row.StudyRoomId;
 
-            if (memberIds.Contains(row.Id)) db.StudyRoomMembers.Update(row);
-            else db.StudyRoomMembers.Add(row);
+            if (memberIds.Contains(row.Id) && db.StudyRoomMembers.Find(row.Id) is { } existingMember)
+            {
+                db.Entry(existingMember).CurrentValues.SetValues(row);
+            }
+            else
+            {
+                db.StudyRoomMembers.Add(row);
+            }
         }
 
         foreach (var row in messages)
@@ -483,8 +512,14 @@ public sealed class DataBackupService
 
             row.StudyRoomId = roomIdMap.TryGetValue(row.StudyRoomId, out var mapped) ? mapped : row.StudyRoomId;
 
-            if (messageIds.Contains(row.Id)) db.StudyRoomMessages.Update(row);
-            else db.StudyRoomMessages.Add(row);
+            if (messageIds.Contains(row.Id) && db.StudyRoomMessages.Find(row.Id) is { } existingMessage)
+            {
+                db.Entry(existingMessage).CurrentValues.SetValues(row);
+            }
+            else
+            {
+                db.StudyRoomMessages.Add(row);
+            }
         }
     }
 

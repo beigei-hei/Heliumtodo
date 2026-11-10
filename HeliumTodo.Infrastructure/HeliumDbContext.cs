@@ -43,5 +43,15 @@ public class HeliumDbContext : DbContext
 
         // 迁移文件也放在 Infrastructure 程序集里，所以从本程序集扫描配置类。
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(HeliumDbContext).Assembly);
+
+        // PostgreSQL 的 xmin 系统列天然是"行版本"：每次 UPDATE 都会换一个值。
+        // 把它当并发令牌，两个窗口同时改同一行时，后提交的那个会拿到
+        // DbUpdateConcurrencyException，而不是静默覆盖前一个窗口的修改。
+        modelBuilder.Entity<ScheduleItem>().Property<uint>("xmin").IsRowVersion();
+        modelBuilder.Entity<TodoItem>().Property<uint>("xmin").IsRowVersion();
+        modelBuilder.Entity<FocusSession>().Property<uint>("xmin").IsRowVersion();
+        modelBuilder.Entity<StudyRoom>().Property<uint>("xmin").IsRowVersion();
+        modelBuilder.Entity<StudyRoomMember>().Property<uint>("xmin").IsRowVersion();
+        modelBuilder.Entity<StudyRoomMessage>().Property<uint>("xmin").IsRowVersion();
     }
 }

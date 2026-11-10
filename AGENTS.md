@@ -8,7 +8,7 @@
 
 1. **先给验收标准**：把用户的话拆成 3–6 条可验证的行为，再说怎么改。
 2. **先想怎么证明**：能写单测就写单测；界面改动必须准备无头渲染 + 像素统计的验证方式（Agent 不能看图，"看着挺好"不算证据）。
-3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（196/196，含真库用例）、`--shell`、十九项 `--check`、指纹基线，全绿才交付。
+3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（197/197，含真库用例）、`--shell`、十九项 `--check`、指纹基线，全绿才交付。
 4. **收尾同步文档**：`PROGRESS.md`（这一轮）、`ARCHITECTURE.md`（新约定）、`UI_TEXT_MAP.md`（改了界面文案时）、指纹基线（`-Update` 后复查）。
 
 ## 分层铁律
@@ -16,6 +16,7 @@
 - `HeliumTodo.Domain` **不许** `using Avalonia`、**不许** 引用 EF Core / Sqlite。它必须能被纯控制台测试。
 - 依赖方向单向：`Desktop → Application → Domain`；`Infrastructure → Application → Domain`。`Infrastructure` 不许引用 `Desktop`。
 - 可测的算术与规则放 `Domain`（例：`TimelineMetrics` / `PlaybackLimits` / `RestartPolicy` / `ColorSchemes` / `RenderBackendSettings`）；界面层只做装配。
+- 数据层写入**不许**对 `AsNoTracking` 拿到的对象直接 `Update`：六张表都有 `xmin` 并发令牌，游离对象会拼出 `WHERE xmin = 0`。先按 Id 取跟踪实体，再 `CurrentValues.SetValues(...)`；冲突由 `ConcurrencyConflictException` 统一翻译。
 
 ## 界面铁律（都是踩过坑换来的）
 

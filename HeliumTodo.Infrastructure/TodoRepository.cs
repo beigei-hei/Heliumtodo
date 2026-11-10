@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using HeliumTodo.Domain.Models;
+using HeliumTodo.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace HeliumTodo.Infrastructure;
@@ -69,7 +70,7 @@ public sealed class TodoRepository
     {
         await using var db = await _factory.CreateDbContextAsync(ct);
         db.Todos.Add(item);
-        await db.SaveChangesAsync(ct);
+        await db.SaveGuardedAsync(ct);
         return item;
     }
 
@@ -77,8 +78,18 @@ public sealed class TodoRepository
     public async Task UpdateAsync(TodoItem item, CancellationToken ct = default)
     {
         await using var db = await _factory.CreateDbContextAsync(ct);
-        db.Todos.Update(item);
-        await db.SaveChangesAsync(ct);
+        // 列表查询走 AsNoTracking，对象上没有 xmin；直接 Update 会拼 WHERE xmin = 0。
+        // 先取带 xmin 的实体再覆盖标量，才是真正的"后写覆盖先写"。
+        var existing = await db.Todos.FindAsync(new object?[] { item.Id }, ct);
+        if (existing is null)
+        {
+            db.Todos.Add(item);
+        }
+        else
+        {
+            db.Entry(existing).CurrentValues.SetValues(item);
+        }
+        await db.SaveGuardedAsync(ct);
     }
 
     /// <summary>
@@ -94,7 +105,7 @@ public sealed class TodoRepository
         found.IsCompleted = !found.IsCompleted;
         found.CompletedAt = found.IsCompleted ? DateTime.Now : null;
 
-        await db.SaveChangesAsync(ct);
+        await db.SaveGuardedAsync(ct);
         return found;
     }
 
@@ -106,7 +117,7 @@ public sealed class TodoRepository
         if (found is null) return;
 
         db.Todos.Remove(found);
-        await db.SaveChangesAsync(ct);
+        await db.SaveGuardedAsync(ct);
     }
 
     /// <summary>给待办累计专注时长（专注结束时调用，实现「待办 ↔ 专注」的联动）。</summary>
@@ -119,7 +130,7 @@ public sealed class TodoRepository
         if (found is null) return;
 
         found.FocusedDuration += duration;
-        await db.SaveChangesAsync(ct);
+        await db.SaveGuardedAsync(ct);
     }
 
     /// <summary>统计信息：总数 / 未完成 / 今天完成。</summary>
