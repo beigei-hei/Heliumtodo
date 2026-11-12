@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2025 Helium Todo contributors
+// SPDX-FileCopyrightText: 2025 Helium Todo contributors
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Diagnostics;
@@ -56,7 +56,10 @@ public static class LocalPostgresRuntime
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                // 不接管道：postgres 会继承句柄，ReadToEnd 会一直等服务器退出（实测挂死）。
+                // pg_ctl 与它拉起的 postgres 会继承父进程的 stdout/stderr。若父进程输出
+                // 接的是管道（dotnet ... | tee、CI 采集），只要 postgres 不退出，管道就
+                // 不会 EOF，调用方会一直等下去。这里把两个流都接到自己的管道上，让
+                // postgres 继承的是我们这根（随进程释放关闭），而不是调用方的。
                 WorkingDirectory = Path.GetDirectoryName(pgCtl) ?? AppContext.BaseDirectory,
             };
             startInfo.ArgumentList.Add("start");
@@ -70,6 +73,13 @@ public static class LocalPostgresRuntime
             startInfo.ArgumentList.Add("-t");
             startInfo.ArgumentList.Add("20");
 
+            // 把 pg_ctl 的 stderr 读出来：启动失败时真正的原因（端口占用、pid 文件、
+            // 数据目录被锁）都在它里面，只报退出码等于让用户猜。
+            // 注意不能同步 ReadToEnd：postgres 会继承这个句柄，句柄不关就一直等。
+            startInfo.RedirectStandardError = true;
+            startInfo.RedirectStandardOutput = true;
+
+            string? errorText = null;
             using var process = Process.Start(startInfo);
             if (process is null)
             {
@@ -77,16 +87,31 @@ public static class LocalPostgresRuntime
                 return false;
             }
 
+            var errorTask = process.StandardError.ReadToEndAsync();
+
             if (!process.WaitForExit(25_000))
             {
                 reason = "pg_ctl 启动超时（25 秒）";
                 return false;
             }
 
+            if (errorTask.Wait(500))
+            {
+                errorText = errorTask.Result.Trim();
+            }
+
             if (process.ExitCode != 0)
             {
-                reason = $"pg_ctl 返回 {process.ExitCode}（详见 {logPath}）";
-                return false;
+                // 刚停库时数据目录可能还在收尾，立刻再启一次往往就好了。
+                Thread.Sleep(1500);
+
+                using var retry = Process.Start(startInfo);
+                if (retry is null || !retry.WaitForExit(25_000) || retry.ExitCode != 0)
+                {
+                    var detail = string.IsNullOrWhiteSpace(errorText) ? string.Empty : $"：{errorText}";
+                    reason = $"pg_ctl 返回 {process.ExitCode}（详见 {logPath}）{detail}";
+                    return false;
+                }
             }
 
             for (var i = 0; i < 10; i++)

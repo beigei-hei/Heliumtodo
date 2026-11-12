@@ -4871,8 +4871,10 @@ FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规�
 - `StorageSettings` 增加 `PgCtlPath` / `PgDataDirectory`；`App.EnsureLocalDatabase` 在 EF 初始化前
   先探一次端口，连不上就让 `LocalPostgresRuntime.TryStart` 用 `pg_ctl start … -w` 拉起便携库。
   只在回环地址、且配置了路径时生效；`HELIUM_DB` 里的端口/用户名优先。
-- `LocalPostgresRuntime` 不接管道启动（postgres 继承句柄会让 `ReadToEnd` 永久等待），
-  25 秒超时后按 10×300 ms 重探端口；失败原因进启动提示条。
+- `LocalPostgresRuntime` 启动前把 pg_ctl 的 stdout/stderr **重定向到自己的管道**：postgres 会继承
+  父进程句柄，若调用方把输出接在管道上，服务器不退出管道就不 EOF（发布包冒烟时实测卡死）；
+  非 0 退出时等 1.5 秒重试一次（刚停库时数据目录还在收尾），失败原因带上 pg_ctl 的 stderr；
+  25 秒超时后按 10×300 ms 重探端口。
 - 壁纸改为纯静态：`WallpaperDecoder.DecodeFile` 拒绝 `.gif` / `.mp4` 等动态格式；
   删除 `MediaFoundationVideo.cs`、`ApngParser.cs` 与 APNG 测试；解码只取第一帧。
 - 设置页文件选择器只列 PNG / JPG / WebP / BMP；状态文字固定为「静态图」。
@@ -4881,6 +4883,6 @@ FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规�
 ### 验证
 
 - 构建 0 警告 0 错误；`SelfTest` **194/194**（移除 11 条 APNG 用例、新增 2 条启动器用例）；
-  十九项 `--check` 全绿（`--copy-check` 676/676）。
+  十九项 `--check` 全绿（`--copy-check` 671/671）。
 - 停止 PostgreSQL 后以沙盒配置启动 `--shell`：pg_ctl 0.7 秒内拉起，7/7 页面正常，退出码 0。
 - 真实 `%APPDATA%\Helium Todo\config.json` 已写入 55432 / postgres / 便携库路径（备份 `config.json.bak-20261112`）。
