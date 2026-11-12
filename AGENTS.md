@@ -8,7 +8,7 @@
 
 1. **先给验收标准**：把用户的话拆成 3–6 条可验证的行为，再说怎么改。
 2. **先想怎么证明**：能写单测就写单测；界面改动必须准备无头渲染 + 像素统计的验证方式（Agent 不能看图，"看着挺好"不算证据）。
-3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（199/199，含真库用例）、`--shell`、十九项 `--check`、指纹基线，全绿才交付。
+3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（204/204，含真库用例）、`--shell`、十九项 `--check`、指纹基线，全绿才交付。
 4. **收尾同步文档**：`PROGRESS.md`（这一轮）、`ARCHITECTURE.md`（新约定）、`UI_TEXT_MAP.md`（改了界面文案时）、指纹基线（`-Update` 后复查）。
 
 ## 分层铁律
@@ -41,6 +41,8 @@
 - **壁纸只支持静态图片**（PNG / JPG / WebP / BMP）：0.5.0 起不再解码 GIF/MP4，选择器也不列这些扩展名；别再恢复 `MediaFoundationVideo`。
 - **壁纸必须先缩放到窗口像素**（`HeliumTodo.Desktop/Services/WallpaperScaler.cs`）：把 4K 原图直接丢给
   `Image Stretch="UniformToFill"` 会让软件渲染每帧重采样一次（2560×1440 上 +27 ms/帧）。
+  预缩放位图**必须保留原图长宽比**（尺寸走 `Domain/Imaging/WallpaperGeometry.cs`，按"覆盖窗口"算，不裁窗口比例）；
+  否则拖拽改窗口时 `UniformToFill` 会重新 cover，松手重做位图又跳回 1:1 —— 用户看到的就是"壁纸突然放大缩小"。
 - 过渡时长不许在 XAML 里写死数字：读 `RailMetrics.AnimationDurationMs` /
   `WindowTransitionPolicy.DurationMs`，界面、降质时长、自检断言三处共用一个数。
 

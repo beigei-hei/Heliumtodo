@@ -202,10 +202,10 @@ public partial class MainWindow : Window
         _scaledWallpaperSource = source;
         _scaledWallpaperSize = target;
 
-        // UniformToFill 而不是 Fill：静态位图是和"上一次的窗口尺寸"1:1 的，
-        // 拖拽过程中窗口比例变了而位图还没重做。Fill 会把旧图硬拉成新宽高（人脸、圆圈全变形），
-        // 用户看到的就是"壁纸突然被拉伸"；UniformToFill 只是等比放大/裁掉一点边缘，
-        // 松手 160 ms 后按新尺寸重做，恢复 1:1。两者在尺寸一致时逐像素等价。
+        // UniformToFill + 保留原图长宽比的位图：拖拽过程中窗口比例变了，
+        // cover 会平滑地跟着窗口缩放/裁边，不会因为位图是"旧窗口的形状"而跳一下；
+        // 松手 160 ms 后按新尺寸重做位图，只是清晰度变化，构图不变。
+        // 注意别把 WallpaperScaler 改回"裁成窗口长宽比"——那会重新引入突然放大缩小。
         WallpaperImage.Stretch = Avalonia.Media.Stretch.UniformToFill;
         WallpaperImage.Source = scaled;
     }

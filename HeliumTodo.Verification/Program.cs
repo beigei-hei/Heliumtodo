@@ -4074,12 +4074,13 @@ public static class Program
         // 还原成亮色 45%，后面的截图断言用得上
         HeliumTodo.Desktop.App.ApplyWallpaperScrim(45, isDark: false);
 
-        // ── 三·五、壁纸预缩放：尺寸对上、裁切居中 ──
-        // 这一条守的是"卡顿修复没有把壁纸画歪"：软件渲染下把 4K 原图直接丢给
-        // Image 撑满，每帧都要重采样一次（+27 ms/帧），所以现在先缩成窗口像素。
-        // 缩放的算术写在 HeliumTodo.Desktop/Services/WallpaperScaler.cs 里，
-        // 这里用"左红、中绿、右蓝"三条竖带当尺子：UniformToFill 会裁掉左右各 160 px，
-        // 于是 1400 宽的成品左边缘只能看到红、右边缘只能看到蓝、中间还是绿。
+        // ── 三·五、壁纸预缩放：尺寸覆盖窗口、保留原图比例、裁切居中 ──
+        // 这一条守的是两件事：软件渲染下把 4K 原图直接丢给 Image 撑满，每帧都要重采样
+        // 一次（+27 ms/帧），所以现在先缩成覆盖窗口的位图；位图必须保留**原图长宽比**，
+        // 否则拖拽改窗口时 UniformToFill 会重新 cover，松手重做位图又跳回 1:1 ——
+        // 用户看到的就是"壁纸突然放大缩小"。
+        // 这里用"左红、中绿、右蓝"三条竖带当尺子：位图仍含完整画面，
+        // UniformToFill 只在显示时裁边，所以左边缘红、右边缘蓝、中间绿。
         {
             const int sourceWidth = 2560;
             const int sourceHeight = 1440;
@@ -4092,9 +4093,14 @@ public static class Program
             }
 
             var target = new PixelSize(1400, 900);
+            var expected = HeliumTodo.Domain.Imaging.WallpaperGeometry.Compute(
+                sourceWidth, sourceHeight, target.Width, target.Height);
             var scaled = HeliumTodo.Desktop.Services.WallpaperScaler.Scale(source, target);
-            Check("壁纸能被缩放到窗口尺寸", scaled is not null && scaled.PixelSize == target,
-                scaled is null ? "返回了 null" : $"{scaled.PixelSize.Width}×{scaled.PixelSize.Height}");
+            Check("壁纸按原图比例缩放到覆盖窗口尺寸",
+                scaled is not null && scaled.PixelSize == new PixelSize(expected.Width, expected.Height),
+                scaled is null
+                    ? "返回了 null"
+                    : $"{scaled.PixelSize.Width}×{scaled.PixelSize.Height}（期望 {expected.Width}×{expected.Height}）");
 
             if (scaled is not null)
             {
