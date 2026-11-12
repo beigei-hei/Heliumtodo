@@ -4966,3 +4966,13 @@ FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规�
 - 头号嫌疑：`WS_THICKFRAME` 的系统命中测试与托管 resize 并发，或 DWM 拉伸旧帧。
 - 录屏：`E:\17121\Videos\2026-11-12 20-55-55.mp4`；本会话无 ffmpeg，WPF MediaPlayer 抽帧 `open timeout`。
 - 下一步：抽帧确认“外框是否真的变大”；核对按下首帧的 `_startPointer/_startWidth` 与 DPI；A/B 去掉 `WS_THICKFRAME`，或改用原生 `BeginResizeDrag` 循环。
+
+### 23:55 续查记录（录屏已抽帧）
+
+- 用 `imageio-ffmpeg`（pip 安装）把 `E:\17121\Videos\2026-11-12 20-55-55.mp4` 抽成 5 fps / 20 fps 帧，确认拖拽发生在 16.6–16.9 s。
+- 逐帧对比：窗口上边持续上移、右边小幅右移，宽度变化远小于高度；**代码里没有任何“同时改宽高”的路径**（`WindowResizeGrips` 单边只改一维）。因此“等比例放大”更可能是 DWM 在 resize 开始时拉伸上一帧，而不是窗口几何真的等比变化。
+- 下一步（下次继续）：
+  1. 在 `OnGripPressed` 首次 `PointerMoved` 打印 `_startPointer/_startWidth/_startHeight` 与首帧 dx/dy（`HELIUM_RESIZE_TRACE=1` 才输出）；
+  2. A/B：临时去掉 `WS_THICKFRAME`（保留 `WS_CAPTION`）看跳变是否消失，确认是否系统命中测试并发；
+  3. 若确认是 DWM 旧帧拉伸，改用原生 `BeginResizeDrag`（需在真机验证不会卡死），或 resize 每帧后同步 `DwmFlush`。
+- 测试用临时目录 `.tmp-video`、`.tmp-resize` 已删除；PG 已停止。
