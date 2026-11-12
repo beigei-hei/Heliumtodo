@@ -4857,3 +4857,30 @@ FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规�
 
 - 如果本机 `postgres` 也需要密码，自愈会放弃并保留原配置；此时需在设置页手填密码。
 - 自动改写的是用户名而非建角色——不替用户在数据库里执行 `CREATE ROLE`。
+
+## 2026-11-12 · 0.5.0-alpha 热修 5：本机 PostgreSQL 自动拉起，壁纸只留静态图
+
+### 用户看到的现象
+
+- 隔天打开程序：`连不上 PostgreSQL (Host=localhost;Port=55432;…): 连接 localhost:55432 超时`。
+  便携 PostgreSQL 不会开机自启，机器重启后它就不再监听了。
+- 壁纸还支持 GIF / MP4 动图，用户要求去掉这类动态壁纸。
+
+### 做了什么
+
+- `StorageSettings` 增加 `PgCtlPath` / `PgDataDirectory`；`App.EnsureLocalDatabase` 在 EF 初始化前
+  先探一次端口，连不上就让 `LocalPostgresRuntime.TryStart` 用 `pg_ctl start … -w` 拉起便携库。
+  只在回环地址、且配置了路径时生效；`HELIUM_DB` 里的端口/用户名优先。
+- `LocalPostgresRuntime` 不接管道启动（postgres 继承句柄会让 `ReadToEnd` 永久等待），
+  25 秒超时后按 10×300 ms 重探端口；失败原因进启动提示条。
+- 壁纸改为纯静态：`WallpaperDecoder.DecodeFile` 拒绝 `.gif` / `.mp4` 等动态格式；
+  删除 `MediaFoundationVideo.cs`、`ApngParser.cs` 与 APNG 测试；解码只取第一帧。
+- 设置页文件选择器只列 PNG / JPG / WebP / BMP；状态文字固定为「静态图」。
+- 新增 `LocalPostgresRuntimeTests`（未配置、pg_ctl 不存在两条边界）。
+
+### 验证
+
+- 构建 0 警告 0 错误；`SelfTest` **194/194**（移除 11 条 APNG 用例、新增 2 条启动器用例）；
+  十九项 `--check` 全绿（`--copy-check` 676/676）。
+- 停止 PostgreSQL 后以沙盒配置启动 `--shell`：pg_ctl 0.7 秒内拉起，7/7 页面正常，退出码 0。
+- 真实 `%APPDATA%\Helium Todo\config.json` 已写入 55432 / postgres / 便携库路径（备份 `config.json.bak-20261112`）。

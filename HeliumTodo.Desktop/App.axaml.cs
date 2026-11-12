@@ -98,6 +98,7 @@ public partial class App : Avalonia.Application
         // 本机旧配置里的用户名（helium）在多数 PostgreSQL 上不存在：
         // 连接得上但登录被拒时，自动退到 postgres 并写回配置，避免用户每次都被挡在门外。
         TryRepairLocalStorage(configService);
+        EnsureLocalDatabase(configService);
 
         // ── ② 主题注册表（插件稍后还能往里加主题） ──
         var themeRegistry = new ThemeRegistry();
@@ -732,6 +733,69 @@ public partial class App : Avalonia.Application
         catch (Exception)
         {
             return null;
+        }
+    }
+    /// <summary>
+    /// 本机便携 PostgreSQL 不会开机自启：连不上时按配置的 pg_ctl/data 拉起来。
+    /// 只对回环地址生效；远程库或系统服务启动失败时保持原有提示。
+    /// </summary>
+    private static void EnsureLocalDatabase(ConfigService configService)
+    {
+        var storage = configService.Current.Storage;
+        var effective = WithEnvironmentConnection(storage);
+
+        if (!IsLoopbackHost(effective.Host))
+        {
+            return;
+        }
+
+        if (PostgresConnection.Probe(effective) is null)
+        {
+            return;
+        }
+
+        if (LocalPostgresRuntime.TryStart(effective, out var reason))
+        {
+            Console.Error.WriteLine($"[启动] 本机 PostgreSQL 已在 {effective.Host}:{effective.Port} 拉起。");
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(reason) && !reason.StartsWith("未配置", StringComparison.Ordinal))
+        {
+            Console.Error.WriteLine($"[启动] 本机 PostgreSQL 启动失败：{reason}");
+            DatabaseStartupNotice ??= $"本机 PostgreSQL 没有运行，自动启动也失败了：{reason}";
+        }
+    }
+
+    /// <summary>HELIUM_DB 优先于 config.json；启动本机库时端口要以最终连接串为准。</summary>
+    private static StorageSettings WithEnvironmentConnection(StorageSettings storage)
+    {
+        var full = Environment.GetEnvironmentVariable(PostgresConnection.FullConnectionVariable);
+        if (string.IsNullOrWhiteSpace(full))
+        {
+            return storage;
+        }
+
+        try
+        {
+            var builder = new Npgsql.NpgsqlConnectionStringBuilder(full);
+            return new StorageSettings
+            {
+                Provider = storage.Provider,
+                Host = string.IsNullOrWhiteSpace(builder.Host) ? storage.Host : builder.Host!,
+                Port = builder.Port == 0 ? storage.Port : builder.Port,
+                Database = string.IsNullOrWhiteSpace(builder.Database) ? storage.Database : builder.Database!,
+                Username = string.IsNullOrWhiteSpace(builder.Username) ? storage.Username : builder.Username!,
+                Password = builder.Password ?? string.Empty,
+                SslMode = storage.SslMode,
+                CommandTimeoutSeconds = storage.CommandTimeoutSeconds,
+                PgCtlPath = storage.PgCtlPath,
+                PgDataDirectory = storage.PgDataDirectory,
+            };
+        }
+        catch (Exception)
+        {
+            return storage;
         }
     }
     /// <summary>数据库没起来时留给壳层的提示；null 表示一切正常。</summary>

@@ -22,7 +22,7 @@
 | MVVM | **CommunityToolkit.Mvvm 8.4.0** | `[ObservableProperty]` / `[RelayCommand]` 源生成器 |
 | 数据访问 | **EF Core 10.0.14** + `Npgsql.EntityFrameworkCore.PostgreSQL 10.0.3` | 主存储是 **PostgreSQL 17**（P2 起）；连接串见 `StorageSettings` / `HELIUM_DB` |
 | 依赖注入 | `Microsoft.Extensions.DependencyInjection 10.0.14` | `App.axaml.cs` 里手工注册 20 处 |
-| 测试 | **xunit 2.9.2** + `Microsoft.NET.Test.Sdk 17.11.1` | 203 个测试（数据库相关用例未设置 `HELIUM_TEST_POSTGRES` 时跳过） |
+| 测试 | **xunit 2.9.2** + `Microsoft.NET.Test.Sdk 17.11.1` | 194 个测试（数据库相关用例未设置 `HELIUM_TEST_POSTGRES` 时跳过） |
 | 视频解码 | **Windows Media Foundation**（系统组件，`mfplat.dll` / `mfreadwrite.dll`） | 零额外打包体积；`MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING` 请求 RGB32，缩放自己用 Skia 做 |
 | 渲染后端 | `Win32RenderingMode`：Auto（默认，AngleEgl→Software 回退）/ Wgl / Vulkan | 设置页「底层设置」或 `HELIUM_RENDER` 切换，重启生效 |
 
@@ -53,7 +53,7 @@ HeliumTodo.slnx
 ├─ HeliumTodo.Application     用例与接口层（配置 / IPC / 通知契约 / Result<T>） 
 ├─ HeliumTodo.Infrastructure  EF Core + PostgreSQL + 备份 v2 + 联机传输
 ├─ HeliumTodo.Desktop         Avalonia 界面（Views / ViewModels / Controls / Services / Windowing）
-├─ HeliumTodo.Tests           xunit 测试（203 个）
+├─ HeliumTodo.Tests           xunit 测试（194 个）
 ├─ HeliumTodo.SelfTest        反射运行器（沙箱里替代 dotnet test）
 └─ HeliumTodo.Verification    无头渲染 + 18 个专项自检 + 后台探针入口
 ```
@@ -155,7 +155,7 @@ Avalonia 在 Windows 上默认走 ANGLE（把 OpenGL 调用翻译成 D3D11）。
 $env:HELIUM_RENDER = "angle"    # 或 software / wgl / vulkan / auto
 ```
 
-### 3.4 动态壁纸：限制帧数与长边
+### 3.4 动态壁纸：限制帧数与长边（0.5.0 起已移除）
 
 动图是"几十帧同时驻留"，代价随帧数线性增长。改成按需限额之后：
 
@@ -206,7 +206,7 @@ powershell -ExecutionPolicy Bypass -File tools\capture-window.ps1 `
 | 自习室（局域网） | `Infrastructure/LanPeerTransport.cs` | 星形拓扑、一行一条 JSON、4 秒心跳 / 15 秒判掉线、UDP 广播发现、默认关闭 |
 | 备份 | `Domain/Backup/*` + `Infrastructure/DataBackupService.cs` | 一个 `.zip` 装库 + 配置 + 壁纸；清单带 SHA256；替换/合并两种导入 |
 | 提醒 | `Domain/Notifications/*` + `Desktop/Services/ReminderService.cs` | 30 秒扫一次、2 分钟容差、`HashSet` 去重、落到 Windows 通知中心 |
-| 壁纸 | `Domain/Imaging/ApngParser.cs` + `Desktop/Services/WallpaperService.cs` | 手工拆 APNG、GIF 逐帧、模糊 + 蒙版、取主色 |
+| 壁纸 | `Desktop/Services/WallpaperDecoder.cs` + `WallpaperService.cs` | 仅静态图（PNG/JPG/WebP/BMP）；缩放、模糊、蒙版、取主色（0.5.0 起移除 GIF/MP4） |
 | 窗口外壳 | `App/Windowing/*` | 自绘标题栏 + 三列卡片 + 8 个改大小抓手 + 180 ms 最大化动画 + 单实例唤回 |
 
 ---

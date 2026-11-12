@@ -64,7 +64,7 @@
 │
 │   PluginHost        插件发现/加载/卸载（AssemblyLoadContext）
 │   ThemeService      主题 + 强调色 → 写入 Avalonia 资源字典
-│   WallpaperDecoder  SkiaSharp 解码 PNG/JPG/GIF/APNG → Bitmap 序列
+│   WallpaperDecoder  SkiaSharp 解码静态图（PNG/JPG/WebP/BMP）→ Bitmap
 │   WallpaperService  DispatcherTimer 逐帧播放，对外只暴露 CurrentFrame
 │
 ├─ 领域层 · HeliumTodo.Domain ──────────────────────────────────────────────
@@ -245,7 +245,7 @@
 ```
 MainWindow（WindowDecorations="BorderOnly"，系统边框还在但标题栏不要了）
 └─ Grid（三层叠着）
-   ├─ Image   壁纸（Stretch=UniformToFill，APNG/GIF 逐帧）
+   ├─ Image   壁纸（Stretch=UniformToFill，静态图）
    ├─ Border  蒙版（WallpaperScrimBrush + WallpaperScrimOpacity）
    └─ ShellView
       └─ Grid RowDefinitions="Auto,*"
@@ -2159,3 +2159,23 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
 - 日志只写一行「已改用 postgres」，不打印密码；完整异常仍按打码连接串记录。
 
 状态栏用 `DatabaseErrorText.Brief`（一句话），提示条和设置页用 `Describe`（含角色名、主机端口与下一步）；两处文案都由 `UI_TEXT_MAP` 管着。
+
+### 20.17 便携数据库自启动与静态壁纸（2026-11-12 热修 5）
+
+**便携 PostgreSQL 自启动。** 交付后便携版不会开机自启，用户隔天打开程序只会看到连接超时。
+
+- `LocalPostgresRuntime.TryStart` 在 EF 初始化之前执行：只有主机是回环地址、配置或环境变量给了
+  `PgCtlPath` / `PgDataDirectory` 时才尝试；系统服务与远程库一律不碰。
+- 命令是 `pg_ctl start -D <data> -l <parent>\server-start.log -o "-p <port>" -w -t 20`。
+  **不接 stdout/stderr 管道**：postgres 会继承句柄，`ReadToEnd` 会一直等到服务器退出（实测挂死）。
+- `pg_ctl` 25 秒内退出且端口在 10×300 ms 内可连才算成功；失败原因写进启动提示条，不打印密码。
+- 路径可用 `HELIUM_PG_CTL` / `HELIUM_PG_DATA` 覆盖；`HELIUM_DB` 仍然优先于 `config.json`。
+
+**动态壁纸移除。** 用户明确要求去掉 `.gif` / `.mp4` 动态壁纸。
+
+- `WallpaperDecoder.DecodeFile` 只接受静态图（PNG / JPG / WebP / BMP）；GIF 与视频扩展名直接抛
+  「0.5.0 起壁纸只支持静态图片…」。
+- 删除 `MediaFoundationVideo`（750 行 COM Interop）与 `ApngParser`（及对应测试）；
+  `Decode` 只取第一帧，`DecodedWallpaper` 恒为单帧。
+- 选择器不再列 `*.gif` / `*.mp4`；设置页状态只显示「静态图」。
+- §18.3 / §18.3.1 的帧预算与 30 fps 上限是历史设计，已不再生效。

@@ -626,11 +626,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     private string DescribeWallpaper()
     {
-        var kind = _wallpaper.IsAnimated
-            ? $"动图 {_wallpaper.FrameCount}/{_wallpaper.SourceFrameCount} 帧"
-            : "静态图";
-
-        return $"{_wallpaper.PixelWidth}×{_wallpaper.PixelHeight} · {kind} · 主色调 {_wallpaper.Accent.ToHex()}";
+        return $"{_wallpaper.PixelWidth}×{_wallpaper.PixelHeight} · 静态图 · 主色调 {_wallpaper.Accent.ToHex()}";
     }
 
     // ─────────────────────────────────────────────────────────

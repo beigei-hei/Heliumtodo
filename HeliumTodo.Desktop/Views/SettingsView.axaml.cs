@@ -54,18 +54,12 @@ public partial class SettingsView : UserControl
             AllowMultiple = false,
             FileTypeFilter = new[]
             {
-                // 图片和视频分两组放：用户想找 mp4 时不用在几十种扩展名里翻。
-                // 视频能播是系统解码器说了算（Media Foundation），
-                // 解不出来的会在设置页下方直接提示，而不是静默失败。
-                new FilePickerFileType("图片（PNG / GIF / APNG / JPG / WebP）")
+                // 0.5.0 起壁纸只支持静态图片：GIF / MP4 等动态壁纸已移除，
+                // 所以选择器里不再列出这些扩展名。
+                new FilePickerFileType("图片（PNG / JPG / WebP / BMP）")
                 {
-                    Patterns = new[] { "*.png", "*.apng", "*.jpg", "*.jpeg", "*.gif", "*.bmp", "*.webp" },
+                    Patterns = new[] { "*.png", "*.jpg", "*.jpeg", "*.bmp", "*.webp" },
                     MimeTypes = new[] { "image/*" },
-                },
-                new FilePickerFileType("视频（MP4 / MOV / WMV 等）")
-                {
-                    Patterns = new[] { "*.mp4", "*.m4v", "*.mov", "*.wmv", "*.avi", "*.mkv", "*.webm" },
-                    MimeTypes = new[] { "video/*" },
                 },
                 new FilePickerFileType("所有文件")
                 {

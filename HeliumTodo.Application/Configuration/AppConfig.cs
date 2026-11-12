@@ -130,8 +130,8 @@ public sealed class AppConfig
     public bool WallpaperEnabled { get; set; }
 
     /// <summary>
-    /// 壁纸文件路径。可以是 APNG / PNG / JPG / GIF，
-    /// 动图（APNG、GIF）会自动播放。
+    /// 壁纸文件路径。0.5.0 起只支持静态图片（PNG / JPG / WebP / BMP）；
+    /// GIF / MP4 等动态壁纸已移除。
     /// </summary>
     public string? WallpaperPath { get; set; }
 
@@ -268,6 +268,19 @@ public sealed class StorageSettings
 
     /// <summary>单条命令超时（秒）。</summary>
     public int CommandTimeoutSeconds { get; set; } = 30;
+
+    /// <summary>
+    /// 便携 PostgreSQL 的 pg_ctl.exe 路径（可选）。
+    /// 配置后，应用发现本机数据库没起来时会尝试自己启动，而不是只报“连不上”。
+    /// 也可用环境变量 HELIUM_PG_CTL 覆盖。
+    /// </summary>
+    public string? PgCtlPath { get; set; }
+
+    /// <summary>
+    /// 便携 PostgreSQL 的 data 目录（可选）。需与 <see cref="PgCtlPath"/> 同时配置。
+    /// 也可用环境变量 HELIUM_PG_DATA 覆盖。
+    /// </summary>
+    public string? PgDataDirectory { get; set; }
 }
 
 /// <summary>
