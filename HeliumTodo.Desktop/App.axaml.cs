@@ -754,7 +754,7 @@ public partial class App : Avalonia.Application
             return;
         }
 
-        if (LocalPostgresRuntime.TryStart(effective, out var reason))
+        if (LocalPostgresRuntime.TryStart(effective, configService.ConfigDirectory, out var reason))
         {
             Console.Error.WriteLine($"[启动] 本机 PostgreSQL 已在 {effective.Host}:{effective.Port} 拉起。");
             return;

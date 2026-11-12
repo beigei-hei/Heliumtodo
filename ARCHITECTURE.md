@@ -2166,13 +2166,15 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
 
 - `LocalPostgresRuntime.TryStart` 在 EF 初始化之前执行：只有主机是回环地址、配置或环境变量给了
   `PgCtlPath` / `PgDataDirectory` 时才尝试；系统服务与远程库一律不碰。
-- 命令是 `pg_ctl start -D <data> -l <parent>\server-start.log -o "-p <port>" -w -t 20`。
+- 命令是 `pg_ctl start -D <data> -l <配置目录>\server-start.log -o "-p <port>" -w -t 20`。
+  日志写应用配置目录（数据目录可能在只读盘/受控目录），启动前先试写数据目录，不可写直接报
+  「数据目录不可写」而不是把 postgres 的 `Permission denied` 原样抛给用户。
   pg_ctl 与它拉起的 postgres 会继承父进程的 stdout/stderr：调用方若把输出接到管道（`dotnet … | tee`、
   CI 采集），只要 postgres 不退出，管道就永远不 EOF（实测 `--shell | Select-Object` 卡死 154 秒）。
   因此**必须把两个流重定向到子进程自己的管道**（`RedirectStandardOutput/Error = true`），随 `Process`
   释放关闭；绝不能让它继承调用方的句柄。
-- `pg_ctl` 25 秒内退出且端口在 10×300 ms 内可连才算成功；非 0 退出时先等 1.5 秒重试一次（刚停库时
-  数据目录还在收尾/文件锁未释放），并把 pg_ctl 的 stderr 带进启动提示条；不打印密码。
+- `pg_ctl` 25 秒内退出且端口在 10×300 ms 内可连才算成功；非 0 退出时依次等 1.5/3 秒重试两次（刚停库时
+  数据目录还在收尾/文件锁未释放），并把最后一次 pg_ctl 的 stderr 带进启动提示条；不打印密码。
 - 路径可用 `HELIUM_PG_CTL` / `HELIUM_PG_DATA` 覆盖；`HELIUM_DB` 仍然优先于 `config.json`。
 
 **动态壁纸移除。** 用户明确要求去掉 `.gif` / `.mp4` 动态壁纸。

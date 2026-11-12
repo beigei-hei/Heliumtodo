@@ -18,7 +18,7 @@ public class LocalPostgresRuntimeTests
     {
         var storage = new StorageSettings();
 
-        var started = LocalPostgresRuntime.TryStart(storage, out var reason);
+        var started = LocalPostgresRuntime.TryStart(storage, Path.GetTempPath(), out var reason);
 
         Assert.False(started);
         Assert.Contains("PgCtlPath", reason);
@@ -34,7 +34,7 @@ public class LocalPostgresRuntimeTests
             PgDataDirectory = Path.GetTempPath(),
         };
 
-        var started = LocalPostgresRuntime.TryStart(storage, out var reason);
+        var started = LocalPostgresRuntime.TryStart(storage, Path.GetTempPath(), out var reason);
 
         Assert.False(started);
         Assert.Contains("找不到 pg_ctl.exe", reason);

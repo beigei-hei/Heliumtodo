@@ -25,8 +25,10 @@ public static class LocalPostgresRuntime
     /// 尝试启动本机 PostgreSQL。
     /// 返回 true 表示启动命令执行成功且端口已可连接；
     /// 返回 false 时 <paramref name="reason"/> 说明是“没配置”还是“启动失败”。
+    /// <paramref name="logDirectory"/> 必须是当前用户可写的目录（应用配置目录），
+    /// pg_ctl 的日志写在这里，避免数据目录所在盘只读或权限受限。
     /// </summary>
-    public static bool TryStart(StorageSettings storage, out string reason)
+    public static bool TryStart(StorageSettings storage, string logDirectory, out string reason)
     {
         var pgCtl = ResolvePath(storage.PgCtlPath, PgCtlVariable);
         var dataDirectory = ResolvePath(storage.PgDataDirectory, PgDataVariable);
@@ -49,9 +51,27 @@ public static class LocalPostgresRuntime
             return false;
         }
 
+        // 先自己试写一次：postgres 启动第一件事是创建 postmaster.pid，不可写时它只给
+        // 一句 “could not create lock file … Permission denied”，用户看不出是权限问题。
         try
         {
-            var logPath = Path.Combine(Path.GetDirectoryName(dataDirectory.TrimEnd(Path.DirectorySeparatorChar)) ?? dataDirectory, "server-start.log");
+            var probe = Path.Combine(dataDirectory, $".helium-write-{Guid.NewGuid():N}.tmp");
+            File.WriteAllText(probe, "probe");
+            File.Delete(probe);
+        }
+        catch (Exception ex)
+        {
+            reason = $"数据目录不可写：{dataDirectory}（{ex.GetType().Name}: {ex.Message}）";
+            return false;
+        }
+
+        try
+        {
+            // 日志写到应用配置目录：数据目录可能在只读盘/受控目录里，pg_ctl 打不开就会
+            // 直接以 “could not open log file … Permission denied” 退出（发布包实测）。
+            var logPath = Path.Combine(
+                string.IsNullOrWhiteSpace(logDirectory) ? AppContext.BaseDirectory : logDirectory,
+                "server-start.log");
             var startInfo = new ProcessStartInfo(pgCtl)
             {
                 UseShellExecute = false,
@@ -103,10 +123,28 @@ public static class LocalPostgresRuntime
             if (process.ExitCode != 0)
             {
                 // 刚停库时数据目录可能还在收尾，立刻再启一次往往就好了。
-                Thread.Sleep(1500);
+                // 每次重试都重新接 stderr，失败时把最后一次的真实原因带回去。
+                var started = false;
+                for (var attempt = 1; attempt <= 2 && !started; attempt++)
+                {
+                    Thread.Sleep(1500 * attempt);
 
-                using var retry = Process.Start(startInfo);
-                if (retry is null || !retry.WaitForExit(25_000) || retry.ExitCode != 0)
+                    using var retry = Process.Start(startInfo);
+                    if (retry is null)
+                    {
+                        break;
+                    }
+
+                    var retryErrorTask = retry.StandardError.ReadToEndAsync();
+                    started = retry.WaitForExit(25_000) && retry.ExitCode == 0;
+
+                    if (!started && retryErrorTask.Wait(500))
+                    {
+                        errorText = retryErrorTask.Result.Trim();
+                    }
+                }
+
+                if (!started)
                 {
                     var detail = string.IsNullOrWhiteSpace(errorText) ? string.Empty : $"：{errorText}";
                     reason = $"pg_ctl 返回 {process.ExitCode}（详见 {logPath}）{detail}";

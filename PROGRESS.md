@@ -4873,8 +4873,8 @@ FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规�
   只在回环地址、且配置了路径时生效；`HELIUM_DB` 里的端口/用户名优先。
 - `LocalPostgresRuntime` 启动前把 pg_ctl 的 stdout/stderr **重定向到自己的管道**：postgres 会继承
   父进程句柄，若调用方把输出接在管道上，服务器不退出管道就不 EOF（发布包冒烟时实测卡死）；
-  非 0 退出时等 1.5 秒重试一次（刚停库时数据目录还在收尾），失败原因带上 pg_ctl 的 stderr；
-  25 秒超时后按 10×300 ms 重探端口。
+  日志固定写应用配置目录；启动前试写数据目录，不可写直接报「数据目录不可写」；
+  非 0 退出时依次等 1.5/3 秒重试两次，失败原因带上最后一次 pg_ctl 的 stderr；25 秒超时后按 10×300 ms 重探端口。
 - 壁纸改为纯静态：`WallpaperDecoder.DecodeFile` 拒绝 `.gif` / `.mp4` 等动态格式；
   删除 `MediaFoundationVideo.cs`、`ApngParser.cs` 与 APNG 测试；解码只取第一帧。
 - 设置页文件选择器只列 PNG / JPG / WebP / BMP；状态文字固定为「静态图」。
