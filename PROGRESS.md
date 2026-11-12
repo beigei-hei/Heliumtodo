@@ -4976,3 +4976,7 @@ FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规�
   2. A/B：临时去掉 `WS_THICKFRAME`（保留 `WS_CAPTION`）看跳变是否消失，确认是否系统命中测试并发；
   3. 若确认是 DWM 旧帧拉伸，改用原生 `BeginResizeDrag`（需在真机验证不会卡死），或 resize 每帧后同步 `DwmFlush`。
 - 测试用临时目录 `.tmp-video`、`.tmp-resize` 已删除；PG 已停止。
+
+### 23:58 试验记录
+- 试过真机改用 Window.BeginResizeDrag（托管路径保留给无头）；构建 0/0，但 --window-check 在无头下 TryGetPlatformHandle() 非空、原生循环不跑，拖拽断言失败。
+- 已回滚该试验，工作区干净；下次需先让 Verification 用环境变量禁用原生路径，再真机验证 BeginResizeDrag。
