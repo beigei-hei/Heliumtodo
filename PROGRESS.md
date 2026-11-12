@@ -4957,3 +4957,12 @@ FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规�
   十九项 `--check` 全绿。
 - 无头渲染跑通 `--shell`；拖拽手感属于真机体验，无头环境只能守住"位图比例恒定"这条算术契约，
   最终以真机拖拽复验为准。
+
+## 2026-11-12 暂停记录（待修：拖拽手柄时窗口整体放大）
+
+- 当前交付提交 `082c641`（热修 7：壁纸预缩放按原图比例），工作区干净。
+- 用户复现（m05495）：按下任意缩放手柄的瞬间，窗口外框先整体等比例放大一下，之后才按拖动方向变化；任意边都复现。
+- 已排除：`MainWindow.axaml` 壁纸层无 Viewbox/LayoutTransform/RenderTransform；`WindowResizeGrips` 单边逻辑只改对应维；`InteractionQuality` 只改画质/阴影；`WindowAnimator` 无尺寸动画。
+- 头号嫌疑：`WS_THICKFRAME` 的系统命中测试与托管 resize 并发，或 DWM 拉伸旧帧。
+- 录屏：`E:\17121\Videos\2026-11-12 20-55-55.mp4`；本会话无 ffmpeg，WPF MediaPlayer 抽帧 `open timeout`。
+- 下一步：抽帧确认“外框是否真的变大”；核对按下首帧的 `_startPointer/_startWidth` 与 DPI；A/B 去掉 `WS_THICKFRAME`，或改用原生 `BeginResizeDrag` 循环。
