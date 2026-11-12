@@ -64,17 +64,16 @@ public sealed class AppConfig
     public const int WallpaperCardOpacity = 82;
 
     /// <summary>
-    /// 窗口宽度（首次启动 / 恢复默认时的尺寸）。
+    /// 窗口宽度（历史字段，0.5.0 起启动不再读取）。
     ///
-    /// 为什么是 1920×1080：三大核心功能里「每日工作流」和「专注时长」都是横向排布的，
-    /// 1400×900 那张布局在 1080p 屏上左右两侧的字会挤在一起；1920 是 1080p 屏的整数倍，
-    /// 也是"开箱即最大化"的常见做法。屏幕比它小时不用我们处理 —— Avalonia 建窗口时
-    /// 会把窗口收进屏幕工作区（实测 2560×1600 @150% 上得到 ≈1724×1080 DIP），
-    /// 所以这里写 1920×1080 不会在小屏上顶出屏幕。
+    /// 0.5.0 起启动尺寸固定为 1920×1080 **物理像素**，按当前缩放换算成 DIP 并居中；
+    /// 屏幕放不下时只收缩溢出的那一维（见 <c>StartupWindowPlacement</c>）。
+    /// 这两个字段保留只是为了兼容旧 config.json —— 读旧文件时不会因为缺字段报错，
+    /// 写回去时也不会丢字段；但界面不再按它恢复上次尺寸。
     /// </summary>
     public double WindowWidth { get; set; } = 1920;
 
-    /// <summary>窗口高度。</summary>
+    /// <summary>窗口高度（历史字段，0.5.0 起启动不再读取）。</summary>
     public double WindowHeight { get; set; } = 1080;
 
     /// <summary>启动时窗口是否最大化。</summary>
@@ -84,8 +83,8 @@ public sealed class AppConfig
 
     /// <summary>
     /// 用哪个渲染后端。取值见 <see cref="RenderBackendSettings"/>：
-    ///   · "software" —— 软件渲染（默认，Skia 在 CPU 上画，省内存）
-    ///   · "auto"     —— Avalonia 自带渲染器（Windows 上是 ANGLE → D3D11，吃显卡）
+    ///   · "software" —— 软件渲染（Skia 在 CPU 上画，省内存）
+    ///   · "auto"     —— 默认；Windows 上是 ANGLE → D3D11，失败才退回软件渲染
     ///   · "wgl"      —— OpenGL
     ///   · "vulkan"   —— Vulkan
     ///

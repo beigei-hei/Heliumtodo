@@ -22,7 +22,7 @@
 | MVVM | **CommunityToolkit.Mvvm 8.4.0** | `[ObservableProperty]` / `[RelayCommand]` 源生成器 |
 | 数据访问 | **EF Core 10.0.14** + `Npgsql.EntityFrameworkCore.PostgreSQL 10.0.3` | 主存储是 **PostgreSQL 17**（P2 起）；连接串见 `StorageSettings` / `HELIUM_DB` |
 | 依赖注入 | `Microsoft.Extensions.DependencyInjection 10.0.14` | `App.axaml.cs` 里手工注册 20 处 |
-| 测试 | **xunit 2.9.2** + `Microsoft.NET.Test.Sdk 17.11.1` | 194 个测试（数据库相关用例未设置 `HELIUM_TEST_POSTGRES` 时跳过） |
+| 测试 | **xunit 2.9.2** + `Microsoft.NET.Test.Sdk 17.11.1` | 199 个测试（数据库相关用例未设置 `HELIUM_TEST_POSTGRES` 时跳过） |
 | 视频解码 | **Windows Media Foundation**（系统组件，`mfplat.dll` / `mfreadwrite.dll`） | 零额外打包体积；`MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING` 请求 RGB32，缩放自己用 Skia 做 |
 | 渲染后端 | `Win32RenderingMode`：Auto（默认，AngleEgl→Software 回退）/ Wgl / Vulkan | 设置页「底层设置」或 `HELIUM_RENDER` 切换，重启生效 |
 
@@ -40,6 +40,7 @@
 | 托盘图标 | WinForms `NotifyIcon` | `HeliumTodo.Desktop/Services/TrayService.cs`（纯 P/Invoke） | WinForms 会把 TFM 变成 `net10.0-windows`，而项目被无头渲染工具引用 |
 | 系统通知 | WinRT `ToastNotificationManager` | `WindowsToastNotifier` → 托盘气泡 | WinRT 通知需要注册 AppUserModelID + 开始菜单快捷方式 + 额外互操作包 |
 | 窗口圆角 / 最大化动画 | DWM | 圆角用 `Win32Properties.WindowCornerPreference`；动画自己写 180 ms | 无边框窗口（`WindowDecorations="None"`）下 DWM 不给动画，实测确认过 |
+| 启动窗口尺寸 | 纯算术（Domain） | 固定 1920×1080 **物理像素**，按缩放换算 DIP 并居中；装不下只收缩溢出的那一维 | 1920×1080 DIP 在 2560×1600 @150% 上放不下，直接最大化又谈不上"启动居中" |
 | 数据库迁移 | EF Migrations | ~~`EnsureCreated()` + `EnsureColumns()` 手工补列~~ 0.5.0 起只用 Migration，禁止运行期补列 | 「能自动补列」听起来省事，实际会把模型和库悄悄分叉 |
 | 测试运行器 | `dotnet test` | `HeliumTodo.SelfTest`（反射跑 `[Fact]`） | 本机沙箱里 testhost 起不来 |
 
@@ -53,7 +54,7 @@ HeliumTodo.slnx
 ├─ HeliumTodo.Application     用例与接口层（配置 / IPC / 通知契约 / Result<T>） 
 ├─ HeliumTodo.Infrastructure  EF Core + PostgreSQL + 备份 v2 + 联机传输
 ├─ HeliumTodo.Desktop         Avalonia 界面（Views / ViewModels / Controls / Services / Windowing）
-├─ HeliumTodo.Tests           xunit 测试（194 个）
+├─ HeliumTodo.Tests           xunit 测试（199 个）
 ├─ HeliumTodo.SelfTest        反射运行器（沙箱里替代 dotnet test）
 └─ HeliumTodo.Verification    无头渲染 + 18 个专项自检 + 后台探针入口
 ```

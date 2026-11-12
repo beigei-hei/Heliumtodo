@@ -1526,6 +1526,48 @@ public static class Program
             if (!ok) failures++;
         }
 
+        // ── ⓪ 启动尺寸与居中 ──
+        Console.WriteLine();
+        Console.WriteLine("── 启动尺寸：1920×1080 物理像素，按缩放居中 ──");
+
+        var startupWindow = new MainWindow { DataContext = shell };
+        startupWindow.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        var startupScreen = startupWindow.Screens.ScreenFromWindow(startupWindow)
+                            ?? startupWindow.Screens.Primary;
+
+        if (startupScreen is null)
+        {
+            Check("启动尺寸可验证", false, "Screens 为空，拿不到工作区");
+        }
+        else
+        {
+            var startupWork = startupScreen.WorkingArea;
+            var startupScaling = startupScreen.Scaling > 0 ? startupScreen.Scaling : 1.0;
+            var expected = StartupWindowPlacement.Compute(
+                startupWork.X, startupWork.Y, startupWork.Width, startupWork.Height,
+                startupScaling,
+                double.IsNaN(startupWindow.MinWidth) ? 0 : startupWindow.MinWidth,
+                double.IsNaN(startupWindow.MinHeight) ? 0 : startupWindow.MinHeight);
+
+            Check("启动宽度按 1920 物理像素换算",
+                Math.Abs(startupWindow.Width - expected.WidthDip) < 1.5,
+                $"{startupWindow.Width:0} DIP（期望 {expected.WidthDip:0} DIP，缩放 {startupScaling:0.##}）");
+
+            Check("启动高度按 1080 物理像素换算",
+                Math.Abs(startupWindow.Height - expected.HeightDip) < 1.5,
+                $"{startupWindow.Height:0} DIP（期望 {expected.HeightDip:0} DIP）");
+
+            Check("启动位置在屏幕正中",
+                Math.Abs(startupWindow.Position.X - expected.LeftPx) <= 2
+                && Math.Abs(startupWindow.Position.Y - expected.TopPx) <= 2,
+                $"({startupWindow.Position.X}, {startupWindow.Position.Y})（期望 ({expected.LeftPx}, {expected.TopPx})）");
+        }
+
+        startupWindow.Close();
+        PumpDispatcher(TimeSpan.FromMilliseconds(200));
+
         // ── ① 打开动画 ──
         Console.WriteLine();
         Console.WriteLine("── 打开动画：遮罩淡出 ──");

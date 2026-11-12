@@ -2185,3 +2185,14 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
   `Decode` 只取第一帧，`DecodedWallpaper` 恒为单帧。
 - 选择器不再列 `*.gif` / `*.mp4`；设置页状态只显示「静态图」。
 - §18.3 / §18.3.1 的帧预算与 30 fps 上限是历史设计，已不再生效。
+### 20.18 启动窗口尺寸与居中（2026-11-12 热修 6）
+
+- 启动尺寸的**唯一来源**是 `Domain/Windowing/StartupWindowPlacement.cs`：
+  目标是 1920×1080 **物理像素**，按 `Screens.ScreenFromWindow(...).Scaling` 换算成 DIP；
+  屏幕工作区放不下时只收缩溢出的那一维（工作区 94%），并守住窗口的 `MinWidth/MinHeight`。
+- `MainWindow.OnOpened` 只负责把纯函数结果贴到 `Width` / `Height` / `Position`；
+  `WindowStartupLocation="CenterScreen"` 保留，但它按创建时尺寸算，改过尺寸后**必须**重设 `Position`。
+- 0.5.0 起**不再恢复** `config.json` 里的 `WindowWidth/WindowHeight`（字段保留只为兼容旧文件）；
+  关窗时也不再写这两个字段，只记 `StartMaximized`。
+- 验收：`StartupWindowPlacementTests` 覆盖 150%、仅高度溢出、非法缩放、极小工作区、工作区不可用五种情况；
+  `--window-check` 在无头窗口上断言宽/高换算与居中坐标。

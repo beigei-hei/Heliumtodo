@@ -7,6 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
 using HeliumTodo.Desktop.ViewModels;
+using HeliumTodo.Domain.Windowing;
 using HeliumTodo.Desktop.Windowing;
 
 namespace HeliumTodo.Desktop.Views;
@@ -21,7 +22,7 @@ namespace HeliumTodo.Desktop.Views;
 ///
 /// 这样拆的理由：这三件事互不相干，也都跟"这个应用有哪些页面"无关。
 /// 以前它们散在 MainWindow.axaml.cs / MainWindow.Win32.cs / MainWindow.Animation.cs 三个
-/// partial 文件里，读一处逻辑要在三个文件之间跳；现在窗口类只剩"装配 + 存取窗口尺寸"，
+/// partial 文件里，读一处逻辑要在三个文件之间跳；现在窗口类只剩"装配 + 启动尺寸策略"，
 /// 想改动画就只看 WindowAnimator，想改拖拽就只看 WindowResizeGrips。
 /// </summary>
 public partial class MainWindow : Window
@@ -354,44 +355,33 @@ public partial class MainWindow : Window
 
     private void OnOpened(object? sender, EventArgs e)
     {
-        // 恢复上次的窗口大小，并把窗口摆到工作区正中。
+        // 0.5.0 起启动尺寸固定为 1920×1080 物理像素，并按最终尺寸居中；
+        // 不再恢复上次的窗口大小（用户 2026-11-12 明确要求默认值）。
+        // 换算放在 StartupWindowPlacement 里：纯算术、可单测，界面层只负责把结果贴上。
         if (DataContext is ShellViewModel
             && App.Services.GetService(typeof(Application.Configuration.ConfigService))
                 is Application.Configuration.ConfigService config)
         {
             var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
-            var scaling = screen is { Scaling: > 0 } s ? s.Scaling : 1.0;
-
             if (screen is { } current)
             {
-                // 工作区是物理像素；窗口宽高是 DIP。
+                var scaling = current.Scaling > 0 ? current.Scaling : 1.0;
                 var work = current.WorkingArea;
-                var workWidth = work.Width / scaling;
-                var workHeight = work.Height / scaling;
+                var minWidth = double.IsNaN(MinWidth) ? 0 : MinWidth;
+                var minHeight = double.IsNaN(MinHeight) ? 0 : MinHeight;
 
-                // 默认 1920×1080 在 2560×1600 @150% 上（工作区 1706×1019 DIP）放不下；
-                // 旧代码直接最大化，用户看到的不是"居中"。现在只在放不下时收到 94%，
-                // 然后按最终尺寸把窗口摆到工作区正中（WindowStartupLocation=CenterScreen
-                // 是按"创建时的初始尺寸"算的，OnOpened 改了尺寸之后就对不上了）。
-                var desiredWidth = Math.Clamp(config.Current.WindowWidth, MinWidth, 4000);
-                var desiredHeight = Math.Clamp(config.Current.WindowHeight, MinHeight, 4000);
+                var placement = StartupWindowPlacement.Compute(
+                    work.X, work.Y, work.Width, work.Height,
+                    scaling, minWidth, minHeight);
 
-                if (desiredWidth > workWidth || desiredHeight > workHeight)
-                {
-                    desiredWidth = Math.Max(MinWidth, Math.Min(desiredWidth, workWidth * 0.94));
-                    desiredHeight = Math.Max(MinHeight, Math.Min(desiredHeight, workHeight * 0.94));
-                }
-
-                Width = desiredWidth;
-                Height = desiredHeight;
+                Width = placement.WidthDip;
+                Height = placement.HeightDip;
 
                 if (!config.Current.StartMaximized)
                 {
-                    var pixelWidth = (int)Math.Round(Width * scaling);
-                    var pixelHeight = (int)Math.Round(Height * scaling);
-                    Position = new PixelPoint(
-                        work.X + Math.Max(0, (work.Width - pixelWidth) / 2),
-                        work.Y + Math.Max(0, (work.Height - pixelHeight) / 2));
+                    // WindowStartupLocation=CenterScreen 是按创建时的初始尺寸算的，
+                    // 这里改过宽高之后必须重新摆一次，否则窗口会偏向左上。
+                    Position = new PixelPoint(placement.LeftPx, placement.TopPx);
                 }
             }
 
@@ -416,17 +406,12 @@ public partial class MainWindow : Window
             return;
         }
 
-        // 先让动画就地收尾，再读尺寸 —— 动画途中关窗会读到中间值。
+        // 先让动画就地收尾，再读状态 —— 动画途中关窗会读到中间值。
         _animator.Settle();
 
-        // 只记"正常态"的尺寸：最大化记的是最大化后的尺寸，下次恢复会得到一个「假最大化」的窗口；
-        // 最小化时 Width/Height 是系统给的最小化矩形，记下来更糟。
-        if (WindowState == WindowState.Normal)
-        {
-            config.Current.WindowWidth = Width;
-            config.Current.WindowHeight = Height;
-        }
-
+        // 0.5.0 起启动尺寸固定为 1920×1080 物理像素，不再记"上次尺寸"：
+        // 记下来也不会被读取，留着只会让 config.json 里的旧数字误导排查。
+        // 只记最大化状态（用户把窗口最大化后关掉，下次仍按最大化打开）。
         config.Current.StartMaximized = WindowState == WindowState.Maximized;
         config.Save();
     }

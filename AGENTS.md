@@ -8,7 +8,7 @@
 
 1. **先给验收标准**：把用户的话拆成 3–6 条可验证的行为，再说怎么改。
 2. **先想怎么证明**：能写单测就写单测；界面改动必须准备无头渲染 + 像素统计的验证方式（Agent 不能看图，"看着挺好"不算证据）。
-3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（194/194，含真库用例）、`--shell`、十九项 `--check`、指纹基线，全绿才交付。
+3. **先跑门禁再报告**：`dotnet build`（0 警告 0 错误）、`SelfTest`（199/199，含真库用例）、`--shell`、十九项 `--check`、指纹基线，全绿才交付。
 4. **收尾同步文档**：`PROGRESS.md`（这一轮）、`ARCHITECTURE.md`（新约定）、`UI_TEXT_MAP.md`（改了界面文案时）、指纹基线（`-Update` 后复查）。
 
 ## 分层铁律
@@ -32,6 +32,7 @@
   `Desktop/Behaviors/` 下的 `Behavior<T>`，别再往 code-behind 里加 `PointerPressed` / `KeyDown`；
   新增行为必须同时加 `--behavior-check` 断言（挂载数量 + 解绑后不触发）。
 - 卡片内容必须向内缩：`Border.card` 用 `Padding="8"`，里面再套一层同半径（`RadiusCard`）且 `ClipToBounds="True"` 的容器才放滚动区，否则悬停色块会压在圆角上。
+- 启动窗口尺寸固定为 **1920×1080 物理像素**（按屏幕缩放换算成 DIP，并在工作区居中；装不下只收缩溢出的那一维），换算只许走 `Domain/Windowing/StartupWindowPlacement.cs`；别再恢复 `config.json` 里上次的窗口尺寸。
 - 图标轨宽度只能取自 `RailMetrics`（收起 56 / 展开 188 / 条目 44 / 176），别在 XAML 里写数字。
 - 改 XAML 时小心 `FINAL` 属性（`ComboBox.currentValue` 之类）与名字冲突（`Name="WindowEdge"` 会遮住 `WindowEdge` 枚举）。
 - **内部控件动画只许一条属性在动**：图标轨展开时整窗只有轨道的 `Width` 在动，条目按钮用

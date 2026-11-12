@@ -5,7 +5,7 @@
 
 当前版本：**v0.5.0-alpha**
 状态：**0.5.0-alpha 已完成 P0–P7（七项目分层、Application 层、PostgreSQL 17 + EF10、FluentAvaloniaUI 3.1 主题、Xaml.Behaviors 12.1.5、单文件发布）；
-自绘设置控件与提示条；202 个测试全绿（含真库用例），十九项 `--check` 全绿。**
+自绘设置控件与提示条；199 个测试全绿（含真库用例），十九项 `--check` 全绿。**
 
 ---
 
@@ -4886,3 +4886,37 @@ FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规�
   十九项 `--check` 全绿（`--copy-check` 671/671）。
 - 停止 PostgreSQL 后以沙盒配置启动 `--shell`：pg_ctl 0.7 秒内拉起，7/7 页面正常，退出码 0。
 - 真实 `%APPDATA%\Helium Todo\config.json` 已写入 55432 / postgres / 便携库路径（备份 `config.json.bak-20261112`）。
+## 2026-11-12 · 0.5.0-alpha 热修 6：启动固定在屏幕正中，尺寸按 1920×1080 物理像素
+
+### 用户看到的现象
+
+- 启动时窗口大小和位置都不对：实际用的是上次关窗时存下的 1213×758，而且偏左上。
+- 要求："将默认启动位置改至中间，并修改默认启动窗口大小为1920*1080"。
+
+### 根因
+
+- `AppConfig` 默认值本来就是 1920×1080，但 `MainWindow.OnOpened` 会恢复 `config.json`
+  里的 `WindowWidth/WindowHeight`；真实配置里存着 1213×758。
+- 开发机 2560×1600、150% 缩放，工作区约 1707×1019 DIP：1920×1080 **DIP** 放不下，
+  所以"1920×1080"只能按**物理像素**理解（150% 下即 1280×720 DIP）。
+- `WindowStartupLocation="CenterScreen"` 是在窗口创建时按初始尺寸算的，
+  `OnOpened` 改过尺寸之后就不再居中。
+
+### 做了什么
+
+- 新增 `HeliumTodo.Domain/Windowing/StartupWindowPlacement.cs`（纯算术，无 Avalonia）：
+  目标 1920×1080 物理像素 → 按 `Scaling` 换算 DIP；只收缩装不下的那一维（工作区 94%），
+  再守住 `MinWidth/MinHeight`；最后换算回物理像素并在工作区居中。
+- `MainWindow.OnOpened` 改为调用它，设置 `Width/Height` 与 `Position`；不再读上次尺寸。
+- `OnClosing` 不再写 `WindowWidth/WindowHeight`（写了也没人读，留着只会误导排查），
+  仍保留 `StartMaximized`。
+- `AppConfig` 两个尺寸字段的注释改成"历史字段，0.5.0 起不读取"，并顺手修正渲染后端默认值注释。
+- 新增 `StartupWindowPlacementTests` 5 条：150% 下 1280×720 居中、只收缩溢出高度、
+  非法缩放按 1.0、极小工作区守住最小尺寸、工作区不可用时退回 1920×1080。
+- `--window-check` 新增 3 条启动断言（宽/高按物理像素换算、位置在正中），无头实测
+  `1920×1080 @1.0 → 1920 DIP / 1080 DIP，位置 (0,100)` 全部通过。
+
+### 验证
+
+- 构建 0 警告 0 错误；`SelfTest` **199/199**（194 + 5 条启动几何）。
+- `--window-check` 全部通过（含新增 3 条）；`--shell` 7/7；十九项 `--check` 全绿。
