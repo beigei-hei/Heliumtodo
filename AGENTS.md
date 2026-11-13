@@ -33,6 +33,7 @@
   新增行为必须同时加 `--behavior-check` 断言（挂载数量 + 解绑后不触发）。
 - 卡片内容必须向内缩：`Border.card` 用 `Padding="8"`，里面再套一层同半径（`RadiusCard`）且 `ClipToBounds="True"` 的容器才放滚动区，否则悬停色块会压在圆角上。
 - 启动窗口尺寸固定为 **1920×1080 物理像素**（按屏幕缩放换算成 DIP，并在工作区居中；装不下只收缩溢出的那一维），换算只许走 `Domain/Windowing/StartupWindowPlacement.cs`；别再恢复 `config.json` 里上次的窗口尺寸。
+- 真机上改窗口尺寸（启动与 8 个抓手）**必须**减掉系统外框：`WindowChrome` 的 `WS_CAPTION/WS_THICKFRAME` 会让 Avalonia 在 `Width/Height` 上加 `AdjustWindowRectExForDpi` 那一圈，而 `WM_NCCALCSIZE` 又把它算进客户区 —— 150% 下凭空多 22×56 物理像素（用户报的“按下抓手整窗放大”）。外框走 `FramelessWindowFrame.Measure`；`MinWidth/MinHeight` 先按“逻辑最小 − 外框”放宽；每帧两个方向都写补偿值。
 - 图标轨宽度只能取自 `RailMetrics`（收起 56 / 展开 188 / 条目 44 / 176），别在 XAML 里写数字。
 - 改 XAML 时小心 `FINAL` 属性（`ComboBox.currentValue` 之类）与名字冲突（`Name="WindowEdge"` 会遮住 `WindowEdge` 枚举）。
 - **内部控件动画只许一条属性在动**：图标轨展开时整窗只有轨道的 `Width` 在动，条目按钮用

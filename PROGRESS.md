@@ -4980,3 +4980,29 @@ FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规�
 ### 23:58 试验记录
 - 试过真机改用 Window.BeginResizeDrag（托管路径保留给无头）；构建 0/0，但 --window-check 在无头下 TryGetPlatformHandle() 非空、原生循环不跑，拖拽断言失败。
 - 已回滚该试验，工作区干净；下次需先让 Verification 用环境变量禁用原生路径，再真机验证 BeginResizeDrag。
+
+## 2026-11-13 · 0.5.0-alpha 热修 8：窗口外框补偿，按下抓手不再整窗放大
+
+### 症状
+
+用户按下任意缩放手柄的瞬间，窗口会先整体放大一圈（宽高同时），之后才按拖动方向变化；启动窗口也停在 1920×1136 而不是 1920×1080。
+
+### 根因（真机合成输入实测）
+
+- `WindowChrome` 给窗口补了 `WS_CAPTION / WS_THICKFRAME`（DWM 过渡需要），再用 `WM_NCCALCSIZE` 把非客户区抹成 0，所以“客户区 = 窗口矩形”。
+- 但 Avalonia 设置 `Window.Width/Height` 时仍按“窗口 = 客户区 + 外框”计算：先 `AdjustWindowRectExForDpi` 加上外框，再 `SetWindowPos`。这圈外框落在客户区里，就成了额外尺寸。
+- 实测 144 dpi（150%）下外框是 **22×56 物理像素 = 14.67×37.33 DIP**：按下右抓手后第一次移动，`[grip]` 记录 `bounds 1294.67×757.33 → 1312.7×794.7`，高度凭空 +37.33 DIP，正好等于外框。
+- 启动同理：`Width=1920`（DIP）实际变成 1920+14.67，而 `Height` 又被 `MinHeight=720` 顶回 720 再加 37.33，于是窗口停在 1920×1136 物理像素。
+
+### 修复
+
+- 新增 `HeliumTodo.Desktop/Windowing/FramelessWindowFrame.cs`：`Measure(Window)` 用 `GetWindowLongPtrW` + `GetDpiForWindow` + `AdjustWindowRectExForDpi` 量出当前外框；`WindowFrame.SubtractWidth/SubtractHeight` 负责减掉（不小于 1）。
+- `MainWindow.OnOpened`：先按“逻辑最小 − 外框”放宽 `MinWidth/MinHeight`，再用补偿后的 `Width/Height` 设置尺寸并居中。
+- `WindowResizeGrips`：按下时测外框并放宽最小值；每帧 apply 时两个方向都写补偿后的值（只写一个方向会让 Avalonia 用另一个方向的旧值重新 `SetWindowPos`，又长一圈）。
+- 删除试验期的 `NativeWindow.cs`（原生 `SetWindowPos` 路线会被 Avalonia 用缓存的 `Width/Height` 覆盖，已放弃）。
+
+### 验证
+
+- 合成输入探针（`.tmp-input`）：启动 `1280×720` DIP（=1920×1080 物理）；按下后 300 ms 内尺寸不变；拖动只改宽度，高度恒为 720。
+- `--window-check` 新增断言「只按下抓手、不移动时窗口尺寸不变」：`1920×1080 → 1920×1080` 通过；原有「拖 120 变窄 1920→1800」通过。
+- 构建 0 警告 0 错误；`SelfTest` **204/204**（真库）；十九项 `--check` 全绿；`--shell` 7/7。

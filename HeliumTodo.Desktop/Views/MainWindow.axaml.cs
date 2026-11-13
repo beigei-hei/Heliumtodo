@@ -374,14 +374,27 @@ public partial class MainWindow : Window
                     work.X, work.Y, work.Width, work.Height,
                     scaling, minWidth, minHeight);
 
-                Width = placement.WidthDip;
-                Height = placement.HeightDip;
+                // 真机要减掉系统外框：WindowChrome 给窗口补了 WS_CAPTION/WS_THICKFRAME，
+                // Avalonia 设置 Width/Height 时会把这圈外框加进窗口矩形；
+                // 而 WM_NCCALCSIZE 又把它抹成客户区，结果就是“设置多少、实际多一圈”。
+                // 150% 下外框是 22×56 物理像素，正好是用户看到的“启动/拖拽时整窗突然放大”。
+                var frame = Windowing.FramelessWindowFrame.Measure(this);
+                MinWidth = Math.Max(1, minWidth - frame.WidthDip);
+                MinHeight = Math.Max(1, minHeight - frame.HeightDip);
+                Width = frame.SubtractWidth(placement.WidthDip);
+                Height = frame.SubtractHeight(placement.HeightDip);
 
                 if (!config.Current.StartMaximized)
                 {
                     // WindowStartupLocation=CenterScreen 是按创建时的初始尺寸算的，
                     // 这里改过宽高之后必须重新摆一次，否则窗口会偏向左上。
                     Position = new PixelPoint(placement.LeftPx, placement.TopPx);
+                }
+
+                if (Environment.GetEnvironmentVariable("HELIUM_RESIZE_TRACE") == "1")
+                {
+                    Console.Error.WriteLine(
+                        $"[startup] want={placement.WidthDip}x{placement.HeightDip}@{placement.LeftPx},{placement.TopPx} frame={frame} set={Width}x{Height} min={MinWidth}x{MinHeight} bounds={Bounds}");
                 }
             }
 

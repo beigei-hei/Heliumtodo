@@ -1666,6 +1666,24 @@ public static class Program
             }
             else
             {
+                // 回归点（0.5.0 热修 8）：Avalonia 设置 Width/Height 时会加系统外框，
+                // 第一次真正 SetWindowPos 时窗口会凭空长 22×56 物理像素 ——
+                // 用户看到的就是“按下抓手、窗口还没跟手就先整窗放大”。
+                // 所以按下（不移动）必须一点尺寸都不变，这里先钉死这一条。
+                var heightBefore = window.Height;
+                window.MouseMove(center.Value);
+                window.MouseDown(center.Value, MouseButton.Left);
+                Dispatcher.UIThread.RunJobs();
+
+                Check("只按下抓手、不移动时窗口尺寸不变",
+                    Math.Abs(window.Width - widthBefore) < 1
+                    && Math.Abs(window.Height - heightBefore) < 1,
+                    $"{widthBefore:0}×{heightBefore:0} → {window.Width:0}×{window.Height:0}" +
+                    "（外框补偿若失效会多出 14.7×37.3 DIP）");
+
+                window.MouseUp(center.Value, MouseButton.Left);
+                Dispatcher.UIThread.RunJobs();
+
                 // 往"里"拖：往外拖会让指针跑到窗口矩形之外，无头平台不一定还往这个窗口送事件。
                 // 拖右边缘往里 120 → 窗口应该变窄 120 左右。
                 window.MouseMove(center.Value);

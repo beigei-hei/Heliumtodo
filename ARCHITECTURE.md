@@ -2207,3 +2207,20 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
   用户看到的就是"壁纸突然放大缩小"。
 - 验收：`WallpaperGeometryTests` 钉住 16:9→3:2、同比例、竖图进横窗、零尺寸四种边界；
   `--appearance-check` 三·五断言 2560×1440 → 1400×900 的位图是 1600×900，且左/中/右三色仍归位。
+
+### 20.20 窗口外框补偿（2026-11-13 热修 8）
+
+- 本窗口同时满足两个事实：`WindowChrome` 补了 `WS_CAPTION/WS_THICKFRAME`（DWM 过渡需要），
+  `WM_NCCALCSIZE` 又把非客户区抹成 0（视觉无边框）。于是"客户区 = 窗口矩形"。
+- Avalonia 设置 `Window.Width/Height` 时仍按"窗口 = 客户区 + 外框"计算：先
+  `AdjustWindowRectExForDpi` 加一圈，再 `SetWindowPos`。这圈外框落在客户区里变成额外尺寸。
+  实测 150% 缩放为 **22×56 物理像素 / 14.67×37.33 DIP**，正是"按下抓手整窗放大"和
+  "启动停在 1920×1136"的来源。
+- 规则：真机上所有尺寸赋值前减掉 `FramelessWindowFrame.Measure(window)` 量到的外框；
+  `MinWidth/MinHeight` 先放宽到"逻辑最小 − 外框"再赋值，否则高度方向的补偿会被最小值顶回去；
+  每帧 apply 时**两个方向都写**补偿值（只写一个方向会让 Avalonia 用另一方向的旧值重新布局）。
+- 不要改回原生 `SetWindowPos` 方案：Avalonia 会用缓存的 `Width/Height` 在
+  `WM_WINDOWPOSCHANGING` 里覆盖它。原生 `BeginResizeDrag` 也不行 —— 无头自检里也会报告平台句柄，
+  实测拖拽断言直接变成 `1920 → 1920`。
+- 验收：`--window-check` 新增"只按下抓手、不移动时窗口尺寸不变"（外框补偿失效会多 14.7×37.3 DIP），
+  以及原有"拖 120 → 1920→1800"；真机用 `.tmp-input` 合成输入探针确认按下 300ms 尺寸不变、拖动只改一维。

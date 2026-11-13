@@ -15,36 +15,37 @@ namespace HeliumTodo.Desktop.Windowing;
 /// 系统不再把边缘当成"可拖拽的边框"，鼠标落在边缘也只是普通点击。
 /// 所以 XAML 里铺了 8 个透明 Border（四条边 + 四个角），由这个类接管拖拽。
 ///
-/// 为什么自己算、不用 Window.BeginResizeDrag：
-///   BeginResizeDrag 最终是把鼠标交给系统那个"改大小循环"，
-///   而那个循环只在窗口带 WS_THICKFRAME（系统边框）时才生效。
-///   最早窗口是 WindowDecorations="None"，这个样式位没有 ——
-///   实测：抓手能收到点击、BeginResizeDrag 也调用了，窗口纹丝不动，所以改成纯托管实现。
-///   后来为了让最大化有动画，WS_THICKFRAME 又被加回去了（见 WindowChrome），
-///   理论上 BeginResizeDrag 现在能用了；但这套托管实现已经验证过、且不挑平台，
-///   没有理由为了少写几十行去换一个"看系统脸色"的行为，所以保留。
-///   好处是不用 P/Invoke、不挑平台；代价是拖动由界面帧驱动，
-///   不像系统那样"硬件光标实时跟手"——对这个应用足够。
+/// 为什么赋值前要减掉一圈外框（2026-11-13）：
+///   WindowChrome 给窗口补了 WS_CAPTION / WS_THICKFRAME（DWM 的最小化/最大化过渡需要），
+///   再用 WM_NCCALCSIZE 把非客户区抹成 0 —— 视觉上没边框，客户区 = 窗口矩形。
+///   但 Avalonia 设置 Width/Height 时仍然按"窗口矩形 = 客户区 + 外框"计算，
+///   于是它把请求值加上外框再 SetWindowPos；多加的那圈外框落在客户区里，
+///   表现为第一次移动时窗口凭空高 +56 / 宽 +22 物理像素（用户报的"整窗等比例放大"）。
+///   这里在每次赋值前减掉外框，窗口矩形才是我们算的那个值。
+///
+/// 为什么合并到渲染帧：鼠标回报率动辄 125–1000 Hz，而屏幕只有 60 Hz；
+/// 每来一个移动事件就改一次窗口尺寸，等于一帧里重排重画好几次。
 /// </summary>
 internal sealed class WindowResizeGrips
 {
+    private const double MinimumWidthDip = 1080;
+    private const double MinimumHeightDip = 720;
+
+    private static readonly bool TraceOn =
+        Environment.GetEnvironmentVariable("HELIUM_RESIZE_TRACE") == "1";
+
     private readonly Window _window;
     private readonly InteractionQuality _quality;
 
     /// <summary>拖动期间持有的"降质"作用域（松开时释放）。</summary>
     private IDisposable? _qualityScope;
 
-    /// <summary>
-    /// 这一帧的窗口矩形已经算好、只等渲染了。
-    /// 鼠标回报率动辄 125–1000 Hz，而屏幕只有 60 Hz；
-    /// 每来一个移动事件就改一次窗口尺寸，等于一帧里重排重画好几次，
-    /// 这是"拖边缘一顿一顿"的直接原因，所以合并到下一帧只做一次。
-    /// </summary>
+    /// <summary>这一帧的窗口矩形已经算好、只等渲染了。</summary>
     private bool _frameScheduled;
 
+    private PixelPoint _pendingPosition;
     private double _pendingWidth;
     private double _pendingHeight;
-    private PixelPoint _pendingPosition;
 
     /// <summary>正在拖哪条边。null = 没在拖。</summary>
     private WindowEdge? _edge;
@@ -52,10 +53,13 @@ internal sealed class WindowResizeGrips
     /// <summary>按下那一刻鼠标在全屏坐标系里的位置（物理像素）。</summary>
     private PixelPoint _startPointer;
 
-    /// <summary>按下那一刻窗口的位置（物理像素）和大小（DIP）。</summary>
-    private PixelPoint _startPosition;
-    private double _startWidth;
-    private double _startHeight;
+    /// <summary>按下那一刻的窗口客户区矩形（物理像素）。</summary>
+    private PixelRect _startRect;
+
+    /// <summary>这个窗口在系统眼里的外框厚度（DIP）；尺寸赋值前减掉。</summary>
+    private WindowFrame _frame;
+
+    private double _scaling = 1.0;
 
     public WindowResizeGrips(Window window, InteractionQuality quality)
     {
@@ -89,16 +93,28 @@ internal sealed class WindowResizeGrips
         if (!Enum.TryParse<WindowEdge>(edgeName, out var edge)) return;
 
         _edge = edge;
+        _scaling = _window.RenderScaling > 0 ? _window.RenderScaling : 1.0;
+        _frame = FramelessWindowFrame.Measure(_window);
         _startPointer = _window.PointToScreen(e.GetPosition(_window));
-        _startPosition = _window.Position;
-        _startWidth = _window.Bounds.Width;
-        _startHeight = _window.Bounds.Height;
+        _startRect = new PixelRect(
+            _window.Position.X,
+            _window.Position.Y,
+            (int)Math.Round(_window.Bounds.Width * _scaling),
+            (int)Math.Round(_window.Bounds.Height * _scaling));
+
+        // 托管的最小尺寸是"客户区"尺寸；Avalonia 的 MinWidth/MinHeight 也是"客户区"，
+        // 但它比较的是赋值减外框之前的数。把系统最小放宽到"补偿后仍不低于逻辑最小"，
+        // 否则高度方向的补偿会被 MinHeight 顶回去，第一次移动仍会多长 37 DIP。
+        _window.MinWidth = Math.Max(1, MinimumWidthDip - _frame.WidthDip);
+        _window.MinHeight = Math.Max(1, MinimumHeightDip - _frame.HeightDip);
 
         // 拖动全程降质：壁纸换低品质、卡片阴影关掉、动图壁纸暂停
         _qualityScope ??= _quality.Begin();
 
         e.Pointer.Capture(_window);
         e.Handled = true;
+
+        Trace($"press edge={edge} rect={_startRect} scale={_scaling} frame={_frame}");
     }
 
     private void OnPointerMoved(object? sender, PointerEventArgs e)
@@ -106,52 +122,40 @@ internal sealed class WindowResizeGrips
         if (_edge is not { } edge) return;
 
         var current = _window.PointToScreen(e.GetPosition(_window));
-        var scaling = _window.RenderScaling <= 0 ? 1.0 : _window.RenderScaling;
+        var dxPx = current.X - _startPointer.X;
+        var dyPx = current.Y - _startPointer.Y;
 
-        // 鼠标移动了多少物理像素 → 换算成 DIP（窗口大小用的是 DIP）
-        var dx = (current.X - _startPointer.X) / scaling;
-        var dy = (current.Y - _startPointer.Y) / scaling;
+        var minWidthPx = (int)Math.Round(MinimumWidthDip * _scaling);
+        var minHeightPx = (int)Math.Round(MinimumHeightDip * _scaling);
 
-        var width = _startWidth;
-        var height = _startHeight;
+        var x = _startRect.X;
+        var y = _startRect.Y;
+        var width = _startRect.Width;
+        var height = _startRect.Height;
 
         if (edge is WindowEdge.East or WindowEdge.NorthEast or WindowEdge.SouthEast)
         {
-            width = Math.Max(_window.MinWidth, _startWidth + dx);
+            width = Math.Max(minWidthPx, _startRect.Width + dxPx);
         }
         else if (edge is WindowEdge.West or WindowEdge.NorthWest or WindowEdge.SouthWest)
         {
-            width = Math.Max(_window.MinWidth, _startWidth - dx);
+            width = Math.Max(minWidthPx, _startRect.Width - dxPx);
+            x = _startRect.X + (_startRect.Width - width);
         }
 
         if (edge is WindowEdge.South or WindowEdge.SouthEast or WindowEdge.SouthWest)
         {
-            height = Math.Max(_window.MinHeight, _startHeight + dy);
+            height = Math.Max(minHeightPx, _startRect.Height + dyPx);
         }
         else if (edge is WindowEdge.North or WindowEdge.NorthEast or WindowEdge.NorthWest)
         {
-            height = Math.Max(_window.MinHeight, _startHeight - dy);
+            height = Math.Max(minHeightPx, _startRect.Height - dyPx);
+            y = _startRect.Y + (_startRect.Height - height);
         }
 
-        // 往左/往上拉的时候右下角不动，所以左上角要跟着让位。
-        // 位置是物理像素，得换算回去。
-        var left = _startPosition.X;
-        var top = _startPosition.Y;
-
-        if (edge is WindowEdge.West or WindowEdge.NorthWest or WindowEdge.SouthWest)
-        {
-            left = _startPosition.X + (int)Math.Round((_startWidth - width) * scaling);
-        }
-
-        if (edge is WindowEdge.North or WindowEdge.NorthEast or WindowEdge.NorthWest)
-        {
-            top = _startPosition.Y + (int)Math.Round((_startHeight - height) * scaling);
-        }
-
-        // 只记下"这一帧应该长什么样"，真正改窗口交给下一帧 —— 见 _frameScheduled 的注释
-        _pendingPosition = new PixelPoint(left, top);
-        _pendingWidth = width;
-        _pendingHeight = height;
+        _pendingPosition = new PixelPoint(x, y);
+        _pendingWidth = width / _scaling;
+        _pendingHeight = height / _scaling;
         ScheduleApply();
 
         e.Handled = true;
@@ -171,23 +175,27 @@ internal sealed class WindowResizeGrips
             _frameScheduled = false;
             if (_edge is null) return;
 
-            // 拖东/南边时位置没变，别把同一个 Position 再写一遍：
-            // 每一次赋值都会走 SetWindowPos，Windows 会多发一轮 WM_WINDOWPOSCHANGED，
-            // 换来的就是"同样的尺寸被布局/重绘两次"。
             if (_window.Position != _pendingPosition)
             {
                 _window.Position = _pendingPosition;
             }
 
-            if (Math.Abs(_window.Width - _pendingWidth) > 0.01)
+            // 两个方向每帧都写同一个目标值：只改一个方向时，Avalonia 会把另一个方向的
+            // 当前值一起重新 SetWindowPos；若那个当前值还是"没减外框"的旧值，就会多长一圈。
+            var widthDip = _frame.SubtractWidth(_pendingWidth);
+            var heightDip = _frame.SubtractHeight(_pendingHeight);
+
+            if (Math.Abs(_window.Width - widthDip) > 0.01)
             {
-                _window.Width = _pendingWidth;
+                _window.Width = widthDip;
             }
 
-            if (Math.Abs(_window.Height - _pendingHeight) > 0.01)
+            if (Math.Abs(_window.Height - heightDip) > 0.01)
             {
-                _window.Height = _pendingHeight;
+                _window.Height = heightDip;
             }
+
+            Trace($"apply pos={_pendingPosition} want={_pendingWidth}x{_pendingHeight} set={widthDip}x{heightDip} bounds={_window.Bounds}");
         });
     }
 
@@ -202,5 +210,13 @@ internal sealed class WindowResizeGrips
         _qualityScope = null;
 
         e.Handled = true;
+    }
+
+    private static void Trace(string message)
+    {
+        if (TraceOn)
+        {
+            Console.Error.WriteLine("[grip] " + message);
+        }
     }
 }
