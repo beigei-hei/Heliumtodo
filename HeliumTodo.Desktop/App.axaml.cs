@@ -812,7 +812,10 @@ public partial class App : Avalonia.Application
             var probe = PostgresConnection.Probe(storage);
             if (probe is not null)
             {
-                DatabaseStartupNotice = DatabaseErrorText.DescribeProbeFailure(probe, masked);
+                // 自动拉起失败时 EnsureLocalDatabase 已经写过更具体的原因（pg_ctl 退出码、
+                // 数据目录不可写、找不到 pg_ctl…）。别用一句"连接超时"把它盖掉，
+                // 否则用户按提示去查主机/端口，真正的失败原因反而看不到。
+                DatabaseStartupNotice ??= DatabaseErrorText.DescribeProbeFailure(probe, masked);
                 Console.Error.WriteLine($"[启动] 数据库预检失败：{probe}（连接：{masked}）");
                 return;
             }
