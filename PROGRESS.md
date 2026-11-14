@@ -5032,3 +5032,21 @@ FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规�
 - 构建 0 警告 0 错误；`SelfTest` **206/206**（真库）；十九项 `--check` 全绿。
 - 边界：只解决本机、免密/已知密码的场景；远程库、密码错误仍走设置页与提示条，不猜密码、不建角色。
 
+
+## 2026-11-14 · 0.5.0-alpha 调整：日程页「＋ 新建」移入卡片信息栏
+
+### 为什么
+
+用户反馈：日程页的「＋ 新建」挂在页面标题行最右侧，和待办页把创建入口放在卡片里的做法不一致；标题行应该只放模块名与概览数字。
+
+### 做了什么
+
+- `HeliumTodo.Desktop/Views/ScheduleView.axaml`：删除标题行里的 `ToggleButton x:Name="EditorToggle"`；把同一个开关移进卡片内「接下来 N 天」这一行，改成 `Grid ColumnDefinitions="Auto,Auto,*,Auto"`，右侧对齐。
+- 开关仍双向绑 `IsEditorOpen`，点列表铅笔时 VM 置 true 的自动展开链路不变；折叠编辑区的位置没动（仍在列表上方）。
+- 同步更新 `ScheduleViewModel` 的注释与 `ScheduleView.axaml` 顶部说明。
+
+### 验证
+
+- `--shell` 7/7；`日程.png` 中标题行只剩「日程 + 概览」，新建按钮落在卡片信息栏右端（卡片内边距 20）。
+- `--layout-check` 通过（卡片顶边 64、左边缘 12 未变）；十九项 `--check` 全部通过；`SelfTest` 206/206。
+

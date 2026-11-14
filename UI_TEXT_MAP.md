@@ -84,29 +84,29 @@
 - `HeliumTodo.Desktop\Views\ScheduleView.axaml:47` — `<TextBlock Text="今天" Classes="pageCaption" VerticalAlignment="Center"`
 - `HeliumTodo.Desktop\Views\ScheduleView.axaml:52` — `<TextBlock Text="未来 7 天" Classes="pageCaption" VerticalAlignment="Center"`
 - `HeliumTodo.Desktop\Views\ScheduleView.axaml:57` — `<TextBlock Text="今天占用" Classes="pageCaption" VerticalAlignment="Center"`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:67` — `Content="＋ 新建"`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:89` — `PlaceholderText="日程名称，例如：高等数学" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:91` — `<Button Content="取消" Command="{Binding CancelEditCommand}"`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:93` — `<Button Content="保存" Classes="accent" Command="{Binding SaveCommand}" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:100` — `<TextBlock Text="开始" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:106` — `<TextBlock Text="时长" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:109` — `<TextBlock Text="分钟" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:113` — `<TextBlock Text="优先级" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:125` — `<TextBlock Text="时段" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:144` — `PlaceholderText="备注 / 地点，例如：三教 305" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:147` — `<TextBlock Text="重复" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:168` — `<TextBlock Text="星期" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:169` — `<CheckBox Content="一" IsChecked="{Binding Monday}" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:170` — `<CheckBox Content="二" IsChecked="{Binding Tuesday}" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:171` — `<CheckBox Content="三" IsChecked="{Binding Wednesday}" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:172` — `<CheckBox Content="四" IsChecked="{Binding Thursday}" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:173` — `<CheckBox Content="五" IsChecked="{Binding Friday}" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:174` — `<CheckBox Content="六" IsChecked="{Binding Saturday}" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:175` — `<CheckBox Content="日" IsChecked="{Binding Sunday}" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:189` — `<TextBlock Text="接下来" Classes="caption" VerticalAlignment="Center" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:194` — `<TextBlock Text="{Binding StringFormat='{}{0} 天'}" />`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:249` — `<Button FontSize="12" Padding="8,4" ToolTip.Tip="编辑"`
-- `HeliumTodo.Desktop\Views\ScheduleView.axaml:254` — `<Button FontSize="12" Padding="8,4" ToolTip.Tip="删除整条日程"`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:79` — `PlaceholderText="日程名称，例如：高等数学" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:81` — `<Button Content="取消" Command="{Binding CancelEditCommand}"`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:83` — `<Button Content="保存" Classes="accent" Command="{Binding SaveCommand}" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:90` — `<TextBlock Text="开始" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:96` — `<TextBlock Text="时长" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:99` — `<TextBlock Text="分钟" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:103` — `<TextBlock Text="优先级" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:115` — `<TextBlock Text="时段" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:134` — `PlaceholderText="备注 / 地点，例如：三教 305" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:137` — `<TextBlock Text="重复" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:158` — `<TextBlock Text="星期" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:159` — `<CheckBox Content="一" IsChecked="{Binding Monday}" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:160` — `<CheckBox Content="二" IsChecked="{Binding Tuesday}" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:161` — `<CheckBox Content="三" IsChecked="{Binding Wednesday}" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:162` — `<CheckBox Content="四" IsChecked="{Binding Thursday}" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:163` — `<CheckBox Content="五" IsChecked="{Binding Friday}" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:164` — `<CheckBox Content="六" IsChecked="{Binding Saturday}" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:165` — `<CheckBox Content="日" IsChecked="{Binding Sunday}" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:180` — `<TextBlock Grid.Column="0" Text="接下来" Classes="caption" VerticalAlignment="Center" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:185` — `<TextBlock Text="{Binding StringFormat='{}{0} 天'}" />`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:200` — `Content="＋ 新建"`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:252` — `<Button FontSize="12" Padding="8,4" ToolTip.Tip="编辑"`
+- `HeliumTodo.Desktop\Views\ScheduleView.axaml:257` — `<Button FontSize="12" Padding="8,4" ToolTip.Tip="删除整条日程"`
 
 ### `HeliumTodo.Desktop\Views\SettingsView.axaml`（81 处）
 

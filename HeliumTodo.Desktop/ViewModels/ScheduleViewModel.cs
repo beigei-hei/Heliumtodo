@@ -141,7 +141,7 @@ public sealed partial class ScheduleViewModel : ViewModelBase
     /// <summary>
     /// 新建 / 编辑区是不是展开着。
     /// 默认收起：这一页的主视觉是「接下来几天的日程」，表单一直摊开会把列表挤到半屏。
-    /// 点卡片头的「＋ 新建」或某条日程的铅笔按钮才展开（后者见 <see cref="Edit"/>）。
+    /// 点卡片信息栏的「＋ 新建」或某条日程的铅笔按钮才展开（后者见 <see cref="Edit"/>）。
     /// </summary>
     [ObservableProperty] private bool _isEditorOpen;
 

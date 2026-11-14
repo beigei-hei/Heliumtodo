@@ -14,8 +14,8 @@
   <!--
     日程（改版后）
 
-    整页只有一张卡片：卡片头（标题 + 概览数字 + 「新建」开关）、
-    可折叠的编辑区、然后是日程列表。
+    整页只有一张卡片：可折叠的编辑区、卡片内的信息栏（接下来 N 天 + 「＋ 新建」开关）、
+    然后是按天分组的日程列表。模块名与概览数字在卡片外面那一行，和其余五页一致。
 
     为什么编辑区做成折叠的：
       新建/编辑表单有 6 行控件，一直摊开会把列表挤到只剩半屏。
@@ -57,16 +57,6 @@
           <TextBlock Text="今天占用" Classes="pageCaption" VerticalAlignment="Center"
                      Margin="0,2,0,0" />
         </StackPanel>
-
-        <!--
-          新建开关：展开/收起编辑区。
-          直接双向绑 IsEditorOpen —— 点列表里的铅笔按钮时 VM 也会把它置 true，
-          所以「点编辑 → 表单自动展开」这条链路是通的。
-        -->
-        <ToggleButton x:Name="EditorToggle"
-                      Content="＋ 新建"
-                      IsChecked="{Binding IsEditorOpen}"
-                      VerticalAlignment="Center" />
       </StackPanel>
     </Grid>
 
@@ -185,9 +175,10 @@
         <!-- ══════════ 日程列表（按天分组） ══════════ -->
         <Grid Grid.Row="1" RowDefinitions="Auto,*" RowSpacing="8" Margin="0,10,0,0">
 
-          <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="20,0,20,0">
-            <TextBlock Text="接下来" Classes="caption" VerticalAlignment="Center" />
-            <ComboBox ItemsSource="{Binding LookaheadOptions}"
+          <Grid Grid.Row="0" ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="10"
+                Margin="20,0,20,0">
+            <TextBlock Grid.Column="0" Text="接下来" Classes="caption" VerticalAlignment="Center" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding LookaheadOptions}"
                       SelectedItem="{Binding LookaheadDays}" MinWidth="110">
               <ComboBox.ItemTemplate>
                 <DataTemplate x:DataType="x:Int32">
@@ -196,9 +187,21 @@
               </ComboBox.ItemTemplate>
             </ComboBox>
             <!-- 列表真的为空时才显示 -->
-            <TextBlock Text="{Binding EmptyHint}" Classes="caption" VerticalAlignment="Center"
+            <TextBlock Grid.Column="2" Text="{Binding EmptyHint}" Classes="caption"
+                       VerticalAlignment="Center" HorizontalAlignment="Left"
                        IsVisible="{Binding !DayGroups.Count}" />
-          </StackPanel>
+
+            <!--
+              新建开关放在卡片内的信息栏里，和待办页的创建区一样属于「功能区」，
+              不再占页面标题行。直接双向绑 IsEditorOpen —— 点列表里的铅笔按钮时
+              VM 也会把它置 true，所以「点编辑 → 表单自动展开」这条链路是通的。
+            -->
+            <ToggleButton Grid.Column="3" x:Name="EditorToggle"
+                          Content="＋ 新建"
+                          IsChecked="{Binding IsEditorOpen}"
+                          HorizontalAlignment="Right"
+                          VerticalAlignment="Center" />
+          </Grid>
 
           <ScrollViewer Grid.Row="1" Padding="12,0,12,12" VerticalScrollBarVisibility="Auto">
             <ItemsControl ItemsSource="{Binding DayGroups}">
