@@ -5,7 +5,7 @@
 
 当前版本：**v0.5.0-alpha**
 状态：**0.5.0-alpha 已完成 P0–P7（七项目分层、Application 层、PostgreSQL 17 + EF10、FluentAvaloniaUI 3.1 主题、Xaml.Behaviors 12.1.5、单文件发布）；
-自绘设置控件与提示条；204 个测试全绿（含真库用例），十九项 `--check` 全绿。**
+自绘设置控件与提示条；206 个测试全绿（含真库用例），十九项 `--check` 全绿。**
 
 ---
 
@@ -5007,3 +5007,28 @@ FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规�
 - `--window-check` 新增断言「只按下抓手、不移动时窗口尺寸不变」：`1920×1080 → 1920×1080` 通过；原有「拖 120 变窄 1920→1800」通过。
 - 构建 0 警告 0 错误；`SelfTest` **204/204**（真库）；十九项 `--check` 全绿；`--shell` 7/7。
 - 补充：`InitializeDatabase` 的 TCP 预检提示改为 `??=`——自动拉起失败时写下的具体原因（pg_ctl 退出码 / 数据目录不可写）不再被一句"连接超时"覆盖。
+
+## 2026-11-14 · 0.5.0-alpha 热修 9：本机数据库自动识别，不再要求手改 config.json
+
+### 为什么
+
+热修 8 之后仍反复出现同一类报障：用户拿到 exe，数据库连不上，只能被告知去 `%APPDATA%\Helium Todo\config.json` 里改 `Storage`。默认值（localhost:5432 / helium）和本项目实际用的便携版（127.0.0.1:55432 / postgres）对不上，手改门槛太高。
+
+### 做了什么
+
+- 新增 `HeliumTodo.Infrastructure/Persistence/StorageDiscovery.cs`：
+  - 只探测回环地址；候选 =「配置端口 → 5432 → 55432」×「配置用户 → postgres → 当前 Windows 用户」；
+  - 先 400 ms TCP 预检，再 2 s 登录；空密码与配置里的密码各试一次；
+  - 目标库不存在且账号有权限时 `CREATE DATABASE`（库名先过 `^[A-Za-z_][A-Za-z0-9_]{0,62}$`）；
+  - 连上后 `SHOW data_directory` 反推 `pg_ctl.exe` 与数据目录，一起写回配置，下次冷启动可自动拉起。
+- `App.StartCore`：`TryRepairLocalStorage → EnsureLocalDatabase → TryDiscoverStorage`。
+  自动识别只在「没有 `HELIUM_DB` / 回环地址 / 当前配置确实连不上」时执行；成功后清空启动提示并写一行日志，失败只记录原因，不挡启动。
+- 设置页「数据库连接」增加「自动检测」：只把找到的参数填进表单，仍由用户点「保存并重启」，避免静默改连接。
+- 新增 `HeliumTodo.Tests/StorageDiscoveryTests.cs` 2 条（写错用户名仍能找到可用账号；非本机地址拒绝探测）。
+
+### 验证
+
+- 故意写 `localhost:5432 / helium` 的 sandbox 配置启动 `--shell`：7/7 页渲染，`config.json` 被改写为 `127.0.0.1:55432 / postgres`，并补上 `PgCtlPath=D:\pg-portable\pgsql\bin\pg_ctl.exe`、`PgDataDirectory=D:/pg-portable/data`。
+- 构建 0 警告 0 错误；`SelfTest` **206/206**（真库）；十九项 `--check` 全绿。
+- 边界：只解决本机、免密/已知密码的场景；远程库、密码错误仍走设置页与提示条，不猜密码、不建角色。
+

@@ -36,6 +36,12 @@ $env:HELIUM_DB = "Host=127.0.0.1;Port=55432;Database=helium_todo;Username=postgr
 默认连接是 `localhost:5432/helium_todo`（用户 `helium`）；用 `HELIUM_DB` 覆盖整条连接串，
 或用 `HELIUM_DB_PASSWORD` 只覆盖密码。仓库里的 `infra/docker-compose.yml` 也可以直接拉起一个实例。
 
+**连不上时不用手改配置**：应用启动时会依次尝试「配置里的端口 → 5432 → 55432」和
+「配置里的用户 → postgres → 当前 Windows 用户」，找到可免密登录的本机实例后自动写回
+`config.json`（并从运行实例反推 `pg_ctl` 与数据目录，下次冷启动自动拉起）。设置页
+「数据与文件 → 数据库连接」也有「自动检测」按钮，只回填表单，确认后再「保存并重启」。
+自动识别只碰本机回环地址，不猜密码、不建角色；远程库或密码错误仍按提示处理。
+
 ## 构建与运行
 
 ```powershell

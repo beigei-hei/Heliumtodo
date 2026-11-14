@@ -431,6 +431,7 @@
                   <TextBox Text="{Binding DatabasePassword}" PlaceholderText="密码（可空）"
                            PasswordChar="●" />
                   <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button Content="自动检测" Command="{Binding AutoDetectDatabaseCommand}" />
                     <Button Content="测试连接" Command="{Binding TestDatabaseCommand}" />
                     <Button Content="保存并重启" Command="{Binding SaveDatabaseAndRestartCommand}" />
                   </StackPanel>

@@ -256,6 +256,39 @@ public sealed partial class SettingsViewModel : ViewModelBase
         IsNoticeVisible = true;
     }
 
+    /// <summary>
+    /// 「自动检测」：扫描本机 PostgreSQL，把能免密登录的一组参数填进表单。
+    /// 不直接保存 —— 用户可以先看一眼再点「保存并重启」，避免悄悄改坏现有连接。
+    /// </summary>
+    [RelayCommand]
+    private async Task AutoDetectDatabaseAsync()
+    {
+        var current = BuildStorageSettings();
+        var (ok, found, reason) = await Task.Run(() =>
+        {
+            var success = StorageDiscovery.TryDiscover(current, out var result, out var why);
+            return (success, result, why);
+        });
+
+        if (!ok)
+        {
+            DatabaseStatusText = $"自动检测失败：{reason}";
+            NoticeText = DatabaseStatusText;
+            IsNoticeVisible = true;
+            return;
+        }
+
+        DatabaseHost = found.Host;
+        DatabasePort = found.Port;
+        DatabaseName = found.Database;
+        DatabaseUser = found.Username;
+        DatabasePassword = found.Password;
+
+        DatabaseStatusText = $"已找到 {DatabaseHost}:{DatabasePort} / {DatabaseName}（用户 {DatabaseUser}），点「保存并重启」生效";
+        NoticeText = DatabaseStatusText;
+        IsNoticeVisible = true;
+    }
+
     /// <summary>保存连接参数并重启（连接串只在启动时读取一次）。</summary>
     [RelayCommand]
     private void SaveDatabaseAndRestart()

@@ -99,6 +99,7 @@ public partial class App : Avalonia.Application
         // 连接得上但登录被拒时，自动退到 postgres 并写回配置，避免用户每次都被挡在门外。
         TryRepairLocalStorage(configService);
         EnsureLocalDatabase(configService);
+        TryDiscoverStorage(configService);
 
         // ── ② 主题注册表（插件稍后还能往里加主题） ──
         var themeRegistry = new ThemeRegistry();
@@ -704,6 +705,52 @@ public partial class App : Avalonia.Application
         System.Diagnostics.Debug.WriteLine(
             $"[启动] 用户「{currentFailure.MessageText}」不可用，已自动改用 postgres 并写回配置。");
         Console.Error.WriteLine("[启动] 配置里的数据库用户不可用，已自动改用 postgres（已写回 config.json）。");
+    }
+
+    /// <summary>
+    /// 本机数据库自动识别：用户不该为了「能连上」去翻 config.json。
+    ///
+    /// 只在三个前提下出手：没有 HELIUM_DB 覆盖、主机是回环地址、当前配置确实连不上。
+    /// 交给 StorageDiscovery 依次试「配置端口 / 5432 / 55432」×「配置用户 / postgres / 当前用户」，
+    /// 找到可用组合后写回 config.json（含从运行实例反推的 pg_ctl 与 data 路径）。
+    /// </summary>
+    private static void TryDiscoverStorage(ConfigService configService)
+    {
+        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(PostgresConnection.FullConnectionVariable)))
+        {
+            return;
+        }
+
+        var storage = configService.Current.Storage;
+        if (!IsLoopbackHost(storage.Host))
+        {
+            return;
+        }
+
+        if (PostgresConnection.Probe(storage) is null)
+        {
+            return;
+        }
+
+        if (!StorageDiscovery.TryDiscover(storage, out var discovered, out var reason))
+        {
+            Console.Error.WriteLine($"[启动] 未能自动识别本机数据库：{reason}");
+            return;
+        }
+
+        storage.Provider = discovered.Provider;
+        storage.Host = discovered.Host;
+        storage.Port = discovered.Port;
+        storage.Database = discovered.Database;
+        storage.Username = discovered.Username;
+        storage.Password = discovered.Password;
+        storage.PgCtlPath = discovered.PgCtlPath;
+        storage.PgDataDirectory = discovered.PgDataDirectory;
+        configService.Save();
+
+        // 自动识别成功后，之前那条「连不上 / 自动拉起失败」的提示已经过时了。
+        DatabaseStartupNotice = null;
+        Console.Error.WriteLine($"[启动] 已自动识别本机数据库：{reason}（已写回 config.json）。");
     }
 
     private static bool IsLoopbackHost(string host)
