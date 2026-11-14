@@ -5050,3 +5050,25 @@ FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规�
 - `--shell` 7/7；`日程.png` 中标题行只剩「日程 + 概览」，新建按钮落在卡片信息栏右端（卡片内边距 20）。
 - `--layout-check` 通过（卡片顶边 64、左边缘 12 未变）；十九项 `--check` 全部通过；`SelfTest` 206/206。
 
+
+## 2026-11-14 · 0.5.0-alpha 修复：设置页「数据库连接」的标题被表单顶掉
+
+### 为什么
+
+用户看代码时发现 `SettingsView.axaml` 里数据库表单的绑定在 IDE 里一片红，但编译能过，怀疑是无效代码。查下来不是绑定失效，而是 XAML 的赋值规则：
+
+- 同时写 `Content="数据库连接"` 和子元素 `<StackPanel>` 时，Avalonia 把子元素赋给 `Content`，字符串被**静默覆盖**，行标题直接消失；编译不报错。
+- 绑定本身是活的（五个 TextBox、三个命令都在），只是 `Content` 不再是字符串，`--rail-check` 也按标题找不到这一行。
+
+### 做了什么
+
+- `SettingsExpanderItem` 新增 `Body` 属性（标题/说明下面整块内容），模板在说明后面放一个 `ContentPresenter`；`Content` 只留行标题。
+- `SettingsView.axaml` 的数据库表单从“直接子元素”改为 `<ctrl:SettingsExpanderItem.Body>`。
+- 数据库这一块显式 `x:CompileBindings="True"`：绑定路径写错会直接编译失败，不再“编译通过、运行期静默回默认值”。
+- `--rail-check` 新增 8 条断言：行还在、标题真的渲染、五个输入框、VM→控件、控件→VM（TwoWay）、副标题、三个命令、行数据未丢。
+
+### 验证
+
+- build 0 警告 0 错误；`--rail-check` 全部通过；十九项 `--check` 全绿；`SelfTest` 206/206（真库 31.4 s）。
+- `copy-check` 678/678；SPDX 179/179；`UI_TEXT_MAP.md` 已重新生成。
+

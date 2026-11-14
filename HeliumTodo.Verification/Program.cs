@@ -2745,6 +2745,98 @@ public static class Program
         var combos = window.GetVisualDescendants().OfType<ComboBox>().Count();
         Check("行内 Footer 控件真的挂出来了", combos >= 2, $"可见 ComboBox {combos} 个");
 
+        // ── 三·五、数据库表单的绑定必须真的活着（不是"编译通过但运行期静默失效"）──
+        // 这一行是用户手改 config 的兜底入口，绑定断了菜单不会报错，只会默默回到默认值。
+        // 注意：未展开分组的行不会实例化，必须先把「数据与文件」展开再找。
+        var dataExpander = expanders.FirstOrDefault(e => e.Header as string == "数据与文件");
+        Check("设置页有「数据与文件」分组", dataExpander is not null, dataExpander is null ? "没找到" : "找到了");
+        dataExpander?.SetValue(SettingsExpander.IsExpandedProperty, true);
+        PumpDispatcher(TimeSpan.FromMilliseconds(150));
+        var dataRows = dataExpander?
+            .GetVisualDescendants()
+            .OfType<SettingsExpanderItem>()
+            .ToList() ?? new List<SettingsExpanderItem>();
+        var dbRow = dataRows.FirstOrDefault(r => r.Content as string == "数据库连接");
+        Check("数据库连接这一行还在", dbRow is not null, dbRow is null ? "没找到" : "找到了");
+        if (dbRow is not null)
+        {
+            var dbBoxes = dbRow.GetVisualDescendants().OfType<TextBox>().ToList();
+            TextBox? Box(string placeholder) =>
+                dbBoxes.FirstOrDefault(t => t.PlaceholderText == placeholder);
+
+            var hostBox = Box("主机");
+            var portBox = Box("端口");
+            var nameBox = Box("数据库");
+            var userBox = Box("用户名");
+            var passwordBox = Box("密码（可空）");
+            Check("数据库表单的五个输入框都在",
+                hostBox is not null && portBox is not null && nameBox is not null
+                && userBox is not null && passwordBox is not null,
+                $"实际 {dbBoxes.Count} 个");
+
+            // 标题以前被表单顶掉过：XAML 里 Content="数据库连接" 和子元素同时出现时，
+            // 子元素会占掉 Content，行标题直接消失。Body 属性就是为这个拆出来的。
+            Check("数据库连接的标题真的渲染出来了",
+                dbRow.GetVisualDescendants().OfType<TextBlock>()
+                    .Any(t => t.Text == "数据库连接"),
+                "标题 TextBlock");
+
+            // 1) VM → 控件：从 config 读出来的值必须已经显示在框里。
+            Check("打开设置时输入框显示的是 config 里的值",
+                hostBox?.Text == settingsPage.DatabaseHost
+                && portBox?.Text == settingsPage.DatabasePort.ToString()
+                && nameBox?.Text == settingsPage.DatabaseName
+                && userBox?.Text == settingsPage.DatabaseUser,
+                $"框里 {hostBox?.Text}:{portBox?.Text} / {nameBox?.Text}，VM {settingsPage.DatabaseHost}:{settingsPage.DatabasePort} / {settingsPage.DatabaseName}");
+
+            // 2) VM → 控件：改 VM 要立刻刷新界面。
+            var originalHost = settingsPage.DatabaseHost;
+            var originalPort = settingsPage.DatabasePort;
+            var originalPassword = settingsPage.DatabasePassword;
+            var originalStatus = settingsPage.DatabaseStatusText;
+            if (hostBox is not null && portBox is not null && passwordBox is not null)
+            {
+                settingsPage.DatabaseHost = "probe-db-host";
+                settingsPage.DatabasePort = 6543;
+                settingsPage.DatabasePassword = "probe-db-password";
+                settingsPage.DatabaseStatusText = "probe-db-status";
+                PumpDispatcher(TimeSpan.FromMilliseconds(60));
+                Check("改 VM 后主机/端口/密码框跟着变",
+                    hostBox.Text == "probe-db-host"
+                    && portBox.Text == "6543"
+                    && passwordBox.Text == "probe-db-password",
+                    $"{hostBox.Text} / {portBox.Text} / {passwordBox.Text}");
+                Check("数据库行的副标题也绑着状态文字",
+                    dbRow.Description == "probe-db-status",
+                    dbRow.Description ?? "null");
+
+                // 3) 控件 → VM：手打的值必须写回 VM（TextBox.Text 默认 TwoWay）。
+                hostBox.Text = "probe-db-host-2";
+                portBox.Text = "55432";
+                PumpDispatcher(TimeSpan.FromMilliseconds(60));
+                Check("手输主机和端口会写回 VM",
+                    settingsPage.DatabaseHost == "probe-db-host-2" && settingsPage.DatabasePort == 55432,
+                    $"{settingsPage.DatabaseHost}:{settingsPage.DatabasePort}");
+            }
+
+            // 4) 三个按钮的命令都挂着，不是空壳。
+            var buttons = dbRow.GetVisualDescendants().OfType<Button>().ToList();
+            Button? ButtonWith(string text) =>
+                buttons.FirstOrDefault(b => b.Content as string == text);
+            Check("自动检测/测试连接/保存并重启都挂着命令",
+                ButtonWith("自动检测")?.Command is not null
+                && ButtonWith("测试连接")?.Command is not null
+                && ButtonWith("保存并重启")?.Command is not null,
+                $"按钮 {buttons.Count} 个，命令 {buttons.Count(b => b.Command is not null)} 个");
+
+            // 还原，别把探针值留在沙盒配置里。
+            settingsPage.DatabaseHost = originalHost;
+            settingsPage.DatabasePort = originalPort;
+            settingsPage.DatabasePassword = originalPassword;
+            settingsPage.DatabaseStatusText = originalStatus;
+            PumpDispatcher(TimeSpan.FromMilliseconds(60));
+        }
+
         // 折叠必须真的收起内容，不能只是换个箭头。
         var firstExpander = expanders[0];
         var firstItems = firstExpander.GetVisualDescendants().OfType<ItemsControl>().FirstOrDefault();

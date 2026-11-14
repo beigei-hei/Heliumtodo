@@ -5,7 +5,7 @@
 
 ## 一、界面结构里的文字（.axaml）
 
-共 8 个文件、237 处。
+共 8 个文件、234 处。
 
 ### `HeliumTodo.Desktop\Controls\ReminderPicker.axaml`（3 处）
 
@@ -108,7 +108,7 @@
 - `HeliumTodo.Desktop\Views\ScheduleView.axaml:252` — `<Button FontSize="12" Padding="8,4" ToolTip.Tip="编辑"`
 - `HeliumTodo.Desktop\Views\ScheduleView.axaml:257` — `<Button FontSize="12" Padding="8,4" ToolTip.Tip="删除整条日程"`
 
-### `HeliumTodo.Desktop\Views\SettingsView.axaml`（81 处）
+### `HeliumTodo.Desktop\Views\SettingsView.axaml`（78 处）
 
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:27` — `<TextBlock Text="设置" Classes="pageHeader" />`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:66` — `<ctrl:SettingsExpander Background="Transparent" Header="外观" Description="明暗、强调色（含自定义调色板）、功能区玻璃浓度"`
@@ -117,7 +117,6 @@
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:101` — `<TextBlock Text="强调色" Classes="section" />`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:145` — `<TextBlock Text="横轴 = 饱和度　纵轴 = 明度" Classes="caption" />`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:217` — `<ctrl:SettingsExpanderItem Content="功能区不透明度"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:218` — `Description="100% 完全不透明；有壁纸时会自动降到 82%">`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:237` — `<ctrl:SettingsExpander Background="Transparent" Header="背景壁纸"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:241` — `<ctrl:SettingsExpanderItem Content="启用背景壁纸">`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:243` — `<ToggleSwitch IsChecked="{Binding WallpaperEnabled}" OnContent="开" OffContent="关" />`
@@ -151,46 +150,44 @@
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:409` — `<ctrl:SettingsExpander Background="Transparent" Header="数据与文件" Description="配置文件、数据库、备份"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:412` — `<ctrl:SettingsExpanderItem Content="配置文件"`
 - `HeliumTodo.Desktop\Views\SettingsView.axaml:415` — `<Button Content="打开文件夹" Command="{Binding OpenConfigFolderCommand}" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:419` — `<ctrl:SettingsExpanderItem Content="数据库连接"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:423` — `<TextBox Text="{Binding DatabaseHost}" PlaceholderText="主机" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:424` — `<TextBox Grid.Column="1" Text="{Binding DatabasePort}" PlaceholderText="端口" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:427` — `<TextBox Text="{Binding DatabaseName}" PlaceholderText="数据库" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:428` — `<TextBox Grid.Column="1" Text="{Binding DatabaseUser}" PlaceholderText="用户名" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:431` — `<TextBox Text="{Binding DatabasePassword}" PlaceholderText="密码（可空）"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:434` — `<Button Content="自动检测" Command="{Binding AutoDetectDatabaseCommand}" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:435` — `<Button Content="测试连接" Command="{Binding TestDatabaseCommand}" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:436` — `<Button Content="保存并重启" Command="{Binding SaveDatabaseAndRestartCommand}" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:444` — `<ctrl:SettingsExpanderItem Content="启动时自动备份">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:446` — `<ToggleSwitch IsChecked="{Binding Config.AutoBackup}" OnContent="开" OffContent="关" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:450` — `<ctrl:SettingsExpanderItem Content="导出 / 导入">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:453` — `<Button Content="导出…" Click="OnExportBackup"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:455` — `<Button Content="导入…" Click="OnImportBackup"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:461` — `<ctrl:SettingsExpanderItem Content="备份文件夹"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:464` — `<Button Content="打开文件夹" Command="{Binding OpenBackupFolderCommand}" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:468` — `<ctrl:SettingsExpanderItem Content="最近一次备份操作"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:483` — `<ctrl:SettingsExpander Background="Transparent" Header="底层设置"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:484` — `Description="如非遇到渲染问题，请勿调整！"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:488` — `<ctrl:SettingsExpanderItem Content="渲染后端"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:502` — `<TextBlock Text="改完需要重启程序才生效。"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:516` — `<ctrl:SettingsExpander Background="Transparent" Header="插件"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:520` — `<ctrl:SettingsExpanderItem Content="状态"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:521` — `Description="插件接口在本版本中暂时关闭。我们正在重新设计插件规范（可暴露的接口类型、权限与版本兼容策略），完成后再开放。已有的插件目录不会被读取，也不会执行。" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:530` — `<ctrl:SettingsExpander Background="Transparent" Header="关于" Description="Helium Todo 日程！ 专注！ 自动化！"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:533` — `<ctrl:SettingsExpanderItem Content="版本">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:538` — `<ctrl:SettingsExpanderItem Content="恢复默认设置">`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:540` — `<Button Content="恢复默认" Command="{Binding ResetToDefaultCommand}" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:549` — `<Button Content="保存设置" Classes="accent" MinWidth="120"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:552` — `<TextBlock Text="修改主题会立刻生效，其它设置点「保存设置」后写入文件。"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:567` — `<TextBlock Text="导入这份备份？" Classes="section" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:582` — `Text="注意，选择替换会覆盖原有数据！" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:585` — `<Button Content="取消" Command="{Binding CancelImportCommand}" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:586` — `<Button Content="合并导入" Classes="accent"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:589` — `<Button Content="替换导入"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:644` — `ToolTip.Tip="关闭"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:681` — `<TextBlock Text="更改此项需要重启，是否立即重启"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:687` — `Text="「确认」会保存选择并立刻重新启动 Helium Todo；「取消更改」则保持现在的设置不变。" />`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:689` — `<Button Content="确认"`
-- `HeliumTodo.Desktop\Views\SettingsView.axaml:693` — `<Button Content="取消更改"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:423` — `<ctrl:SettingsExpanderItem Content="数据库连接"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:429` — `<TextBox Text="{Binding DatabaseHost}" PlaceholderText="主机" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:430` — `<TextBox Grid.Column="1" Text="{Binding DatabasePort}" PlaceholderText="端口" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:433` — `<TextBox Text="{Binding DatabaseName}" PlaceholderText="数据库" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:434` — `<TextBox Grid.Column="1" Text="{Binding DatabaseUser}" PlaceholderText="用户名" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:437` — `<TextBox Text="{Binding DatabasePassword}" PlaceholderText="密码（可空）"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:440` — `<Button Content="自动检测" Command="{Binding AutoDetectDatabaseCommand}" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:441` — `<Button Content="测试连接" Command="{Binding TestDatabaseCommand}" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:442` — `<Button Content="保存并重启" Command="{Binding SaveDatabaseAndRestartCommand}" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:451` — `<ctrl:SettingsExpanderItem Content="启动时自动备份">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:453` — `<ToggleSwitch IsChecked="{Binding Config.AutoBackup}" OnContent="开" OffContent="关" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:457` — `<ctrl:SettingsExpanderItem Content="导出 / 导入">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:460` — `<Button Content="导出…" Click="OnExportBackup"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:462` — `<Button Content="导入…" Click="OnImportBackup"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:468` — `<ctrl:SettingsExpanderItem Content="备份文件夹"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:471` — `<Button Content="打开文件夹" Command="{Binding OpenBackupFolderCommand}" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:475` — `<ctrl:SettingsExpanderItem Content="最近一次备份操作"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:490` — `<ctrl:SettingsExpander Background="Transparent" Header="底层设置"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:491` — `Description="如非遇到渲染问题，请勿调整！"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:495` — `<ctrl:SettingsExpanderItem Content="渲染后端"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:509` — `<TextBlock Text="更改后需要重启程序才生效。"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:523` — `<ctrl:SettingsExpander Background="Transparent" Header="插件"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:527` — `<ctrl:SettingsExpanderItem Content="状态"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:528` — `Description="正在重写插件逻辑.ing" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:537` — `<ctrl:SettingsExpander Background="Transparent" Header="关于" Description="Helium Todo 日程！ 专注！ 自动化！"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:540` — `<ctrl:SettingsExpanderItem Content="版本">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:545` — `<ctrl:SettingsExpanderItem Content="恢复默认设置">`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:547` — `<Button Content="恢复默认" Command="{Binding ResetToDefaultCommand}" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:556` — `<Button Content="保存设置" Classes="accent" MinWidth="120"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:572` — `<TextBlock Text="导入这份备份？" Classes="section" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:587` — `Text="注意，选择替换会覆盖原有数据！" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:590` — `<Button Content="取消" Command="{Binding CancelImportCommand}" />`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:591` — `<Button Content="合并导入" Classes="accent"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:594` — `<Button Content="替换导入"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:649` — `ToolTip.Tip="关闭"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:686` — `<TextBlock Text="更改此项需要重启，是否立即重启"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:691` — `<Button Content="确认"`
+- `HeliumTodo.Desktop\Views\SettingsView.axaml:695` — `<Button Content="取消更改"`
 
 ### `HeliumTodo.Desktop\Views\ShellView.axaml`（4 处）
 

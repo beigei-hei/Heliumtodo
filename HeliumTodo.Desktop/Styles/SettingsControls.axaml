@@ -105,6 +105,10 @@
                        Opacity="0.6"
                        TextWrapping="Wrap"
                        IsVisible="{TemplateBinding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            <!-- 整块表单放 Body，不能占 Content：Content 是行标题 -->
+            <ContentPresenter Content="{TemplateBinding Body}"
+                              Margin="0,4,0,0"
+                              IsVisible="{TemplateBinding Body, Converter={x:Static ObjectConverters.IsNotNull}}" />
           </StackPanel>
           <ContentPresenter Grid.Column="1"
                             Content="{TemplateBinding Footer}"

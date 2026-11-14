@@ -76,6 +76,14 @@ public class SettingsExpanderItem : ContentControl
     public static readonly StyledProperty<object?> FooterProperty =
         AvaloniaProperty.Register<SettingsExpanderItem, object?>(nameof(Footer));
 
+    /// <summary>
+    /// 标题/说明下面的整块内容（例如数据库表单）。
+    /// 不能直接塞成控件的 Content —— XAML 会用它覆盖掉 Content="标题"，
+    /// 结果行标题消失、只剩一块表单（0.5.1 踩过）。
+    /// </summary>
+    public static readonly StyledProperty<object?> BodyProperty =
+        AvaloniaProperty.Register<SettingsExpanderItem, object?>(nameof(Body));
+
     public string? Description
     {
         get => GetValue(DescriptionProperty);
@@ -86,5 +94,11 @@ public class SettingsExpanderItem : ContentControl
     {
         get => GetValue(FooterProperty);
         set => SetValue(FooterProperty, value);
+    }
+
+    public object? Body
+    {
+        get => GetValue(BodyProperty);
+        set => SetValue(BodyProperty, value);
     }
 }

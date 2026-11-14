@@ -215,7 +215,7 @@
               想再透一点或者想完全不透，拖这个滑块。
             -->
             <ctrl:SettingsExpanderItem Content="功能区不透明度"
-                                       Description="100% 完全不透明；有壁纸时会自动降到 82%">
+       >
               <ctrl:SettingsExpanderItem.Footer>
                 <StackPanel Orientation="Horizontal" Spacing="10">
                   <Slider Value="{Binding CardOpacity}"
@@ -416,27 +416,34 @@
               </ctrl:SettingsExpanderItem.Footer>
             </ctrl:SettingsExpanderItem>
 
+            <!--
+              这一块显式打开编译绑定：数据库表单有 8 个绑定，打字错误在运行时只会静默失效，
+              编译期不会报。加上 x:CompileBindings 后，属性名不存在会直接编译失败。
+            -->
             <ctrl:SettingsExpanderItem Content="数据库连接"
-                                       Description="{Binding DatabaseStatusText}">
-              <StackPanel Spacing="8" Margin="0,2,0,2">
-                <Grid ColumnDefinitions="*,110" ColumnSpacing="8">
-                  <TextBox Text="{Binding DatabaseHost}" PlaceholderText="主机" />
-                  <TextBox Grid.Column="1" Text="{Binding DatabasePort}" PlaceholderText="端口" />
-                </Grid>
-                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                  <TextBox Text="{Binding DatabaseName}" PlaceholderText="数据库" />
-                  <TextBox Grid.Column="1" Text="{Binding DatabaseUser}" PlaceholderText="用户名" />
-                </Grid>
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                  <TextBox Text="{Binding DatabasePassword}" PlaceholderText="密码（可空）"
-                           PasswordChar="●" />
-                  <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                    <Button Content="自动检测" Command="{Binding AutoDetectDatabaseCommand}" />
-                    <Button Content="测试连接" Command="{Binding TestDatabaseCommand}" />
-                    <Button Content="保存并重启" Command="{Binding SaveDatabaseAndRestartCommand}" />
-                  </StackPanel>
-                </Grid>
-              </StackPanel>
+                                       Description="{Binding DatabaseStatusText}"
+                                       x:CompileBindings="True">
+              <ctrl:SettingsExpanderItem.Body>
+                <StackPanel Spacing="8" Margin="0,2,0,2">
+                  <Grid ColumnDefinitions="*,110" ColumnSpacing="8">
+                    <TextBox Text="{Binding DatabaseHost}" PlaceholderText="主机" />
+                    <TextBox Grid.Column="1" Text="{Binding DatabasePort}" PlaceholderText="端口" />
+                  </Grid>
+                  <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                    <TextBox Text="{Binding DatabaseName}" PlaceholderText="数据库" />
+                    <TextBox Grid.Column="1" Text="{Binding DatabaseUser}" PlaceholderText="用户名" />
+                  </Grid>
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBox Text="{Binding DatabasePassword}" PlaceholderText="密码（可空）"
+                             PasswordChar="●" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                      <Button Content="自动检测" Command="{Binding AutoDetectDatabaseCommand}" />
+                      <Button Content="测试连接" Command="{Binding TestDatabaseCommand}" />
+                      <Button Content="保存并重启" Command="{Binding SaveDatabaseAndRestartCommand}" />
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+              </ctrl:SettingsExpanderItem.Body>
             </ctrl:SettingsExpanderItem>
 
          
@@ -499,7 +506,7 @@
                       </DataTemplate>
                     </ComboBox.ItemTemplate>
                   </ComboBox>
-                  <TextBlock Text="改完需要重启程序才生效。"
+                  <TextBlock Text="更改后需要重启程序才生效。"
                              Classes="caption"
                              HorizontalAlignment="Right" />
                 </StackPanel>
@@ -518,7 +525,7 @@
           <ctrl:SettingsExpander.Items>
 
             <ctrl:SettingsExpanderItem Content="状态"
-                             Description="插件接口在本版本中暂时关闭。我们正在重新设计插件规范（可暴露的接口类型、权限与版本兼容策略），完成后再开放。已有的插件目录不会被读取，也不会执行。" />
+                             Description="正在重写插件逻辑.ing" />
 
           </ctrl:SettingsExpander.Items>
         </ctrl:SettingsExpander>
@@ -549,8 +556,6 @@
         <Button Content="保存设置" Classes="accent" MinWidth="120"
                 HorizontalContentAlignment="Center"
                 Command="{Binding SaveCommand}" />
-        <TextBlock Text="修改主题会立刻生效，其它设置点「保存设置」后写入文件。"
-                   Classes="caption" VerticalAlignment="Center" />
       </StackPanel>
 
     </StackPanel>
@@ -682,9 +687,6 @@
                      FontSize="16"
                      FontWeight="SemiBold"
                      TextWrapping="Wrap" />
-          <TextBlock Classes="caption"
-                     TextWrapping="Wrap"
-                     Text="「确认」会保存选择并立刻重新启动 Helium Todo；「取消更改」则保持现在的设置不变。" />
           <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
             <Button Content="确认"
                     Classes="accent"
