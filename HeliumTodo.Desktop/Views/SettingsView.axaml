@@ -257,7 +257,7 @@
             </ctrl:SettingsExpanderItem>
 
             <ctrl:SettingsExpanderItem Content="蒙版浓度"
-                                       Description="把壁纸压淡一点，字就看得清。颜色跟着明暗：亮色用白提亮，暗色用黑压暗，暗色下会自动加强。">
+                                       Description="调整亮暗色下壁纸的显示效果">
               <ctrl:SettingsExpanderItem.Footer>
                 <StackPanel Orientation="Horizontal" Spacing="10">
                   <Slider Value="{Binding WallpaperScrimOpacity}"
@@ -355,7 +355,7 @@
                              IsExpanded="True">
           <ctrl:SettingsExpander.Items>
             <ctrl:SettingsExpanderItem Content="超载阈值（小时）"
-                                       Description="一天安排超过这么多小时，就在时间轴右边提示“今天有点满”。">
+                                       Description="超过一定时间后会提示日程过满。">
               <ctrl:SettingsExpanderItem.Footer>
                 <NumericUpDown Value="{Binding Config.OverloadHours}"
                                Minimum="1" Maximum="24" Increment="1"
@@ -364,7 +364,7 @@
             </ctrl:SettingsExpanderItem>
 
             <ctrl:SettingsExpanderItem Content="时间轴上显示已完成"
-                                       Description="关掉之后，已完成的日程和待办不再画在 24 小时时间轴上，画面更干净。">
+                                       Description="关闭后，已完成的日程和待办不会再显示在时间轴上。">
               <ctrl:SettingsExpanderItem.Footer>
                 <ToggleSwitch IsChecked="{Binding Config.ShowCompletedOnTimeline}" OnContent="开" OffContent="关" />
               </ctrl:SettingsExpanderItem.Footer>

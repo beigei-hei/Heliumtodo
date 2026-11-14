@@ -86,7 +86,7 @@
               <!-- 输入框去边框、透明底：让它看起来就是"这一行本身" -->
               <TextBox Grid.Column="0"
                        Text="{Binding NewTitle}"
-                       PlaceholderText="要做点什么？例如：写数据结构实验报告"
+                       PlaceholderText="要做点什么？例如：完成水课的论文"
                        AcceptsReturn="False"
                        Background="Transparent"
                        BorderThickness="0"
@@ -128,7 +128,7 @@
                   既能自由填写，也能一键选常用分类。
                 -->
                 <TextBox Text="{Binding NewCategory}" MinWidth="96"
-                         PlaceholderText="分类" ToolTip.Tip="可以自己填，也可以点右面的常用分类" />
+                         PlaceholderText="分类" ToolTip.Tip="tip.可以选择侧边的类型捏" />
                 <Button Content="学习" FontSize="10" Padding="6,2" Tag="学习" Command="{Binding UseCategoryPresetCommand}" CommandParameter="学习" />
                 <Button Content="生活" FontSize="10" Padding="6,2" Tag="生活" Command="{Binding UseCategoryPresetCommand}" CommandParameter="生活" />
                 <Button Content="社团" FontSize="10" Padding="6,2" Tag="社团" Command="{Binding UseCategoryPresetCommand}" CommandParameter="社团" />

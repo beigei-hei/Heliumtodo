@@ -298,7 +298,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
             || string.IsNullOrWhiteSpace(DatabaseUser)
             || DatabasePort is < 1 or > 65535)
         {
-            NoticeText = "主机、端口、数据库、用户名不能为空，端口要在 1–65535 之间。";
+            NoticeText = "主机、端口、数据库、用户名不能为空。";
             IsNoticeVisible = true;
             return;
         }
@@ -384,7 +384,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         if (!announce) return;
 
         NoticeText = isDark
-            ? "已切换到暗色模式：壁纸会自动压暗一档，浓度可以在「背景壁纸」里调。"
+            ? "已切换到暗色模式。"
             : "已切换到亮色模式。";
         IsNoticeVisible = true;
     }
@@ -455,9 +455,9 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
         NoticeText = value.Key switch
         {
-            AccentSourceDefs.Wallpaper => "强调色改为跟随壁纸：壁纸换一帧，强调色也跟着重新算。",
-            AccentSourceDefs.Custom => "强调色改为自定义：下面那块调色板现在可以拖了。",
-            _ => "强调色改回跟随主题。",
+            AccentSourceDefs.Wallpaper => "强调色已跟随壁纸",
+            AccentSourceDefs.Custom => "强调色可自定义了捏",
+            _ => "强调色已跟随主题。",
         };
         IsNoticeVisible = true;
     }
@@ -554,7 +554,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         }
         else
         {
-            WallpaperStatusText = "请先选一张图片";
+            WallpaperStatusText = "请先选择图片";
         }
 
         ScheduleSave();
@@ -631,7 +631,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         // LoadAsync 内部已经 await 回了界面线程，这里可以直接改绑定属性
         WallpaperStatusText = ok
             ? DescribeWallpaper()
-            : $"打不开这张图：{_wallpaper.Error}";
+            : $"图片打开失败：{_wallpaper.Error}";
 
         RefreshAccentPreview();
     }
@@ -680,8 +680,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _state.NotifySettingsChanged();
 
         NoticeText = value
-            ? "已打开局域网联机：可以去自习室建房，或者填同学的 IP 连过去。"
-            : "已关闭局域网联机：自习室只在本机用，不再监听端口。";
+            ? "已打开局域网联机：可以去自习室建房，或者使用神奇IP连接同学。"
+            : "已关闭局域网联机：自习室切换到本地模式。";
         IsNoticeVisible = true;
     }
 
@@ -767,8 +767,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     /// <summary>可选的渲染后端。顺序、文案都按产品要求写死在这里，界面只负责摆。</summary>
     public ObservableCollection<RenderBackendOption> RenderBackends { get; } =
     [
-        new(RenderBackendSettings.Auto, "Avalonia 自带渲染器（默认，最流畅）"),
-        new(RenderBackendSettings.Software, "软件渲染（省内存，动画会掉帧）"),
+        new(RenderBackendSettings.Auto, "默认"),
+        new(RenderBackendSettings.Software, "软件"),
         new(RenderBackendSettings.OpenGl, "OpenGL"),
         new(RenderBackendSettings.Vulkan, "Vulkan"),
     ];
@@ -840,7 +840,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
                 // 我们在这里偷偷起一个不受调试器管的进程，结果就是
                 // "调试已结束、软件还开着、exe 被占着、下次编译 MSB3027"。
                 NoticeText = $"渲染后端已保存为「{backendName}」。检测到正在调试器里运行，"
-                             + "自动重启会把调试器甩掉、还会占住 exe 让下次编译失败；"
                              + "请用调试器的「重新启动」(Ctrl+Shift+F5)，或停止调试后重新运行。";
                 IsNoticeVisible = true;
                 break;
@@ -1124,7 +1123,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
                 // 这里要把"改到哪了"和"为什么"一起说，否则用户会以为放桌面上了。
                 BackupStatusText = $"原位置不能写入，已改存到备份文件夹：{Path.GetFileName(result.Path)}"
                                    + $"（{DescribeSize(result.SizeBytes)} · {result.Manifest.Counts.DescribeText}）";
-                NoticeText = "那个文件夹系统不让写（多半是「受控文件夹访问」），备份已经放到「备份文件夹」里了。";
+                NoticeText = "文件夹写入失败（多半是「受控文件夹访问」），备份已存放至「备份文件夹」。";
                 IsNoticeVisible = true;
             }
             else
@@ -1177,7 +1176,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            BackupStatusText = $"读不了这份备份：{ex.Message}";
+            BackupStatusText = $"这份备份读取不了一点：{ex.Message}";
         }
         finally
         {
@@ -1416,9 +1415,9 @@ public sealed class AccentSourceOption
     /// <summary>下拉框里再补一句说明，免得用户不知道"跟随壁纸"是什么意思。</summary>
     public string Hint => Key switch
     {
-        AccentSourceDefs.Wallpaper => "从壁纸里自动提一个主色调",
-        AccentSourceDefs.Custom => "用下面的调色板自己调",
-        _ => "用主题自带的那套颜色",
+        AccentSourceDefs.Wallpaper => "从壁纸里提取主色调",
+        AccentSourceDefs.Custom => "",
+        _ => "",
     };
 
     public override string ToString() => DisplayName;

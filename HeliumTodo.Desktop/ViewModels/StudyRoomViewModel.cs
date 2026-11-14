@@ -18,7 +18,7 @@ namespace HeliumTodo.Desktop.ViewModels;
 /// 【当前实现程度】
 ///   ✅ 本地自习室：创建房间、房间码、成员列表、聊天、在房间里开始专注
 ///   ✅ 和专注模块打通：房间里的专注时长会计入「专注」页的统计
-///   ⏸ 多人联机（无中心服务器方案）：<b>暂缓</b>
+///   ⏸ 多人联机（无中心服务器方案）：其实已经修了，但是受限于开发人数（一个人+一只肥鱼）还没测。
 ///
 /// 【为什么暂缓，以及以后怎么做】
 ///   无中心服务器（P2P）听起来简单，实际要处理不少麻烦事：
@@ -28,6 +28,7 @@ namespace HeliumTodo.Desktop.ViewModels;
 ///     · 有人掉线了怎么办？→ 心跳检测 + 自动剔除
 ///   这些都不难，但要花时间调。首版先把接口留好（IPeerTransport），
 ///   业务逻辑全部走接口，以后补上真正的 P2P 实现时，这个页面一行都不用改。
+///   （其实一直在想，能不能使用easytier去代替）
 /// </summary>
 public sealed partial class StudyRoomViewModel : ViewModelBase
 {
@@ -188,7 +189,7 @@ public sealed partial class StudyRoomViewModel : ViewModelBase
 
             return _roomService.IsConnected
                 ? $"已连接 · 共 {_roomService.LocalPort} 端口在监听"
-                : "局域网联机已就绪：填对方的 IP 点「连接」，或者让对方填你的地址。";
+                : "局域网联机已就绪：填写对方IP或对方填写你的IP";
         }
     }
 
@@ -217,7 +218,7 @@ public sealed partial class StudyRoomViewModel : ViewModelBase
 
             var rtt = _roomService.RoundTripMs;
 
-            return rtt <= 0 ? "正在测延迟…" : $"延迟 {rtt} 毫秒";
+            return rtt <= 0 ? "正在测量延迟…" : $"延迟 {rtt} 毫秒";
         }
     }
 
@@ -267,13 +268,13 @@ public sealed partial class StudyRoomViewModel : ViewModelBase
     {
         if (string.IsNullOrWhiteSpace(JoinHost))
         {
-            NoticeText = "先填对方的 IP 地址，例如 192.168.1.5 或 [fe80::1]:47470";
+            NoticeText = "填写IP地址，例如 192.168.1.5 或 [fe80::1]:47470";
             return;
         }
 
         if (!CanGoOnline)
         {
-            NoticeText = "局域网联机是关着的。到「设置 → 自习室」打开「局域网联机」再来。";
+            NoticeText = "连不上啦( ; ω ; )，前往设置-自习室将局域网联机打开捏";
             return;
         }
 
@@ -284,7 +285,7 @@ public sealed partial class StudyRoomViewModel : ViewModelBase
             _state.Config.DisplayName,
             JoinHost);
 
-        NoticeText = ok ? "连上了，可以让对方开始专注了。" : "没连上，看看地址和房间码对不对。";
+        NoticeText = ok ? "连接完成，可以让对方开始专注了。" : "连接失败，请检查地址和房间码。";
 
         UpdateFromRoom();
         OnPropertyChanged(nameof(OnlineStatusText));
@@ -342,15 +343,15 @@ public sealed partial class StudyRoomViewModel : ViewModelBase
         if (!CanGoOnline)
         {
             NoticeText = IsLanDisabled
-                ? "本地找不到这个房间。联机是关着的，先到「设置 → 自习室」打开「局域网联机」。"
-                : "本地找不到这个房间，而且当前是本地模式，没法联机。";
+                ? "本地找不到这个房间。联机已关闭，请先到设置-自习室下打开“局域网联机”。"
+                : "本地找不到这个房间，当前为本地模式，无法联机。";
             return;
         }
 
         _roomService.JoinRoom(JoinCode, _state.Config.DisplayName);
 
         NoticeText = string.IsNullOrWhiteSpace(JoinHost)
-            ? $"本地没有这个房间。请在下面填上房主的 IP 地址，再点「连接」。"
+            ? $"本地没有这个房间。请先输入房主的 IP 地址，再尝试「连接」。"
             : "正在连接…";
     }
 

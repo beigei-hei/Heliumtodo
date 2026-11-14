@@ -50,7 +50,7 @@ public partial class SettingsView : UserControl
 
         var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "选一张背景壁纸",
+            Title = "选择一张壁纸",
             AllowMultiple = false,
             FileTypeFilter = new[]
             {

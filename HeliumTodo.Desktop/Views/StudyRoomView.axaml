@@ -190,7 +190,7 @@
               </Grid>
 
               <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
-                <TextBox Text="{Binding FocusTitle}" PlaceholderText="这次专注做什么？" />
+                <TextBox Text="{Binding FocusTitle}" PlaceholderText="专注名称" />
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <TextBlock Text="时长" Classes="caption" VerticalAlignment="Center" />
                   <NumericUpDown Value="{Binding FocusMinutes}" Minimum="1" Maximum="480"
@@ -199,7 +199,7 @@
                   <TextBlock Text="分钟" Classes="caption" VerticalAlignment="Center" />
                 </StackPanel>
                 <TextBlock Classes="caption">
-                  <Run Text="我今天在自习室的累计专注：" />
+                  <Run Text="今日累计专注时长：" />
                   <Run Text="{Binding MyFocusTodayText}" />
                 </TextBlock>
               </StackPanel>

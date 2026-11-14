@@ -52,7 +52,7 @@ public sealed partial class TodoViewModel : ViewModelBase
     [ObservableProperty] private int _completedTodayCount;
 
     /// <summary>空列表时的提示文字。</summary>
-    [ObservableProperty] private string _emptyHint = "还没有待办，用下面的输入框加一个吧。";
+    [ObservableProperty] private string _emptyHint = "还没有待办，添加一个吧。";
 
     // ─────────────────────────────────────────────────────────
     // 筛选
@@ -140,7 +140,7 @@ public sealed partial class TodoViewModel : ViewModelBase
     {
         if (string.IsNullOrWhiteSpace(NewTitle))
         {
-            EmptyHint = "标题不能为空哦。";
+            EmptyHint = "标题不能为空哦";
             return;
         }
 
@@ -414,7 +414,7 @@ public sealed partial class TodoViewModel : ViewModelBase
                 TodoFilter.Completed => "还没有完成任何待办。",
                 TodoFilter.Today => "今天没有要做的待办，轻松一下也不错。",
                 TodoFilter.Active => "没有未完成的待办，全清空了！",
-                _ => "还没有待办，用上面的输入框加一个吧。",
+                _ => "还没有待办，添加一个-_-",
             }
             : string.Empty;
     }
