@@ -1,7 +1,7 @@
 # Helium Todo
 
 > **许可证**：GPL-3.0-only（[`LICENSE`](LICENSE)，第三方组件见 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)）。
-> 源码：本仓库（发布时填写公开仓库地址）。本项目不联网、不上传数据。
+> 源码：<https://github.com/beigei-hei/Heliumtodo-renew>。本项目不联网、不上传数据。
 
 一个**本地优先**的「日程 + 专注 + 待办」桌面工具：C# 14 / .NET 10，Avalonia 12 界面，
 数据存在本机 PostgreSQL 17 里（也可以用便携版，不装服务）。

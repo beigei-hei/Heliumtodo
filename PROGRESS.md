@@ -5072,3 +5072,20 @@ FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规�
 - build 0 警告 0 错误；`--rail-check` 全部通过；十九项 `--check` 全绿；`SelfTest` 206/206（真库 31.4 s）。
 - `copy-check` 678/678；SPDX 179/179；`UI_TEXT_MAP.md` 已重新生成。
 
+
+## 2026-11-14 · 仓库迁移：项目合并到 Heliumtodo-renew
+
+### 为什么
+
+用户要求把当前 0.5.0-alpha 项目合并到新仓库 https://github.com/beigei-hei/Heliumtodo-renew，旧仓库 Heliumtodo 继续保留历史。
+
+### 做了什么
+
+- 把新仓库的初始 README.md 以 unrelated-histories 方式合并进 dev（冲突按项目 README 解决，合并提交保留新仓库的 Initial commit）。
+- 推送 main 分支与 0.5.0-alpha 标签到新仓库；随后回填 README.md 与 	ools/publish.ps1 里的仓库地址（原来是“发布时填写”占位）。
+- 远程 enew 指向新仓库，origin 仍指向旧仓库，便于对比。
+
+### 验证
+
+- git ls-remote renew 能看到 efs/heads/main 与 efs/tags/v0.5.0-alpha。
+- 发布包的 SOURCE.txt 现在写入真实仓库地址。

@@ -66,7 +66,7 @@ try {
 Helium Todo $version 源码对应关系
 =====================================
 
-仓库地址：本仓库（发布时填写公开仓库地址，见 README）。
+仓库地址：https://github.com/beigei-hei/Heliumtodo-renew
 提交：$commit
 构建日期：$(Get-Date -Format 'yyyy-MM-dd')
 运行时：$Runtime（self-contained）
