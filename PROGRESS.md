@@ -5072,7 +5072,6 @@ FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规�
 - build 0 警告 0 错误；`--rail-check` 全部通过；十九项 `--check` 全绿；`SelfTest` 206/206（真库 31.4 s）。
 - `copy-check` 678/678；SPDX 179/179；`UI_TEXT_MAP.md` 已重新生成。
 
-
 ## 2026-11-14 · 仓库迁移：项目合并到 Heliumtodo-renew
 
 ### 为什么
@@ -5082,10 +5081,28 @@ FluentAvalonia，并在下次打包时尝试单 exe。用户指令优先于规�
 ### 做了什么
 
 - 把新仓库的初始 README.md 以 unrelated-histories 方式合并进 dev（冲突按项目 README 解决，合并提交保留新仓库的 Initial commit）。
-- 推送 main 分支与 0.5.0-alpha 标签到新仓库；随后回填 README.md 与 	ools/publish.ps1 里的仓库地址（原来是“发布时填写”占位）。
-- 远程 enew 指向新仓库，origin 仍指向旧仓库，便于对比。
+- 推送 main 分支与 v0.5.0-alpha 标签到新仓库；随后回填 README.md 与 tools/publish.ps1 里的仓库地址（原来是“发布时填写”占位）。
+- 远程 renew 指向新仓库，origin 仍指向旧仓库，便于对比。
 
 ### 验证
 
-- git ls-remote renew 能看到 efs/heads/main 与 efs/tags/v0.5.0-alpha。
+- `git ls-remote renew` 能看到 `refs/heads/main` 与 `refs/tags/v0.5.0-alpha`。
 - 发布包的 SOURCE.txt 现在写入真实仓库地址。
+
+## 2026-11-16 · 0.5.0-alpha 调整：数据库报错改为右下角浮层
+
+### 为什么
+
+用户截图里，数据库连接失败是一条整行提示条：横跨内容区、两行技术文案直接压在页面上，盖住标题栏右侧的窗口按钮，也把内容整体往下推。用户要求改成「窗体内浮空」的右下角小卡片。
+
+### 做了什么
+
+- `ShellView.axaml`：删除内容区第 0 行的提醒条，内容区回到单行 Grid；在根 Grid 上新增 `AlertToast`（`Grid.RowSpan="2"`、右下角 `Margin="0,0,20,20"`、`MaxWidth="440"`、`ZIndex="20"`、圆角 10 + 阴影）。
+- 文案最多三行、超出省略，悬停看全文；右上角 × 绑定 `DismissAlertCommand` 收起；不自动消失（数据库错误需要用户处理）。
+- `ShellViewModel` 的提醒拆成 `AlertMessage`（一句话）与 `AlertDetail`（悬停全文）；数据库启动失败时 `App` 写入短句（如「连不上 PostgreSQL（127.0.0.1:55432），请在「设置」里检查连接」），完整连接串与排查步骤放悬停提示。
+- `--notice-check` 增加 5 条断言：浮层存在、贴右下角（右/下各 20）、宽度 ≤ 460、ZIndex ≥ 10、点关闭立即收起；`--shell` 支持 `HELIUM_ALERT_TEXT` 强制渲染提醒，用于截图目检。
+
+### 验证
+
+- build 0 警告 0 错误；`--notice-check` 全过（实测 437×76，右距 20、下距 20）；`--shell` 截图确认浮层只盖右下角。
+- 十九项 `--check` 全绿；`SelfTest` 206/206；SPDX 179/179；`UI_TEXT_MAP.md` 已重新生成。

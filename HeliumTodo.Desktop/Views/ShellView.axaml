@@ -207,39 +207,69 @@
       </Border>
 
       <!-- ───── 内容区 ───── -->
-      <Grid Grid.Column="1" RowDefinitions="Auto,*">
-
-        <!--
-          严重冲突时的提醒条：贴在内容区顶部，不占卡片位置。
-          P4 起不再用 FAInfoBar（它把整行高度、圆角和关闭按钮都写死在 FA 模板里），
-          改为和设置页提示条同一套自绘底板 —— 明暗跟随 Notice* 令牌。
-        -->
-        <Border Grid.Row="0"
-                Margin="4,0,12,4"
-                Padding="12,8"
-                CornerRadius="8"
-                Background="{DynamicResource NoticeSurfaceBrush}"
-                BorderBrush="{DynamicResource NoticeBorderBrush}"
-                BorderThickness="1"
-                IsVisible="{Binding IsAlertVisible}">
-          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-            <TextBlock Text="&#xE7BA;"
-                       FontFamily="{DynamicResource IconFont}"
-                       FontSize="14"
-                       Foreground="#FFB900"
-                       VerticalAlignment="Center" />
-            <TextBlock Grid.Column="1"
-                       Text="{Binding AlertMessage}"
-                       Foreground="{DynamicResource NoticeForegroundBrush}"
-                       TextWrapping="Wrap"
-                       VerticalAlignment="Center" />
-          </Grid>
-        </Border>
-
-        <ContentControl Grid.Row="1" Content="{Binding CurrentPage}" />
+      <Grid Grid.Column="1">
+        <ContentControl Content="{Binding CurrentPage}" />
       </Grid>
 
     </Grid>
+
+    <!--
+      ───── 提醒浮层（错误 / 冲突） ─────
+      贴在窗口右下角、浮在内容之上，不占布局行。
+
+      【为什么不放在内容区顶部】
+        P4 之前它是一条整行 Border，数据库连不上时两行长文案会把页面整体压低，
+        遮住标题栏右侧的窗口按钮，也挡住内容区的第一行。改成小卡片后：
+        宽度有上限、最多三行、悬停可看全文，只盖住右下角一块。
+
+      【为什么留在 XAML 里而不是用系统通知】
+        自检需要能按名字找到它、量它的位置和宽度；系统通知在无头环境里不存在。
+    -->
+    <Border Grid.RowSpan="2"
+            x:Name="AlertToast"
+            ZIndex="20"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Bottom"
+            Margin="0,0,20,20"
+            MaxWidth="440"
+            Padding="14,10"
+            CornerRadius="10"
+            Background="{DynamicResource NoticeSurfaceBrush}"
+            BorderBrush="{DynamicResource NoticeBorderBrush}"
+            BorderThickness="1"
+            BoxShadow="0 10 30 0 #33000000"
+            IsVisible="{Binding IsAlertVisible}">
+      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+        <TextBlock Text="&#xE7BA;"
+                   FontFamily="{DynamicResource IconFont}"
+                   FontSize="14"
+                   Foreground="#FFB900"
+                   VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1"
+                   Text="{Binding AlertMessage}"
+                   Foreground="{DynamicResource NoticeForegroundBrush}"
+                   TextWrapping="Wrap"
+                   MaxLines="3"
+                   TextTrimming="CharacterEllipsis"
+                   ToolTip.Tip="{Binding AlertDetail}"
+                   VerticalAlignment="Center" />
+        <Button Grid.Column="2"
+                Width="24" Height="24"
+                Padding="0"
+                Background="Transparent"
+                BorderThickness="0"
+                CornerRadius="6"
+                Command="{Binding DismissAlertCommand}"
+                ToolTip.Tip="收起提醒"
+                VerticalAlignment="Top">
+          <TextBlock Text="&#xE8BB;"
+                     FontFamily="{DynamicResource IconFont}"
+                     FontSize="10"
+                     Foreground="{DynamicResource NoticeForegroundBrush}"
+                     Opacity="0.65" />
+        </Button>
+      </Grid>
+    </Border>
 
   </Grid>
 </UserControl>

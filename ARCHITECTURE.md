@@ -2256,3 +2256,11 @@ P3/P4 切换主题与控件，不要再引用这段历史偏差当借口。
 - 结构化表单（例如数据库连接）必须开 `x:CompileBindings="True"`：`{Binding}` 默认走反射，属性名写错只会静默失效；开了编译绑定才会在 `dotnet build` 里报错。
 - 数据库这一行的活性由 `--rail-check` 守着：行标题渲染、五个输入框在场、VM→控件与控件→VM 双向、副标题、三个命令，少一个都红。
 
+
+### 20.24 壳层提醒浮层：右下角、窄卡片、不占布局行（2026-11-16）
+
+- 壳层提醒只有一个来源：`ShellView.axaml` 根 Grid 里的 `AlertToast`。`Grid.RowSpan="2"`、`Right/Bottom` 对齐、`Margin="0,0,20,20"`、`MaxWidth="440"`、`ZIndex="20"`，底板继续用 `Notice*` 令牌，圆角 10 + 阴影。
+- **不要再把它放回内容区的第 0 行**：那会把整页往下推、在数据库报错时遮住标题栏右侧的窗口按钮，也会让 `--layout-check` 的卡片顶边 64 失效。0.5.0 之前那条整行提示条就是这么来的。
+- 文案上限三行（`MaxLines="3"` + `TextTrimming="CharacterEllipsis"`），完整原因放 `AlertDetail` 悬停提示；`AlertMessage` 只放一句话，不要把连接串整段塞进卡片。
+- 必须带关闭按钮（`DismissAlertCommand`）；数据库错误不自动消失，用户处理完自行收起。`--notice-check` 守着位置（右/下各 20）、宽度（≤ 460）、层级（≥ 10）与关闭行为。
+

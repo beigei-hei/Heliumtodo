@@ -217,7 +217,15 @@ public partial class App : Avalonia.Application
             if (DatabaseStartupNotice is { Length: > 0 } startupNotice &&
                 _mainWindow.DataContext is ShellViewModel startupShell)
             {
-                startupShell.ShowAlert(startupNotice);
+                startupShell.ShowAlert(DatabaseStartupBrief ?? startupNotice, startupNotice);
+            }
+
+            // 截图 / 布局自检用：HELIUM_ALERT_TEXT 强制弹一条壳层提醒。
+            // 只影响本次进程，不写配置，也不改任何业务状态。
+            if (Environment.GetEnvironmentVariable("HELIUM_ALERT_TEXT") is { Length: > 0 } fakeAlert &&
+                _mainWindow.DataContext is ShellViewModel alertShell)
+            {
+                alertShell.ShowAlert(fakeAlert);
             }
 
             StartBackgroundServices(desktop);
@@ -811,6 +819,7 @@ public partial class App : Avalonia.Application
         {
             Console.Error.WriteLine($"[启动] 本机 PostgreSQL 启动失败：{reason}");
             DatabaseStartupNotice ??= $"本机 PostgreSQL 没有运行，自动启动也失败了：{reason}";
+            DatabaseStartupBrief ??= "本机 PostgreSQL 没有运行，自动启动失败";
         }
     }
 
@@ -848,6 +857,12 @@ public partial class App : Avalonia.Application
     /// <summary>数据库没起来时留给壳层的提示；null 表示一切正常。</summary>
     internal static string? DatabaseStartupNotice { get; private set; }
 
+    /// <summary>
+    /// 壳层浮层上的短句（一行左右）；完整连接串与排查步骤留在
+    /// <see cref="DatabaseStartupNotice"/> 里当悬停提示，避免右下一个技术大块。
+    /// </summary>
+    internal static string? DatabaseStartupBrief { get; private set; }
+
     private static void InitializeDatabase(ConfigService configService)
     {
         try
@@ -863,6 +878,7 @@ public partial class App : Avalonia.Application
                 // 数据目录不可写、找不到 pg_ctl…）。别用一句"连接超时"把它盖掉，
                 // 否则用户按提示去查主机/端口，真正的失败原因反而看不到。
                 DatabaseStartupNotice ??= DatabaseErrorText.DescribeProbeFailure(probe, masked);
+                DatabaseStartupBrief ??= $"连不上 PostgreSQL（{storage.Host}:{storage.Port}），请在「设置」里检查连接";
                 Console.Error.WriteLine($"[启动] 数据库预检失败：{probe}（连接：{masked}）");
                 return;
             }
@@ -904,6 +920,7 @@ public partial class App : Avalonia.Application
             var masked = PostgresConnection.Mask(
                 PostgresConnection.Resolve(configService.GetStorageSettings()));
             DatabaseStartupNotice = DatabaseErrorText.Describe(ex, masked);
+            DatabaseStartupBrief = DatabaseErrorText.Brief(ex) + "，请在「设置」里检查连接";
             Console.Error.WriteLine($"[启动] 数据库初始化失败：{ex.Message}（连接：{masked}）");
         }
     }

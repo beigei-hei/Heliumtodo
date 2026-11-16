@@ -146,6 +146,12 @@ public static class Program
 
         var shell = services.GetRequiredService<ShellViewModel>();
 
+        // 截图用：HELIUM_ALERT_TEXT 让外壳浮层带着一条提醒渲染，便于目检位置。
+        if (Environment.GetEnvironmentVariable("HELIUM_ALERT_TEXT") is { Length: > 0 } shotAlert)
+        {
+            shell.ShowAlert(shotAlert);
+        }
+
         // 备份自检：走界面命令那条路，不是直接调服务 ——
         // 这样连"按钮点下去到底跑没跑通"一起验证了。
         if (args.Any(a => a.Equals("--backup-check", StringComparison.OrdinalIgnoreCase)))
@@ -2430,6 +2436,33 @@ public static class Program
         PumpDispatcher(TimeSpan.FromMilliseconds(150));
         Check("点关闭按钮立刻收起", !viewModel.IsNoticeVisible && !bar.IsVisible,
             $"IsNoticeVisible={viewModel.IsNoticeVisible}");
+
+        // ⑧ 外壳提醒：右下角浮层、窄卡片、盖在内容上，点 × 收起
+        shell.ShowAlert("连不上 PostgreSQL（Host=127.0.0.1;Port=55432;Database=helium_todo;Username=postgres）：连接超时。请在「设置 → 数据与文件 → 数据库连接」检查主机、端口、用户名和密码后保存重启。");
+        PumpDispatcher(TimeSpan.FromMilliseconds(300));
+
+        var toast = window.GetVisualDescendants()
+            .OfType<Border>()
+            .FirstOrDefault(b => b.Name == "AlertToast");
+        Check("外壳提醒浮层存在且可见", toast is { IsVisible: true }, toast is null ? "没找到" : "找到了");
+        if (toast is not null)
+        {
+            var toastOrigin = toast.TranslatePoint(new Point(0, 0), window) ?? new Point(0, 0);
+            var toastRect = new Rect(toastOrigin, toast.Bounds.Size);
+            var rightGap = window.Bounds.Width - toastRect.Right;
+            var bottomGap = window.Bounds.Height - toastRect.Bottom;
+
+            Check("浮层贴在右下角", rightGap is > 4 and < 60 && bottomGap is > 4 and < 60,
+                $"右距 {rightGap:0.#}，下距 {bottomGap:0.#}（窗口 {window.Bounds.Width:0}x{window.Bounds.Height:0}）");
+            Check("浮层是窄卡片而不是整行", toastRect.Width is > 180 and <= 460,
+                $"宽 {toastRect.Width:0.#}，高 {toastRect.Height:0.#}");
+            Check("浮层层级在内容之上", toast.ZIndex >= 10, $"ZIndex={toast.ZIndex}");
+
+            shell.DismissAlertCommand.Execute(null);
+            PumpDispatcher(TimeSpan.FromMilliseconds(200));
+            Check("点关闭后浮层收起", !toast.IsVisible && !shell.IsAlertVisible,
+                $"IsVisible={toast.IsVisible}，VM={shell.IsAlertVisible}");
+        }
 
         Console.WriteLine(failures == 0
             ? "   ✓ 提示条行为正常"

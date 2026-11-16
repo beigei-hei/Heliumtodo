@@ -108,9 +108,13 @@ public sealed partial class ShellViewModel : ViewModelBase
     /// </summary>
     public string VersionText => HeliumTodo.Domain.VersionInfo.Display;
 
-    /// <summary>顶部信息条：有严重冲突时显示红色提醒。</summary>
+    /// <summary>壳层提醒浮层：有严重冲突/数据库连不上时显示一句话。</summary>
     [ObservableProperty]
     private string _alertMessage = string.Empty;
+
+    /// <summary>悬停时展示的完整说明；数据库报错时是连接串 + 排查步骤。</summary>
+    [ObservableProperty]
+    private string _alertDetail = string.Empty;
 
     [ObservableProperty]
     private bool _isAlertVisible;
@@ -242,15 +246,20 @@ public sealed partial class ShellViewModel : ViewModelBase
         }
     }
 
-    /// <summary>显示一条顶部提醒（例如「今天有 2 处时间冲突」）。</summary>
-    public void ShowAlert(string message)
+    /// <summary>
+    /// 显示一条壳层提醒（例如「今天有 2 处时间冲突」）。
+    /// <paramref name="detail"/> 是悬停提示；省略时与 <paramref name="message"/> 相同。
+    /// </summary>
+    public void ShowAlert(string message, string? detail = null)
     {
         AlertMessage = message;
+        AlertDetail = detail ?? message;
         IsAlertVisible = !string.IsNullOrWhiteSpace(message);
     }
 
     /// <summary>收起提醒。</summary>
-    public void DismissAlert() => IsAlertVisible = false;
+    [RelayCommand]
+    private void DismissAlert() => IsAlertVisible = false;
 }
 
 /// <summary>
