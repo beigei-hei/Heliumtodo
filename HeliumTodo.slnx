@@ -1,20 +1,3 @@
-
-<!--
-  Helium Todo 解决方案（.slnx 新格式）
-
-  和老的 .sln 有什么区别？
-    · 老 .sln 是 Visual Studio 自己发明的一套文本格式，里面塞满了 GUID，
-      人几乎没法手写，改起来容易出错、合并冲突也难解。
-    · .slnx 就是普通的 XML：一个 <Project Path="..."/> 就是一条项目引用，
-      没有 GUID，看一眼就懂，手改也不会坏。
-
-  怎么打开？
-    Visual Studio 2022 17.13 及以上版本可以直接打开 .slnx。
-    命令行用 dotnet build / dotnet test 也一样，把文件名换成 HeliumTodo.slnx 即可。
-
-  怎么加项目？
-    dotnet sln HeliumTodo.slnx add 项目路径\项目.csproj
--->
 <Solution>
 
   <!-- 领域：纯 BCL 的模型、规则与算法，不依赖界面框架 -->
