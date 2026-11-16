@@ -27,6 +27,7 @@
 - 提示条**不用** `FAInfoBar`：自绘 `Border Name="NoticeBar"` + `ZIndex="10"`，
   和卡片同格、排在卡片**后面**（叠在功能区上方），底板跟随明暗，3 秒自动收起（`NoticePolicy`）。
   注意 Avalonia 12 里写 `ZIndex="10"`，写 `Panel.ZIndex` 会报 `AVLN3000`。
+- 壳层提醒（数据库错误 / 冲突）用根 Grid 的 `AlertToast`：右下角 `Margin="0,0,20,20"`、`MaxWidth="440"`、`ZIndex≥10`，**不许**再放回内容区第 0 行；一句话放 `AlertMessage`，完整原因放 `AlertDetail` 悬停，必须带 ×（`DismissAlertCommand`），不自动消失。
 - 设置页折叠分组是自绘 `SettingsExpander` / `SettingsExpanderItem`（`Desktop/Controls/SettingsExpander.cs`，模板在 `Styles/SettingsControls.axaml`）：模板里**任何一层都不许给背景**（0.4 的 FA 模板写死 `#B3FFFFFF`，就是"控件下面垫一层"的根因）；`--rail-check` 会数着 10 组 28 行验证。标题**必须**用 `SettingsExpanderHeaderTheme`（默认 `ToggleButton` 主题会画 checked 方底，在卡片圆角下变成"上圆下方"）；`SettingsExpanderItem` 是 `Grid ColumnDefinitions="*,Auto"`，Footer 右对齐、**不许**横向拉伸（按钮会变成整行宽）。行标题写 `Content`，整块表单写 `Body` —— 把表单直接写成子元素会顶掉 `Content="标题"`，编译不报错、运行时标题消失。
 - 打开文件夹**不许**直接 `CreateProcess explorer.exe`（`UseShellExecute=false`）：绕过外壳启动会得到 `0xc0000142`（`STATUS_DLL_INIT_FAILED`）。只许走 `AvaloniaFolderLauncher` → 外壳启 `explorer.exe` → 目录交给系统 → `cmd /c start`，失败原因汇总进提示条。
 - 外壳交互（标题栏拖拽 / 双击最大化 / 窗口按钮 / 8 个抓手 / 回车发送 / 滚动同步）只许用
