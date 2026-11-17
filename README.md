@@ -1,25 +1,11 @@
 # Helium Todo
-
-> **许可证**：GPL-3.0-only（[`LICENSE`](LICENSE)，第三方组件见 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)）。
-> 源码：<https://github.com/beigei-hei/Heliumtodo-renew>。本项目不联网、不上传数据。
+开发者注：本项目早期开发由AI完成，推送，不建议于此时使用此项目，开发者目前正在介入并修复和重写部分代码
+（虽然很慢就是了）
 
 一个**本地优先**的「日程 + 专注 + 待办」桌面工具：C# 14 / .NET 10，Avalonia 12 界面，
 数据存在本机 PostgreSQL 17 里（也可以用便携版，不装服务）。
 
-## 现在是什么状态
-
-当前是 **0.5.0-alpha 的 P6 文案与性能门禁完成**快照：
-
-- 七个项目已按目标分层改名：`HeliumTodo.Domain` / `Application` / `Infrastructure` /
-  `Desktop` / `Tests` / `SelfTest` / `Verification`。
-- 版本号统一为 `0.5.0-alpha`，新增 GPL-3.0 许可证与逐文件 SPDX 头。
-- 插件宿主已移除，`IHeliumPlugin` 收进 `#if HELIUM_PLUGINS`。
-- 主存储已切到 **PostgreSQL 17**：EF Core 10 + Npgsql，只用 Migration 建表；
-  业务时间是墙上时钟、审计时间是 `timestamptz`。
-- 备份升到 **v2**（`manifest.json` + 每表一份 JSONL，带 SHA256），支持 Replace / Merge；
-  0.4 的 SQLite 备份只识别、不自动转换。
-
-界面使用 **FluentAvaloniaUI 3.1.0** + Avalonia 12.1.5（0.5.0 曾整体切到 Material.Avalonia，因小尺寸按钮与下拉框观感回退，见 `PROGRESS.md` 2026-11-10 热修 2）；设置页折叠分组和两条提示条仍是自绘控件（`Desktop/Controls/SettingsExpander.cs`），强调色支持任意 `#RRGGBB`。外壳交互（拖拽 / 双击最大化 / 窗口按钮 / 8 个抓手 / 回车发送 / 滚动同步）改由 `Xaml.Behaviors.Avalonia` 12.1.5 的 `Behavior<T>` 接管，code-behind 只剩装配。
+## 早期开发阶段，仍具有不少bug
 
 ## 准备数据库
 

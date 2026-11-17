@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
 <Solution>
 
   <!-- 领域：纯 BCL 的模型、规则与算法，不依赖界面框架 -->
@@ -5,21 +9,21 @@
     <Project Path="HeliumTodo.Domain/HeliumTodo.Domain.csproj" />
   </Folder>
 
-  <!-- 应用：用例编排、契约与配置，只依赖 Domain -->
+  <!-- 应用：vibecoding时所划定的规定，只依赖 Domain -->
   <Folder Name="/应用/">
     <Project Path="HeliumTodo.Application/HeliumTodo.Application.csproj" />
   </Folder>
 
-  <!-- 基础设施：EF Core + SQLite（0.5.0 计划切换 PostgreSQL） -->
-  <Folder Name="/基础设施/">
+  <!-- 数据库：EF Core + PostgreSQL -->
+  <Folder Name="/数据库/">
     <Project Path="HeliumTodo.Infrastructure/HeliumTodo.Infrastructure.csproj" />
   </Folder>
 
-  <!-- 界面：Avalonia + FluentAvaloniaUI -->
-  <Folder Name="/界面/">
+  <!-- 程序主体：Avalonia + FluentAvaloniaUI -->
+  <Folder Name="/程序主体/">
     <Project Path="HeliumTodo.Desktop/HeliumTodo.Desktop.csproj" />
   </Folder>
-
+  
   <!-- 测试与自检工具 -->
   <Folder Name="/测试/">
     <Project Path="HeliumTodo.Tests/HeliumTodo.Tests.csproj" />

@@ -30,3 +30,11 @@ _probe-*/
 
 # ── 文档截图保留，但渲染中间产物不留 ──────────────────────
 docs/_shots/
+
+# ——不应当提交的开发文档————————————————————————————————————
+TECH_STACK.md
+UI_REDESIGN_BRIEF.md
+WINDOW_ANIMATION_FIX_PLAN.md
+WINDOWS_DEPENDENCIES.md
+DEVELOPMENT_PLAYBOOK.md
+AVALONIA12_FEASIBILITY.md
