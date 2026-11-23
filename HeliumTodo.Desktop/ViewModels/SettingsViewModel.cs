@@ -321,12 +321,11 @@ public sealed partial class SettingsViewModel : ViewModelBase
                 break;
 
             case RestartOutcome.BlockedByDebugger:
-                NoticeText = "数据库连接已保存。检测到正在调试器里运行，请用调试器的「重新启动」(Ctrl+Shift+F5)。";
-                IsNoticeVisible = true;
+                NoticeText = "数据库连接已保存。检测到正在调试器里运行，请在调试器或是IDE内执行重启";
                 break;
 
             default:
-                NoticeText = "数据库连接已保存，但自动重启没成功，请手动关闭后重新打开 Helium Todo。";
+                NoticeText = "数据库连接已保存，但未能自动重启，请手动关闭后重新打开 Helium Todo。";
                 IsNoticeVisible = true;
                 break;
         }
@@ -847,7 +846,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
             default:
                 // 重启失败也要让用户知道"配置已经存了、下次开机会生效"
                 NoticeText = $"渲染后端已保存为「{backendName}」，"
-                             + "但自动重启没成功，请手动关闭后重新打开 Helium Todo。";
+                             + "但未能执行自动重启，请手动关闭后重新打开 Helium Todo。";
                 IsNoticeVisible = true;
                 break;
         }
@@ -883,7 +882,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
             _suppressRenderBackendChange = false;
         }
 
-        NoticeText = $"已取消更改，渲染后端仍是「{backTo.DisplayText}」。";
+        NoticeText = $"已取消更改。";
         IsNoticeVisible = true;
         RefreshRenderBackendStatus();
     }
@@ -933,7 +932,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         if (RenderBackendChoice.IsOverriddenByEnvironment)
         {
             RenderBackendStatusText =
-                $"当前生效：{activeText}（由环境变量 HELIUM_RENDER 强制指定，这一项暂时不起作用）";
+                $"当前生效：{activeText}";
             return;
         }
 
@@ -1154,7 +1153,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         if (IsBackupBusy) return;
 
         IsBackupBusy = true;
-        BackupStatusText = "正在检查这份备份…";
+        BackupStatusText = "正在很认真地检查备份…";
 
         try
         {
@@ -1162,7 +1161,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
             if (!inspection.IsUsable)
             {
-                BackupStatusText = $"这份文件不能导入：{inspection.Error}";
+                BackupStatusText = $"这份文件导入不了一点：{inspection.Error}";
                 return;
             }
 
@@ -1208,7 +1207,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         IsImportConfirmOpen = false;
         IsBackupBusy = true;
         BackupStatusText = mode == BackupImportMode.Replace
-            ? "正在替换…（会先备份当前数据）"
+            ? "正在替换…（同时备份当前数据）"
             : "正在合并…";
 
         try

@@ -401,7 +401,7 @@ public sealed partial class FocusViewModel : ViewModelBase
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[专注] 结束流程出错：{ex}");
-            ShowNotice("这次专注结束时的收尾动作出错了，数据可能没记全。");
+            ShowNotice("专注结束时出现错误，数据可能未保全");
         }
     }
 
