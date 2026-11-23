@@ -5,7 +5,7 @@
 >
 > 本文所有结构、类名、方法签名、行数均**取自当前代码实际内容**（2026-11-03 核对）。
 >
-> 开发流程（每轮怎么走、用哪些技能、质量门禁）见 [`DEVELOPMENT_PLAYBOOK.md`](DEVELOPMENT_PLAYBOOK.md)，
+> 开发流程（每轮怎么走、用哪些技能、质量门禁）见 [`DEVELOPMENT_SPEC.md`](DEVELOPMENT_SPEC.md)，
 > 给 AI 的硬规则见 [`AGENTS.md`](AGENTS.md)。本文只描述「现在的代码长什么样」，讲流程的不在这里。
 
 ---

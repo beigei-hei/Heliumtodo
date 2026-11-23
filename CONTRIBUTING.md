@@ -3,7 +3,7 @@
 感谢你愿意花时间改进 Helium Todo。开始之前请先读：
 
 - [`AGENTS.md`](AGENTS.md)：不许破的硬规则（分层、界面、动效、测试）。
-- [`DEVELOPMENT_PLAYBOOK.md`](DEVELOPMENT_PLAYBOOK.md)：开发流程与质量门禁。
+- [`DEVELOPMENT_SPEC.md`](DEVELOPMENT_SPEC.md)：开发流程与质量门禁。
 - [`DEVELOPMENT_SPEC.md`](DEVELOPMENT_SPEC.md)：0.5.0 的目标技术栈与里程碑。
 
 ## 许可证与 DCO

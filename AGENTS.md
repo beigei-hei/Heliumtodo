@@ -1,7 +1,7 @@
 # AGENTS.md · 给 AI 的硬规则
 
 > 这是一个 **C# 14 / .NET 10 + Avalonia 12 + FluentAvaloniaUI 3.1 + PostgreSQL 17** 的本地优先桌面应用（0.5.0-alpha；设置页分组与提示条自绘，外壳交互走 Behaviors，文案与性能有机器门禁）。
-> 改代码之前先读 [`DEVELOPMENT_PLAYBOOK.md`](DEVELOPMENT_PLAYBOOK.md)（流程）与 [`ARCHITECTURE.md`](ARCHITECTURE.md)（约定）。
+> 改代码之前先读 [`DEVELOPMENT_SPEC.md`](DEVELOPMENT_SPEC.md)（规格、流程与门禁）与 [`ARCHITECTURE.md`](ARCHITECTURE.md)（约定）。
 > 本文件只列**不许破**的规则，不解释为什么——解释在 playbook 里。
 
 ## 必须先做的四件事
